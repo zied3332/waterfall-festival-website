@@ -12,9 +12,27 @@ function EventCard({ title, date, location, slug }: EventCardProps) {
   return (
     <article className="group overflow-hidden rounded-[8px] border border-violet-500/70 bg-[#05050d] text-white shadow-[0_0_35px_rgba(139,92,246,0.28)]">
       <div className="relative h-64 bg-gradient-to-br from-zinc-700 to-zinc-900">
-        <div className="absolute left-5 top-5 rounded bg-violet-600 p-8 text-xs font-bold uppercase tracking-wider">
-          Upcoming
-        </div>
+<div
+  className="
+    absolute
+    left-5
+    top-5
+    h-8
+    w-[90px]
+    flex
+    items-center
+    justify-center
+    rounded-md
+    bg-violet-600
+    text-[10px]
+    font-bold
+    uppercase
+    tracking-[0.12em]
+    text-white
+  "
+>
+  UPCOMING
+</div>
 
         <button className="absolute right-5 top-5 transition hover:scale-110">
           <Heart size={30} strokeWidth={1.8} className="text-gray-300" />
@@ -55,11 +73,32 @@ function EventCard({ title, date, location, slug }: EventCardProps) {
       </div>
 
       <Link
-        to={`/events/${slug}`}
-        className="mt-5 flex h-16 items-center justify-center rounded-b-[28px] bg-gradient-to-r from-violet-700 to-violet-500 text-sm font-bold uppercase tracking-widest transition hover:brightness-110"
-      >
-        View Event
-      </Link>
+  to={`/events/${slug}`}
+  className="
+    mx-5
+    mt-6
+    flex
+    h-12
+    items-center
+    justify-center
+    rounded-xl
+    bg-gradient-to-r
+    from-violet-700
+    to-violet-500
+    text-sm
+    font-bold
+    uppercase
+    tracking-wide
+    text-white
+    shadow-lg
+    transition
+    hover:brightness-110
+  "
+>
+  <span>View Event</span>
+
+  <span className="ml-3 text-lg">→</span>
+</Link>
     </article>
   );
 }
