@@ -1,0 +1,87 @@
+.contact-page {
+  min-height: 100vh;
+  background: #f9fafb;
+  padding: 96px 24px;
+}
+
+.contact-container {
+  max-width: 1152px;
+  margin: 0 auto;
+}
+
+.contact-label {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: #6b7280;
+}
+
+.contact-title {
+  margin-top: 16px;
+  font-size: 48px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.contact-description {
+  margin-top: 20px;
+  max-width: 672px;
+  font-size: 18px;
+  line-height: 32px;
+  color: #4b5563;
+}
+
+.contact-grid {
+  margin-top: 48px;
+  display: grid;
+  gap: 32px;
+}
+
+@media (min-width: 768px) {
+  .contact-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.contact-card {
+  border-radius: 24px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  padding: 32px;
+}
+
+.contact-card-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.contact-details {
+  margin-top: 24px;
+  color: #4b5563;
+  line-height: 28px;
+}
+
+.contact-input,
+.contact-textarea {
+  width: 100%;
+  margin-top: 16px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  padding: 16px;
+}
+
+.contact-textarea {
+  height: 160px;
+  resize: none;
+}
+
+.contact-button {
+  margin-top: 24px;
+  width: 100%;
+  border-radius: 999px;
+  background: #111827;
+  padding: 16px;
+  font-weight: 700;
+  color: white;
+}

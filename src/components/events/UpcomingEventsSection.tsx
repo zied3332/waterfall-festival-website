@@ -7,11 +7,12 @@ import { Navigation } from "swiper/modules";
 
 import "swiper/css";
 import "swiper/css/navigation";
+import "./Events.css";
 
 function UpcomingEventsSection() {
   return (
-    <section className="bg-gray-50 py-24">
-      <div className="mx-auto max-w-7xl px-6">
+    <section className="events-section">
+      <div className="events-container">
         <SectionTitle
           label="Events"
           title="Upcoming Events"
@@ -24,16 +25,11 @@ function UpcomingEventsSection() {
           spaceBetween={30}
           slidesPerView={1}
           breakpoints={{
-            640: {
-              slidesPerView: 1,
-            },
-            768: {
-              slidesPerView: 2,
-            },
-            1200: {
-              slidesPerView: 3,
-            },
+            640: { slidesPerView: 1 },
+            768: { slidesPerView: 2 },
+            1200: { slidesPerView: 3 },
           }}
+          className="events-swiper"
         >
           {events.map((event) => (
             <SwiperSlide key={event.id}>

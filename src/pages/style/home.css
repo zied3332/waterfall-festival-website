@@ -1,0 +1,118 @@
+.home-hero {
+  position: relative;
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #05050d;
+}
+
+.home-hero__background {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(124, 58, 237, 0.32), transparent 32%),
+    radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.18), transparent 30%),
+    linear-gradient(135deg, #080812 0%, #101020 45%, #03040a 100%);
+}
+
+.home-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.home-hero__content {
+  position: relative;
+  z-index: 2;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.home-hero__location {
+  margin: 0 0 24px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+}
+
+.home-hero__title {
+  margin: 0;
+  font-size: clamp(58px, 9vw, 130px);
+  line-height: 0.9;
+  font-weight: 900;
+  color: white;
+  text-transform: uppercase;
+}
+
+.home-hero__description {
+  max-width: 680px;
+  margin: 32px auto 0;
+  font-size: 18px;
+  line-height: 1.8;
+  color: #d4d4d8;
+}
+
+.home-hero__actions {
+  margin-top: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.home-hero__button {
+  min-width: 160px;
+  padding: 16px 34px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 900;
+  transition: transform 0.2s ease, filter 0.2s ease, background 0.2s ease;
+}
+
+.home-hero__button:hover {
+  transform: translateY(-3px);
+}
+
+.home-hero__button--primary {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  box-shadow: 0 16px 40px rgba(124, 58, 237, 0.4);
+}
+
+.home-hero__button--primary:hover {
+  filter: brightness(1.1);
+}
+
+.home-hero__button--secondary {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.home-hero__button--secondary:hover {
+  background: white;
+  color: #111827;
+}
+
+@media (max-width: 700px) {
+  .home-hero {
+    min-height: 78vh;
+  }
+
+  .home-hero__location {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+  }
+
+  .home-hero__description {
+    font-size: 16px;
+  }
+}

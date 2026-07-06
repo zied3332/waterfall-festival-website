@@ -1,25 +1,21 @@
 import { Link } from "react-router-dom";
+
 import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
+import TicketsPreviewSection from "../components/tickets/TicketsPreviewSection";
+
+import "./style/home.css";
 
 function Home() {
   return (
     <>
-      {/* ================= HERO ================= */}
+      <section className="home-hero">
+        <div className="home-hero__background" />
+        <div className="home-hero__overlay" />
 
-      <section className="relative flex min-h-[85vh] items-center justify-center overflow-hidden bg-gray-900">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-black" />
+        <div className="home-hero__content">
+          <p className="home-hero__location">Koh Phangan, Thailand</p>
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/40" />
-
-        {/* Content */}
-        <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
-          <p className="mb-6 text-sm font-semibold uppercase tracking-[0.45em] text-gray-300">
-            Koh Phangan, Thailand
-          </p>
-
-          <h1 className="text-5xl font-black leading-none text-white md:text-7xl lg:text-8xl">
+          <h1 className="home-hero__title">
             Experience
             <br />
             The Waterfall
@@ -27,61 +23,26 @@ function Home() {
             Festival
           </h1>
 
-          <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-gray-300">
+          <p className="home-hero__description">
             A clean first prototype focused on layout, user flow, ticket
             conversion and mobile experience.
           </p>
 
-          {/* Buttons */}
-
-          <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
-            <Link
-              to="/tickets"
-              className="
-                rounded-full
-                bg-white
-                px-9
-                py-4
-                font-semibold
-                text-gray-900
-                shadow-xl
-                transition-all
-                duration-300
-                hover:-translate-y-1
-                hover:shadow-2xl
-              "
-            >
+          <div className="home-hero__actions">
+            <Link to="/tickets" className="home-hero__button home-hero__button--primary">
               Get Tickets
             </Link>
 
-            <Link
-              to="/events"
-              className="
-                rounded-full
-                border
-                border-white/70
-                bg-white/5
-                px-9
-                py-4
-                font-semibold
-                text-white
-                backdrop-blur-sm
-                transition-all
-                duration-300
-                hover:bg-white
-                hover:text-black
-                hover:-translate-y-1
-              "
-            >
+            <Link to="/events" className="home-hero__button home-hero__button--secondary">
               View Events
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ================= UPCOMING EVENTS ================= */}
-
       <UpcomingEventsSection />
+
+      <TicketsPreviewSection />
     </>
   );
 }
