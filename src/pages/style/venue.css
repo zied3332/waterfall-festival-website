@@ -1,0 +1,99 @@
+.venue-page {
+  min-height: 100vh;
+  background: #f9fafb;
+  padding: 96px 24px;
+}
+
+.venue-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.venue-label {
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: #6b7280;
+}
+
+.venue-title {
+  margin-top: 16px;
+  font-size: 56px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.venue-description {
+  margin-top: 20px;
+  max-width: 680px;
+  font-size: 18px;
+  line-height: 32px;
+  color: #4b5563;
+}
+
+.venue-grid {
+  margin-top: 48px;
+  display: grid;
+  gap: 32px;
+}
+
+@media (min-width: 900px) {
+  .venue-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.venue-map-card,
+.venue-info-card {
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 28px;
+  padding: 24px;
+}
+
+.venue-map-placeholder {
+  height: 560px;
+  border-radius: 22px;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.venue-info-card h2 {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.venue-list {
+  margin-top: 24px;
+  display: grid;
+  gap: 14px;
+}
+
+.venue-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #374151;
+}
+
+.venue-list-item span {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #111827;
+}
+
+.venue-button {
+  margin-top: 32px;
+  width: 100%;
+  border-radius: 999px;
+  background: #111827;
+  color: white;
+  padding: 16px;
+  font-weight: 800;
+}
