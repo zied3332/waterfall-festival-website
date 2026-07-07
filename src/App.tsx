@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Footer from "./layout/Footer";
 import Contact from "./pages/Contact";
 import Venue from "./pages/Venue";
+import Gallery from "./pages/Gallery";
 function Events() {
   return <h1>Events</h1>;
 }
@@ -19,6 +20,7 @@ function App() {
           <Route path="/events" element={<Events />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/venue" element={<Venue />} />
+          <Route path="/gallery" element={<Gallery />} />
         </Routes>
       </main>
 
