@@ -26,6 +26,15 @@ function App() {
       </main>
 
       <Footer />
+
+
+
+
+
+
+
+
+      
       <FloatingChat />
     </BrowserRouter>
   );
