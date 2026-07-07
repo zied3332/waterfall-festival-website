@@ -1,0 +1,125 @@
+.ai-preview {
+  background: #ffffff;
+  padding: 96px 24px;
+}
+
+.ai-preview__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .ai-preview__container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.ai-preview__label {
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: #7c3aed;
+}
+
+.ai-preview__title {
+  margin-top: 16px;
+  font-size: 48px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.ai-preview__description {
+  margin-top: 20px;
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 32px;
+  color: #6b7280;
+}
+
+.ai-preview__questions {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ai-preview__questions span {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.ai-preview__button {
+  margin-top: 36px;
+  display: inline-flex;
+  border-radius: 999px;
+  background: #111827;
+  color: white;
+  padding: 16px 28px;
+  font-weight: 800;
+}
+
+.ai-preview__mockup {
+  border-radius: 32px;
+  background: #111827;
+  padding: 28px;
+  color: white;
+  box-shadow: 0 25px 70px rgba(17, 24, 39, 0.25);
+}
+
+.ai-preview__chat-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.ai-preview__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: #7c3aed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.ai-preview__chat-header h3 {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.ai-preview__chat-header p {
+  margin-top: 4px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.ai-preview__bubble {
+  max-width: 85%;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  line-height: 26px;
+  font-size: 15px;
+}
+
+.ai-preview__bubble--bot {
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+.ai-preview__bubble--user {
+  margin-left: auto;
+  background: #7c3aed;
+  color: white;
+}

@@ -1,0 +1,135 @@
+.chat-button {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 58px;
+  height: 58px;
+  border: none;
+  border-radius: 18px;
+  background: #7c3aed;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14px 35px rgba(124, 58, 237, 0.35);
+  cursor: pointer;
+  z-index: 9999;
+}
+
+.chat-window {
+  position: fixed;
+  right: 24px;
+  bottom: 96px;
+  width: 380px;
+  height: 500px;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(16px);
+  transition: 0.25s ease;
+  z-index: 9998;
+}
+
+.chat-window.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.chat-header {
+  background: #7c3aed;
+  color: white;
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.chat-header p {
+  margin-top: 4px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.chat-header button {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.chat-body {
+  flex: 1;
+  padding: 18px;
+  background: #f8fafc;
+  overflow-y: auto;
+}
+
+.bot-message {
+  max-width: 82%;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #e5e7eb;
+  color: #111827;
+  line-height: 24px;
+  font-size: 15px;
+}
+
+.chat-footer {
+  padding: 14px;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+}
+
+.chat-footer input {
+  flex: 1;
+  height: 44px;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  padding: 0 14px;
+  outline: none;
+}
+
+.chat-footer input:focus {
+  border-color: #7c3aed;
+}
+
+.chat-footer button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 14px;
+  background: #7c3aed;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .chat-window {
+    width: calc(100vw - 24px);
+    height: 70vh;
+    right: 12px;
+    bottom: 88px;
+  }
+
+  .chat-button {
+    right: 16px;
+    bottom: 16px;
+  }
+}

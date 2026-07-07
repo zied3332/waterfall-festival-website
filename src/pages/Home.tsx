@@ -4,7 +4,7 @@ import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
 import TicketsPreviewSection from "../components/tickets/TicketsPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 import "./style/home.css";
-
+import AIChatPreviewSection from "../components/chat/AIChatPreviewSection";
 function Home() {
   return (
     <>
@@ -44,6 +44,7 @@ function Home() {
 
       <TicketsPreviewSection />
       <FAQPreviewSection />
+      <AIChatPreviewSection />
     </>
   );
 }

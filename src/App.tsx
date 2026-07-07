@@ -5,6 +5,7 @@ import Footer from "./layout/Footer";
 import Contact from "./pages/Contact";
 import Venue from "./pages/Venue";
 import Gallery from "./pages/Gallery";
+import FloatingChat from "./components/chat/FloatingChat";
 function Events() {
   return <h1>Events</h1>;
 }
@@ -25,6 +26,7 @@ function App() {
       </main>
 
       <Footer />
+      <FloatingChat />
     </BrowserRouter>
   );
 }
