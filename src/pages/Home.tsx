@@ -5,6 +5,7 @@ import TicketsPreviewSection from "../components/tickets/TicketsPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 import "./style/home.css";
 import AIChatPreviewSection from "../components/chat/AIChatPreviewSection";
+import ExperiencePreviewSection from "../components/experience/ExperiencePreviewSection";
 function Home() {
   return (
     <>
@@ -43,6 +44,8 @@ function Home() {
       <UpcomingEventsSection />
 
       <TicketsPreviewSection />
+      <ExperiencePreviewSection />
+
       <FAQPreviewSection />
       <AIChatPreviewSection />
     </>
