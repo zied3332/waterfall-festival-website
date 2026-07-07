@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
 import TicketsPreviewSection from "../components/tickets/TicketsPreviewSection";
-
+import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 import "./style/home.css";
 
 function Home() {
@@ -43,6 +43,7 @@ function Home() {
       <UpcomingEventsSection />
 
       <TicketsPreviewSection />
+      <FAQPreviewSection />
     </>
   );
 }
