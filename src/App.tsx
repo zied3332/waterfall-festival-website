@@ -10,7 +10,7 @@ import Tickets from "./pages/Tickets";
 import Contact from "./pages/Contact";
 import Venue from "./pages/Venue";
 import Gallery from "./pages/Gallery";
-
+import Experience from "./pages/Experience";
 import FloatingChat from "./components/chat/FloatingChat";
 
 function App() {
@@ -26,6 +26,7 @@ function App() {
           <Route path="/venue" element={<Venue />} />
           <Route path="/gallery" element={<Gallery />
         } />
+        <Route path="/experience" element={<Experience />} />
         <Route path="/tickets" element={<Tickets />
         } />
         </Routes>
