@@ -26,14 +26,24 @@
   min-width: 230px;
 }
 
+.navbar__brand picture {
+  display: flex;
+  align-items: center;
+}
+
 .navbar__logo {
   width: 180px;
   height: auto;
   display: block;
   object-fit: contain;
-  border-radius: 0;
+}
+
+.navbar__menu-button {
+  display: none;
   background: transparent;
-  box-shadow: none;
+  border: none;
+  color: white;
+  cursor: pointer;
 }
 
 .navbar__links {
@@ -137,56 +147,83 @@
 
 @media (max-width: 900px) {
   .navbar {
-    height: auto;
+    height: 90px;
   }
 
   .navbar__inner {
-    padding: 16px;
-    flex-wrap: wrap;
+    height: 90px;
+    padding: 0 30px;
+    flex-wrap: nowrap;
+    gap: 0;
+    position: relative;
   }
 
   .navbar__brand {
     min-width: auto;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    margin-left: -18px;
+  }
+
+  .navbar__brand picture {
+    height: 90px;
+    display: flex;
+    align-items: center;
   }
 
   .navbar__logo {
     width: 150px;
+    transform: translateX(-14px) translateY(-5px);
+  }
+
+  .navbar__menu-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    background: transparent;
+    border: 2px solid #f5b21b;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    transform: translateY(0);
+  }
+
+  .navbar__right {
+    display: none;
   }
 
   .navbar__links {
-    order: 3;
+    display: none;
+    position: absolute;
+    top: 90px;
+    left: 0;
     width: 100%;
-    overflow-x: auto;
-    padding-bottom: 6px;
+    background: #03040a;
+    padding: 18px 28px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .navbar__links--open {
+    display: flex;
   }
 
   .navbar__links a {
-    padding: 12px 0;
+    width: 100%;
+    padding: 14px 0;
     white-space: nowrap;
   }
 
   .navbar__links a.active::after {
-    bottom: 4px;
-  }
-
-  .navbar__right {
-    margin-left: auto;
-  }
-
-  .navbar__lang {
-    display: none;
+    bottom: 6px;
+    right: auto;
+    width: 36px;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

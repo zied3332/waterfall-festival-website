@@ -4,6 +4,7 @@ import { Menu, X, Ticket } from "lucide-react";
 import { FaInstagram, FaFacebookF, FaYoutube, FaTiktok } from "react-icons/fa6";
 import "./Navbar.css";
 import logo from "./logo.png";
+import logo2 from "./logo2.png";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -14,7 +15,10 @@ export default function Navbar() {
     <header className="navbar">
       <nav className="navbar__inner">
         <Link to="/" className="navbar__brand" onClick={closeMenu}>
-          <img src={logo} alt="Waterfall Festival" className="navbar__logo" />
+          <picture>
+            <source srcSet={logo2} media="(max-width: 900px)" />
+            <img src={logo} alt="Waterfall Festival" className="navbar__logo" />
+          </picture>
         </Link>
 
         <button
