@@ -12,6 +12,9 @@ import "./Events.css";
 function UpcomingEventsSection() {
   return (
     <section className="events-section">
+      <div className="events-section__glow events-section__glow--one" />
+      <div className="events-section__glow events-section__glow--two" />
+
       <div className="events-container">
         <SectionTitle
           label="Events"
@@ -22,7 +25,7 @@ function UpcomingEventsSection() {
         <Swiper
           modules={[Navigation]}
           navigation
-          spaceBetween={30}
+          spaceBetween={34}
           slidesPerView={1}
           breakpoints={{
             640: { slidesPerView: 1 },

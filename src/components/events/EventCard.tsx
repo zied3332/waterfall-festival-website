@@ -7,16 +7,26 @@ type EventCardProps = {
   date: string;
   location: string;
   slug: string;
+  image?: string;
 };
 
-function EventCard({ title, date, location, slug }: EventCardProps) {
+function EventCard({ title, date, location, slug, image }: EventCardProps) {
   return (
     <article className="event-card">
-      <div className="event-card__image">
-        <div className="event-card__badge">Upcoming</div>
+      <div
+        className="event-card__image"
+        data-event={slug}
+        style={image ? { backgroundImage: `url(${image})` } : undefined}
+      >
+        <div className="event-card__overlay" />
 
-        <button className="event-card__heart">
-          <Heart size={28} strokeWidth={1.8} />
+        <div className="event-card__badge">
+          <span />
+          Upcoming
+        </div>
+
+        <button className="event-card__heart" aria-label="Add to favorites">
+          <Heart size={26} strokeWidth={1.8} />
         </button>
       </div>
 
@@ -29,32 +39,31 @@ function EventCard({ title, date, location, slug }: EventCardProps) {
 
         <div className="event-card__details">
           <div className="event-card__detail">
-            <Calendar size={18} />
+            <Calendar size={17} />
             <span>{date}</span>
           </div>
 
           <div className="event-card__detail">
-            <Clock3 size={18} />
+            <Clock3 size={17} />
             <span>4:00 PM - 6:00 AM</span>
           </div>
 
           <div className="event-card__detail">
-            <MapPin size={18} />
+            <MapPin size={17} />
             <span>{location}</span>
           </div>
         </div>
 
         <p className="event-card__description">
-          The original and biggest Full Moon Party. Dance beneath the stars with
-          world-class DJs, incredible visuals, and the unforgettable atmosphere
-          of Koh Phangan.
+          Dance beneath the stars with world-class DJs, powerful visuals, and
+          the unforgettable atmosphere of Koh Phangan.
         </p>
-      </div>
 
-      <Link to={`/events/${slug}`} className="event-card__button">
-        <span>View Event</span>
-        <span>→</span>
-      </Link>
+        <Link to={`/events/${slug}`} className="event-card__button">
+          <span>View Event</span>
+          <span>→</span>
+        </Link>
+      </div>
     </article>
   );
 }
