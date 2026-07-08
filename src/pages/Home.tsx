@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 
+import logo from "./logo1.png";
+
 import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
 import TicketsPreviewSection from "../components/tickets/TicketsPreviewSection";
 import ExperiencePreviewSection from "../components/experience/ExperiencePreviewSection";
@@ -17,17 +19,30 @@ function Home() {
         <div className="home-hero__overlay" />
 
         <div className="home-hero__content">
-          <p className="home-hero__location">Koh Phangan, Thailand</p>
+          <img
+            src={logo}
+            alt="Waterfall Festival"
+            className="home-hero__logo"
+          />
 
-          <h1 className="home-hero__title">
-            Where the Jungle
+      
+
+         
+
+          <div className="home-hero__divider">
+            <span />
+            <b>✣</b>
+            <span />
+          </div>
+
+          <h2 className="home-hero__title">
+            Dance Under The
             <br />
-            Meets the Music
-          </h1>
+            <strong>Waterfall</strong>
+          </h2>
 
           <p className="home-hero__description">
-            Join Waterfall Festival for an unforgettable night of music,
-            lights, nature, and island energy in the heart of Koh Phangan.
+            The world's most unforgettable tropical electronic music festival.
           </p>
 
           <div className="home-hero__actions">
@@ -35,7 +50,7 @@ function Home() {
               to="/tickets"
               className="home-hero__button home-hero__button--primary"
             >
-              Book Your Night
+              Get Tickets
             </Link>
 
             <Link
@@ -45,7 +60,35 @@ function Home() {
               Explore Events
             </Link>
           </div>
+
+          <div className="home-hero__info">
+            <div>
+              <span>📍</span>
+              <p>
+                Koh Phangan
+                <small>Thailand</small>
+              </p>
+            </div>
+
+            <div>
+              <span>🗓️</span>
+              <p>
+                Next Event
+                <small>12 - 16 Aug 2026</small>
+              </p>
+            </div>
+
+            <div>
+              <span>☆</span>
+              <p>
+                15 Years
+                <small>Of Magic</small>
+              </p>
+            </div>
+          </div>
         </div>
+
+        <div className="home-hero__scroll">Scroll to discover</div>
       </section>
 
       <UpcomingEventsSection />

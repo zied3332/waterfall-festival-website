@@ -1,0 +1,236 @@
+.event-details-page {
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.event-details-hero {
+  position: relative;
+  min-height: 72vh;
+  background: linear-gradient(135deg, #111827, #03040a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 24px;
+  overflow: hidden;
+}
+
+.event-details-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8)),
+    url("https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=2000&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+}
+
+.event-details-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 950px;
+}
+
+.event-details-label {
+  color: #c4b5fd;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+}
+
+.event-details-hero h1 {
+  margin-top: 18px;
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 900;
+  color: white;
+  text-transform: uppercase;
+}
+
+.event-details-meta {
+  margin-top: 24px;
+  color: #e5e7eb;
+  font-size: 18px;
+}
+
+.event-details-button {
+  margin-top: 38px;
+  display: inline-flex;
+  background: white;
+  color: #111827;
+  padding: 17px 34px;
+  border-radius: 999px;
+  font-weight: 900;
+}
+
+.event-details-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+
+.event-info-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.event-info-grid div {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  padding: 26px;
+}
+
+.event-info-grid span {
+  display: block;
+  color: #7c3aed;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.event-info-grid strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 20px;
+  color: #111827;
+}
+
+.event-section {
+  margin-top: 80px;
+}
+
+.event-section h2 {
+  font-size: 42px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.event-section > p {
+  margin-top: 20px;
+  max-width: 800px;
+  color: #6b7280;
+  font-size: 18px;
+  line-height: 34px;
+}
+
+.artist-grid {
+  margin-top: 34px;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.artist-card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.artist-image {
+  height: 180px;
+  background: linear-gradient(135deg, #d1d5db, #9ca3af);
+}
+
+.artist-card h3 {
+  margin: 20px 20px 0;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.artist-card p {
+  margin: 8px 20px 24px;
+  color: #6b7280;
+}
+
+.schedule-list {
+  margin-top: 34px;
+  display: grid;
+  gap: 18px;
+}
+
+.schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: white;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+}
+
+.schedule-item span {
+  width: 14px;
+  height: 14px;
+  background: #7c3aed;
+  border-radius: 999px;
+}
+
+.schedule-item p {
+  font-weight: 800;
+  color: #111827;
+}
+
+.venue-box {
+  background: white;
+  border-radius: 28px;
+  border: 1px solid #e5e7eb;
+  padding: 36px;
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  align-items: center;
+}
+
+.venue-box a,
+.event-cta a {
+  background: #111827;
+  color: white;
+  padding: 16px 28px;
+  border-radius: 999px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.event-cta {
+  margin-top: 90px;
+  text-align: center;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  border-radius: 32px;
+  padding: 70px 24px;
+}
+
+.event-cta h2 {
+  font-size: 44px;
+  font-weight: 900;
+}
+
+.event-cta p {
+  margin: 18px auto 34px;
+  max-width: 650px;
+  line-height: 30px;
+}
+
+.event-cta a {
+  background: white;
+  color: #7c3aed;
+}
+
+@media (max-width: 768px) {
+  .event-section h2 {
+    font-size: 34px;
+  }
+
+  .venue-box {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .event-cta h2 {
+    font-size: 34px;
+  }
+}
