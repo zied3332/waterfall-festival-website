@@ -5,6 +5,8 @@ import Footer from "./layout/Footer";
 
 import Home from "./pages/Home";
 import Events from "./pages/Events";
+import Tickets from "./pages/Tickets";
+
 import Contact from "./pages/Contact";
 import Venue from "./pages/Venue";
 import Gallery from "./pages/Gallery";
@@ -22,7 +24,10 @@ function App() {
           <Route path="/events" element={<Events />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/venue" element={<Venue />} />
-          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/gallery" element={<Gallery />
+        } />
+        <Route path="/tickets" element={<Tickets />
+        } />
         </Routes>
       </main>
 
