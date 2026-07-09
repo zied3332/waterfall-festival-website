@@ -1,0 +1,149 @@
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.dashboard-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+  transition: 0.25s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(124, 58, 237, 0.12);
+}
+
+.dashboard-card svg {
+  color: #7c3aed;
+}
+
+.dashboard-card h3 {
+  margin-top: 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.dashboard-card h2 {
+  margin-top: 10px;
+  font-size: 42px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.dashboard-card p {
+  margin-top: 8px;
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+.dashboard-grid {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 28px;
+}
+
+.dashboard-panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  padding: 30px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-panel h2 {
+  margin-bottom: 24px;
+  font-size: 26px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 14px;
+  transition: 0.25s ease;
+}
+
+.activity-item:hover {
+  background: #f3f4f6;
+}
+
+.activity-item svg {
+  color: #7c3aed;
+  flex-shrink: 0;
+}
+
+.activity-item span {
+  color: #374151;
+  font-weight: 600;
+}
+
+.quick-actions {
+  display: grid;
+  gap: 16px;
+}
+
+.quick-actions button {
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.quick-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(124, 58, 237, 0.35);
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-panel {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-card {
+    padding: 24px;
+  }
+
+  .dashboard-panel {
+    padding: 20px;
+  }
+
+  .dashboard-panel h2 {
+    font-size: 22px;
+  }
+
+  .dashboard-card h2 {
+    font-size: 34px;
+  }
+}

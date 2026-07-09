@@ -11,6 +11,8 @@ import Venue from "./pages/Venue";
 import Gallery from "./pages/Gallery";
 import Experience from "./pages/Experience";
 import Faq from "./pages/FAQ";
+import AdminLayout from "./admin/AdminLayout";
+import Dashboard from "./admin/pages/Dashboard";
 import EventDetails from "./pages/EventDetails";
 import FloatingChat from "./components/chat/FloatingChat";
 
@@ -30,6 +32,9 @@ function App() {
           <Route path="/faq" element={<Faq />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/events/:slug" element={<EventDetails />} />
+          <Route path="/admin" element={<AdminLayout />}>
+  <Route index element={<Dashboard />} />
+</Route>
         </Routes>
       </main>
 
