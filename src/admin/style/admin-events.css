@@ -1,91 +1,156 @@
+.admin-events {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
 .admin-events__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 28px;
 }
 
 .admin-events__header h2 {
-  font-size: 32px;
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 900;
-  color: #111827;
+  color: #ffffff;
 }
 
 .admin-events__header p {
-  margin-top: 8px;
-  color: #6b7280;
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.7;
+  max-width: 620px;
 }
 
 .admin-events__header button {
-  border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
-  color: white;
-  padding: 14px 18px;
-  font-weight: 800;
+  flex-shrink: 0;
+
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+
+  padding: 13px 22px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: linear-gradient(135deg, #22d3ee, #7c3aed);
+  color: #ffffff;
+
+  font-weight: 800;
   cursor: pointer;
+
+  box-shadow: 0 18px 40px rgba(34, 211, 238, 0.18);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
+.admin-events__header button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 48px rgba(124, 58, 237, 0.28);
+}
+
+/* =========================
+   Table Card
+========================= */
+
 .admin-events__table-card {
-  overflow-x: auto;
-  border-radius: 22px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+
+  border-radius: 28px;
+
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
 }
 
 .admin-events__table {
   width: 100%;
-  border-collapse: collapse;
   min-width: 900px;
+  border-collapse: collapse;
 }
 
 .admin-events__table th {
+  padding: 20px 24px;
+
   text-align: left;
-  padding: 18px 22px;
-  font-size: 13px;
-  color: #6b7280;
+
+  color: rgba(255, 255, 255, 0.55);
+
+  font-size: .78rem;
+  font-weight: 800;
+
   text-transform: uppercase;
-  letter-spacing: 1px;
-  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: .12em;
+
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
 }
 
 .admin-events__table td {
-  padding: 20px 22px;
-  border-bottom: 1px solid #f1f5f9;
-  color: #374151;
+  padding: 22px 24px;
+
+  color: rgba(255, 255, 255, .76);
+
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
 }
 
-.admin-events__table tr:last-child td {
+.admin-events__table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.admin-events__table tbody tr {
+  transition: background .2s ease;
+}
+
+.admin-events__table tbody tr:hover {
+  background: rgba(255,255,255,.035);
 }
 
 .admin-events__table td strong {
   display: block;
-  font-weight: 900;
-  color: #111827;
+
+  color: #ffffff;
+  font-weight: 800;
 }
 
 .admin-events__table td span {
   display: block;
-  margin-top: 4px;
-  color: #9ca3af;
-  font-size: 13px;
+
+  margin-top: 6px;
+
+  color: rgba(255,255,255,.5);
+
+  font-size: .85rem;
 }
 
+/* =========================
+   Status Badge
+========================= */
+
 .admin-events__status {
-  width: fit-content;
-  border-radius: 999px;
-  background: #dcfce7;
-  color: #15803d !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   padding: 7px 12px;
-  font-size: 12px !important;
-  font-weight: 900;
+
+  border-radius: 999px;
+
+  background: rgba(34,211,238,.12);
+
+  color: #67e8f9 !important;
+
+  font-size: .78rem !important;
+  font-weight: 800;
 }
+
+/* =========================
+   Actions
+========================= */
 
 .admin-events__actions {
   display: flex;
@@ -95,29 +160,47 @@
 .admin-events__actions button {
   width: 38px;
   height: 38px;
-  border: none;
-  border-radius: 12px;
-  background: #f3f4f6;
-  color: #111827;
-  display: flex;
+
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  border: none;
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.08);
+  color: #ffffff;
+
   cursor: pointer;
+
+  transition:
+    background .2s ease,
+    transform .2s ease,
+    color .2s ease;
 }
 
-.admin-events__actions button.danger {
-  background: #fee2e2;
-  color: #dc2626;
+.admin-events__actions button:hover {
+  transform: translateY(-2px);
+  background: rgba(34,211,238,.18);
 }
+
+.admin-events__actions button.danger:hover {
+  background: rgba(251,113,133,.18);
+  color: #fb7185;
+}
+
+/* =========================
+   Responsive
+========================= */
 
 @media (max-width: 700px) {
+
   .admin-events__header {
-    align-items: flex-start;
     flex-direction: column;
+    align-items: stretch;
   }
 
   .admin-events__header button {
     width: 100%;
-    justify-content: center;
   }
 }

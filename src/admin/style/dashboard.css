@@ -5,41 +5,44 @@
 }
 
 .dashboard-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 22px;
   padding: 28px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
-  transition: 0.25s ease;
+  border-radius: 24px;
+
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.16);
+
+  transition: transform .25s ease, box-shadow .25s ease;
 }
 
 .dashboard-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 18px 40px rgba(124, 58, 237, 0.12);
+  box-shadow: 0 24px 60px rgba(124, 58, 237, 0.22);
 }
 
 .dashboard-card svg {
-  color: #7c3aed;
+  color: #22d3ee;
 }
 
 .dashboard-card h3 {
   margin-top: 18px;
-  font-size: 15px;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .dashboard-card h2 {
   margin-top: 10px;
-  font-size: 42px;
+  font-size: 2.6rem;
   font-weight: 900;
-  color: #111827;
+  color: #ffffff;
 }
 
 .dashboard-card p {
   margin-top: 8px;
-  color: #9ca3af;
-  font-size: 15px;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.95rem;
 }
 
 .dashboard-grid {
@@ -50,19 +53,25 @@
 }
 
 .dashboard-panel {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 22px;
   padding: 30px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+  border-radius: 24px;
+
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.16);
 }
 
 .dashboard-panel h2 {
-  margin-bottom: 24px;
-  font-size: 26px;
+  margin: 0 0 24px;
+  font-size: 1.7rem;
   font-weight: 900;
-  color: #111827;
+  color: #ffffff;
 }
+
+/* =========================
+   Activity
+========================= */
 
 .activity-list {
   display: flex;
@@ -74,25 +83,34 @@
   display: flex;
   align-items: center;
   gap: 14px;
+
   padding: 16px;
-  background: #f8fafc;
-  border-radius: 14px;
-  transition: 0.25s ease;
+
+  border-radius: 16px;
+
+  background: rgba(255, 255, 255, 0.05);
+
+  transition: background .2s ease, transform .2s ease;
 }
 
 .activity-item:hover {
-  background: #f3f4f6;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
 }
 
 .activity-item svg {
-  color: #7c3aed;
+  color: #22d3ee;
   flex-shrink: 0;
 }
 
 .activity-item span {
-  color: #374151;
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 600;
 }
+
+/* =========================
+   Quick Actions
+========================= */
 
 .quick-actions {
   display: grid;
@@ -100,21 +118,35 @@
 }
 
 .quick-actions button {
-  border: none;
-  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   padding: 16px;
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
+
+  border: none;
+  border-radius: 16px;
+
+  background: linear-gradient(135deg, #22d3ee, #7c3aed);
+
   color: white;
-  font-size: 15px;
+
+  font-size: 0.95rem;
   font-weight: 800;
+
   cursor: pointer;
-  transition: 0.25s ease;
+
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
 .quick-actions button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 16px 36px rgba(124, 58, 237, 0.3);
 }
+
+/* =========================
+   Responsive
+========================= */
 
 @media (max-width: 900px) {
   .dashboard-grid {
@@ -140,10 +172,10 @@
   }
 
   .dashboard-panel h2 {
-    font-size: 22px;
+    font-size: 1.4rem;
   }
 
   .dashboard-card h2 {
-    font-size: 34px;
+    font-size: 2.2rem;
   }
 }

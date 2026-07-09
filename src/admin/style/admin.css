@@ -1,15 +1,22 @@
 .admin-layout {
-  min-height: 100vh;
   display: flex;
-  background: #f8fafc;
-  color: #111827;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(34, 211, 238, 0.12), transparent 28%),
+    radial-gradient(circle at 85% 15%, rgba(124, 58, 237, 0.15), transparent 32%),
+    linear-gradient(180deg, #080814 0%, #05050d 100%);
+  color: #ffffff;
 }
+
+/* =========================
+   Sidebar
+========================= */
 
 .admin-sidebar {
   width: 270px;
   min-height: 100vh;
-  background: #05050d;
-  color: white;
+  background: #04040b;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   padding: 28px 20px;
   position: sticky;
   top: 0;
@@ -17,84 +24,153 @@
 
 .admin-logo {
   padding: 0 10px 28px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .admin-logo h2 {
-  font-size: 26px;
+  margin: 0;
+  font-size: 28px;
   font-weight: 900;
+  color: #ffffff;
 }
 
 .admin-logo p {
-  margin-top: 6px;
-  color: #9ca3af;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.55);
   font-size: 14px;
 }
+
+/* =========================
+   Navigation
+========================= */
 
 .admin-nav {
   margin-top: 28px;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .admin-nav a {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 14px;
+  gap: 14px;
+
+  padding: 14px 16px;
+
   border-radius: 14px;
-  color: #d1d5db;
+
+  color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   font-weight: 700;
-  transition: 0.2s;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    transform 0.2s ease;
 }
 
-.admin-nav a:hover,
-.admin-nav a.active {
-  background: #7c3aed;
+.admin-nav a:hover {
+  background: rgba(124, 58, 237, 0.25);
   color: white;
+  transform: translateX(4px);
 }
+
+.admin-nav a.active {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  box-shadow: 0 12px 30px rgba(124, 58, 237, 0.35);
+}
+
+/* =========================
+   Main
+========================= */
 
 .admin-main {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
+
+/* =========================
+   Topbar
+========================= */
 
 .admin-topbar {
   height: 90px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0 32px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  padding: 0 36px;
+
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(18px);
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .admin-topbar h1 {
-  font-size: 26px;
+  margin: 0;
+  font-size: 28px;
   font-weight: 900;
+  color: #ffffff;
 }
 
 .admin-topbar p {
-  margin-top: 4px;
-  color: #6b7280;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .admin-profile {
   border: none;
   border-radius: 999px;
-  background: #111827;
+
+  padding: 12px 22px;
+
+  background: linear-gradient(135deg, #22d3ee, #7c3aed);
+
   color: white;
-  padding: 12px 20px;
   font-weight: 800;
+
+  cursor: pointer;
+
+  transition: transform .2s ease;
 }
+
+.admin-profile:hover {
+  transform: translateY(-2px);
+}
+
+/* =========================
+   Content
+========================= */
 
 .admin-content {
-  padding: 32px;
+  flex: 1;
+  padding: 40px;
 }
 
+/* =========================
+   Scrollbar
+========================= */
+
+.admin-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.admin-content::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.12);
+  border-radius: 999px;
+}
+
+/* =========================
+   Responsive
+========================= */
+
 @media (max-width: 900px) {
+
   .admin-layout {
     flex-direction: column;
   }
@@ -119,5 +195,24 @@
 
   .admin-content {
     padding: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .admin-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-content {
+    padding: 20px;
+  }
+
+  .admin-topbar {
+    padding: 20px;
+  }
+
+  .admin-topbar h1 {
+    font-size: 24px;
   }
 }
