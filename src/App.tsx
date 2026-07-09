@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 import Navbar from "./layout/Navbar";
 import Footer from "./layout/Footer";
@@ -11,35 +11,50 @@ import Venue from "./pages/Venue";
 import Gallery from "./pages/Gallery";
 import Experience from "./pages/Experience";
 import Faq from "./pages/FAQ";
+import EventDetails from "./pages/EventDetails";
+
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/pages/Dashboard";
-import EventDetails from "./pages/EventDetails";
+import AdminEvents from "./admin/pages/AdminEvents";
 import FloatingChat from "./components/chat/FloatingChat";
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const isAdminPage = location.pathname.startsWith("/admin");
+
   return (
-    <BrowserRouter>
-      <Navbar />
+    <>
+      {!isAdminPage && <Navbar />}
 
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/events/:slug" element={<EventDetails />} />
           <Route path="/tickets" element={<Tickets />} />
           <Route path="/experience" element={<Experience />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/venue" element={<Venue />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/events/:slug" element={<EventDetails />} />
+
           <Route path="/admin" element={<AdminLayout />}>
-  <Route index element={<Dashboard />} />
-</Route>
+            <Route index element={<Dashboard />} />
+              <Route path="events" element={<AdminEvents />} />
+          </Route>
         </Routes>
       </main>
 
-      <Footer />
-      <FloatingChat />
+      {!isAdminPage && <Footer />}
+      {!isAdminPage && <FloatingChat />}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }
