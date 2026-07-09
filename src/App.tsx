@@ -20,6 +20,7 @@ import FloatingChat from "./components/chat/FloatingChat";
 import AdminTickets from "./admin/pages/AdminTickets";
 import AdminGallery from "./admin/pages/AdminGallery";
 import AdminMessages from "./admin/pages/AdminMessages";
+import AdminFAQ from "./admin/pages/AdminFAQ";
 function AppContent() {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith("/admin");
@@ -46,6 +47,7 @@ function AppContent() {
                 <Route path="tickets" element={<AdminTickets />} />
 <Route path="gallery" element={<AdminGallery />} />
 <Route path="messages" element={<AdminMessages />} />
+<Route path="faq" element={<AdminFAQ />} />
           </Route>
         </Routes>
       </main>
