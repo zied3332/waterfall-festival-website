@@ -1,14 +1,27 @@
+import { useState } from "react";
 import { Save, Settings, Mail, Share2, Bot, Palette } from "lucide-react";
 import "../style/admin-settings.css";
 
+const tabs = [
+  { id: "festival", label: "Festival Info", icon: Settings },
+  { id: "contact", label: "Contact", icon: Mail },
+  { id: "social", label: "Social Media", icon: Share2 },
+  { id: "chat", label: "AI Chat", icon: Bot },
+  { id: "appearance", label: "Appearance", icon: Palette },
+];
+
 function AdminSettings() {
+  const [activeTab, setActiveTab] = useState("festival");
+
   return (
     <section className="admin-settings">
       <div className="admin-settings__header">
         <div>
           <span className="admin-settings__eyebrow">Website Control</span>
           <h1>Settings</h1>
-          <p>Manage festival information, contact details, social links, AI chat, and website appearance.</p>
+          <p>
+            Manage the main configuration of the Waterfall Festival website.
+          </p>
         </div>
 
         <button className="admin-settings__save">
@@ -17,125 +30,152 @@ function AdminSettings() {
         </button>
       </div>
 
-      <div className="admin-settings__grid">
-        <div className="admin-settings__card">
-          <div className="admin-settings__card-title">
-            <Settings size={20} />
-            <h2>Festival Information</h2>
-          </div>
+      <div className="admin-settings__layout">
+        <aside className="admin-settings__tabs">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
 
-          <label>
-            Festival Name
-            <input type="text" defaultValue="Waterfall Festival Koh Phangan" />
-          </label>
+            return (
+              <button
+                key={tab.id}
+                className={activeTab === tab.id ? "active" : ""}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <Icon size={18} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </aside>
 
-          <label>
-            Location
-            <input type="text" defaultValue="Koh Phangan, Thailand" />
-          </label>
+        <div className="admin-settings__panel">
+          {activeTab === "festival" && (
+            <SettingsCard
+              icon={<Settings size={20} />}
+              title="Festival Information"
+              description="Basic information displayed across the website."
+            >
+              <Input label="Festival Name" value="Waterfall Festival Koh Phangan" />
+              <Input label="Location" value="Koh Phangan, Thailand" />
+              <Input label="Festival Dates" value="December 28 - January 2" />
+              <Input label="Timezone" value="Asia/Bangkok" />
+            </SettingsCard>
+          )}
 
-          <label>
-            Festival Dates
-            <input type="text" defaultValue="December 28 - January 2" />
-          </label>
-        </div>
+          {activeTab === "contact" && (
+            <SettingsCard
+              icon={<Mail size={20} />}
+              title="Contact Information"
+              description="Contact details shown in the footer and contact page."
+            >
+              <Input label="Support Email" type="email" value="info@waterfallfestival.com" />
+              <Input label="Phone Number" value="+66 000 000 000" />
+              <Input label="Google Maps Link" value="https://maps.google.com" />
+              <Textarea label="Address" value="Waterfall Party, Koh Phangan, Thailand" />
+            </SettingsCard>
+          )}
 
-        <div className="admin-settings__card">
-          <div className="admin-settings__card-title">
-            <Mail size={20} />
-            <h2>Contact Information</h2>
-          </div>
+          {activeTab === "social" && (
+            <SettingsCard
+              icon={<Share2 size={20} />}
+              title="Social Media"
+              description="Links to official festival social platforms."
+            >
+              <Input label="Instagram" value="https://instagram.com/waterfallfestival" />
+              <Input label="Facebook" value="https://facebook.com/waterfallfestival" />
+              <Input label="TikTok" value="https://tiktok.com/@waterfallfestival" />
+              <Input label="YouTube" value="https://youtube.com" />
+            </SettingsCard>
+          )}
 
-          <label>
-            Support Email
-            <input type="email" defaultValue="info@waterfallfestival.com" />
-          </label>
+          {activeTab === "chat" && (
+            <SettingsCard
+              icon={<Bot size={20} />}
+              title="AI Chat Settings"
+              description="Control the floating AI assistant on the public website."
+            >
+              <Input label="AI Assistant Name" value="Waterfall Assistant" />
+              <Textarea
+                label="Welcome Message"
+                value="Hi! Ask me about tickets, events, venue, or festival information."
+              />
 
-          <label>
-            Phone Number
-            <input type="text" defaultValue="+66 000 000 000" />
-          </label>
+              <label className="admin-settings__switch-row">
+                Enable AI Chat
+                <input type="checkbox" defaultChecked />
+              </label>
+            </SettingsCard>
+          )}
 
-          <label>
-            Google Maps Link
-            <input type="text" defaultValue="https://maps.google.com" />
-          </label>
-        </div>
-
-        <div className="admin-settings__card">
-          <div className="admin-settings__card-title">
-            <Share2 size={20} />
-            <h2>Social Media</h2>
-          </div>
-
-          <label>
-            Instagram
-            <input type="text" defaultValue="https://instagram.com/waterfallfestival" />
-          </label>
-
-          <label>
-            Facebook
-            <input type="text" defaultValue="https://facebook.com/waterfallfestival" />
-          </label>
-
-          <label>
-            TikTok
-            <input type="text" defaultValue="https://tiktok.com/@waterfallfestival" />
-          </label>
-        </div>
-
-        <div className="admin-settings__card">
-          <div className="admin-settings__card-title">
-            <Bot size={20} />
-            <h2>AI Chat Settings</h2>
-          </div>
-
-          <label>
-            AI Assistant Name
-            <input type="text" defaultValue="Waterfall Assistant" />
-          </label>
-
-          <label>
-            Welcome Message
-            <textarea defaultValue="Hi! Ask me about tickets, events, venue, or festival information." />
-          </label>
-
-          <label className="admin-settings__switch-row">
-            Enable AI Chat
-            <input type="checkbox" defaultChecked />
-          </label>
-        </div>
-
-        <div className="admin-settings__card admin-settings__card--wide">
-          <div className="admin-settings__card-title">
-            <Palette size={20} />
-            <h2>Appearance</h2>
-          </div>
-
-          <div className="admin-settings__two-columns">
-            <label>
-              Primary Color
-              <input type="text" defaultValue="#22d3ee" />
-            </label>
-
-            <label>
-              Secondary Color
-              <input type="text" defaultValue="#7c3aed" />
-            </label>
-
-            <label>
-              Logo URL
-              <input type="text" defaultValue="/logo.png" />
-            </label>
-
-            <label>
-              Favicon URL
-              <input type="text" defaultValue="/favicon.ico" />
-            </label>
-          </div>
+          {activeTab === "appearance" && (
+            <SettingsCard
+              icon={<Palette size={20} />}
+              title="Appearance"
+              description="Control branding, colors, logo, and favicon."
+            >
+              <div className="admin-settings__two-columns">
+                <Input label="Primary Color" value="#22d3ee" />
+                <Input label="Secondary Color" value="#7c3aed" />
+                <Input label="Logo URL" value="/logo.png" />
+                <Input label="Favicon URL" value="/favicon.ico" />
+              </div>
+            </SettingsCard>
+          )}
         </div>
       </div>
     </section>
+  );
+}
+
+type SettingsCardProps = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+};
+
+function SettingsCard({ icon, title, description, children }: SettingsCardProps) {
+  return (
+    <div className="admin-settings__card">
+      <div className="admin-settings__card-title">
+        {icon}
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+      </div>
+
+      <div className="admin-settings__form">{children}</div>
+    </div>
+  );
+}
+
+type InputProps = {
+  label: string;
+  value: string;
+  type?: string;
+};
+
+function Input({ label, value, type = "text" }: InputProps) {
+  return (
+    <label>
+      {label}
+      <input type={type} defaultValue={value} />
+    </label>
+  );
+}
+
+type TextareaProps = {
+  label: string;
+  value: string;
+};
+
+function Textarea({ label, value }: TextareaProps) {
+  return (
+    <label>
+      {label}
+      <textarea defaultValue={value} />
+    </label>
   );
 }
 
