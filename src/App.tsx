@@ -12,7 +12,7 @@ import Gallery from "./pages/Gallery";
 import Experience from "./pages/Experience";
 import Faq from "./pages/FAQ";
 import EventDetails from "./pages/EventDetails";
-
+import AdminSettings from "./admin/pages/AdminSettings";
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/pages/Dashboard";
 import AdminEvents from "./admin/pages/AdminEvents";
@@ -47,7 +47,7 @@ function AppContent() {
                 <Route path="tickets" element={<AdminTickets />} />
 <Route path="gallery" element={<AdminGallery />} />
 <Route path="messages" element={<AdminMessages />} />
-<Route path="faq" element={<AdminFAQ />} />
+<Route path="faq" element={<AdminFAQ />} /><Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>
       </main>
