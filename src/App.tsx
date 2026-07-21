@@ -13,6 +13,8 @@ import {
 import AdminLayout from "./admin/AdminLayout";
 import ProtectedRoute from "./admin/components/ProtectedRoute";
 
+import AdminEventCreate from "./admin/pages/AdminEventCreate";
+import AdminEventEdit from "./admin/pages/AdminEventEdit";
 import AdminEvents from "./admin/pages/AdminEvents";
 import AdminFAQ from "./admin/pages/AdminFAQ";
 import AdminGallery from "./admin/pages/AdminGallery";
@@ -21,7 +23,7 @@ import AdminMessages from "./admin/pages/AdminMessages";
 import AdminSettings from "./admin/pages/AdminSettings";
 import AdminTickets from "./admin/pages/AdminTickets";
 import Dashboard from "./admin/pages/Dashboard";
-import AdminEventCreate from "./admin/pages/AdminEventCreate";
+
 import FloatingChat from "./components/chat/FloatingChat";
 
 import Footer from "./layout/Footer";
@@ -66,7 +68,8 @@ function AppContent() {
 
     async function restoreSession() {
       try {
-        const currentUser = await getCurrentUser();
+        const currentUser =
+          await getCurrentUser();
 
         if (isCancelled) {
           return;
@@ -119,7 +122,10 @@ function AppContent() {
 
       <main>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route
+            path="/"
+            element={<Home />}
+          />
 
           <Route
             path="/events"
@@ -166,54 +172,59 @@ function AppContent() {
             element={<AdminLogin />}
           />
 
-        <Route
-  path="/admin"
-  element={
-    <ProtectedRoute>
-      <AdminLayout />
-    </ProtectedRoute>
-  }
->
-  <Route
-    index
-    element={<Dashboard />}
-  />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              index
+              element={<Dashboard />}
+            />
 
-  <Route
-    path="events"
-    element={<AdminEvents />}
-  />
+            <Route
+              path="events"
+              element={<AdminEvents />}
+            />
 
-  <Route
-    path="events/new"
-    element={<AdminEventCreate />}
-  />
+            <Route
+              path="events/new"
+              element={<AdminEventCreate />}
+            />
 
-  <Route
-    path="tickets"
-    element={<AdminTickets />}
-  />
+            <Route
+              path="events/:id/edit"
+              element={<AdminEventEdit />}
+            />
 
-  <Route
-    path="gallery"
-    element={<AdminGallery />}
-  />
+            <Route
+              path="tickets"
+              element={<AdminTickets />}
+            />
 
-  <Route
-    path="messages"
-    element={<AdminMessages />}
-  />
+            <Route
+              path="gallery"
+              element={<AdminGallery />}
+            />
 
-  <Route
-    path="faq"
-    element={<AdminFAQ />}
-  />
+            <Route
+              path="messages"
+              element={<AdminMessages />}
+            />
 
-  <Route
-    path="settings"
-    element={<AdminSettings />}
-  />
-</Route>
+            <Route
+              path="faq"
+              element={<AdminFAQ />}
+            />
+
+            <Route
+              path="settings"
+              element={<AdminSettings />}
+            />
+          </Route>
         </Routes>
       </main>
 
