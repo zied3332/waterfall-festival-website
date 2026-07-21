@@ -9,7 +9,9 @@ export interface GalleryImage {
   description: string | null;
   imageUrl: string;
   altText: string | null;
+
   status: GalleryStatus;
+
   isFeatured: boolean;
   sortOrder: number;
 
@@ -23,8 +25,12 @@ export interface GalleryImage {
 
   createdAt: string;
   updatedAt: string;
-}
 
+  // Frontend only
+  category?: string;
+  type?: "photo" | "video";
+  size?: "standard" | "wide" | "tall" | "large";
+}
 export interface CreateGalleryImageInput {
   title: string;
   description?: string;

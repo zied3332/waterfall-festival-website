@@ -3,122 +3,91 @@ import {
   Camera,
   ChevronLeft,
   ChevronRight,
-  Play,
   X,
 } from "lucide-react";
 
+import { getGallery } from "../services/gallery.service";
+import type { GalleryImage } from "../types/gallery";
+
 import "./style/gallery.css";
 
-import gallery1 from "../../assets/gallery-1.jpg";
-import gallery2 from "../../assets/gallery-2.jpg";
-import gallery3 from "../../assets/gallery-3.jpg";
-import gallery4 from "../../assets/gallery-4.jpg";
-import gallery5 from "../../assets/gallery-5.jpg";
+type GalleryCardSize =
+  | "standard"
+  | "wide"
+  | "tall"
+  | "large";
 
-type GalleryCategory =
-  | "All"
-  | "Stage"
-  | "Crowd"
-  | "Experience"
-  | "Nature";
-
-type GalleryItem = {
-  id: number;
-  title: string;
-  category: Exclude<GalleryCategory, "All">;
-  image: string;
-  type: "photo" | "video";
-  size: "standard" | "wide" | "tall" | "large";
-};
-
-const galleryItems: GalleryItem[] = [
-  {
-    id: 1,
-    title: "Waterfall Main Stage",
-    category: "Stage",
-    image: gallery1,
-    type: "photo",
-    size: "large",
-  },
-  {
-    id: 2,
-    title: "Fire Under the Stars",
-    category: "Experience",
-    image: gallery2,
-    type: "video",
-    size: "standard",
-  },
-  {
-    id: 3,
-    title: "Festival Friends",
-    category: "Crowd",
-    image: gallery3,
-    type: "photo",
-    size: "tall",
-  },
-  {
-    id: 4,
-    title: "Jungle Night Lights",
-    category: "Nature",
-    image: gallery4,
-    type: "photo",
-    size: "standard",
-  },
-  {
-    id: 5,
-    title: "Dance Until Sunrise",
-    category: "Crowd",
-    image: gallery5,
-    type: "video",
-    size: "wide",
-  },
-  {
-    id: 6,
-    title: "Electric Stage Energy",
-    category: "Stage",
-    image: gallery2,
-    type: "photo",
-    size: "standard",
-  },
-  {
-    id: 7,
-    title: "Island Festival Escape",
-    category: "Nature",
-    image: gallery1,
-    type: "photo",
-    size: "tall",
-  },
-  {
-    id: 8,
-    title: "An Unforgettable Night",
-    category: "Experience",
-    image: gallery3,
-    type: "video",
-    size: "wide",
-  },
+const galleryCardSizes: GalleryCardSize[] = [
+  "large",
+  "standard",
+  "tall",
+  "standard",
+  "wide",
+  "standard",
+  "tall",
+  "wide",
 ];
 
-const categories: GalleryCategory[] = [
-  "All",
-  "Stage",
-  "Crowd",
-  "Experience",
-  "Nature",
-];
+function getGalleryCardSize(
+  item: GalleryImage,
+  index: number,
+): GalleryCardSize {
+  if (item.isFeatured) {
+    return "large";
+  }
+
+  return galleryCardSizes[index % galleryCardSizes.length];
+}
 
 function Gallery() {
-  const [activeCategory, setActiveCategory] =
-    useState<GalleryCategory>("All");
-
+  const [galleryItems, setGalleryItems] = useState<GalleryImage[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const filteredItems =
-    activeCategory === "All"
-      ? galleryItems
-      : galleryItems.filter((item) => item.category === activeCategory);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedItem =
-    selectedIndex !== null ? filteredItems[selectedIndex] : null;
+    selectedIndex !== null
+      ? galleryItems[selectedIndex] ?? null
+      : null;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadGallery = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const data = await getGallery();
+
+        if (isMounted) {
+          setGalleryItems(data);
+        }
+      } catch (requestError) {
+        if (!isMounted) {
+          return;
+        }
+
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to load the gallery.";
+
+        setError(message);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadGallery();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const openGalleryItem = (index: number) => {
     setSelectedIndex(index);
@@ -130,31 +99,26 @@ function Gallery() {
 
   const showPreviousItem = () => {
     setSelectedIndex((currentIndex) => {
-      if (currentIndex === null) {
+      if (currentIndex === null || galleryItems.length === 0) {
         return null;
       }
 
       return currentIndex === 0
-        ? filteredItems.length - 1
+        ? galleryItems.length - 1
         : currentIndex - 1;
     });
   };
 
   const showNextItem = () => {
     setSelectedIndex((currentIndex) => {
-      if (currentIndex === null) {
+      if (currentIndex === null || galleryItems.length === 0) {
         return null;
       }
 
-      return currentIndex === filteredItems.length - 1
+      return currentIndex === galleryItems.length - 1
         ? 0
         : currentIndex + 1;
     });
-  };
-
-  const handleCategoryChange = (category: GalleryCategory) => {
-    setActiveCategory(category);
-    setSelectedIndex(null);
   };
 
   useEffect(() => {
@@ -164,15 +128,31 @@ function Gallery() {
       }
 
       if (event.key === "Escape") {
-        closeGalleryItem();
+        setSelectedIndex(null);
       }
 
       if (event.key === "ArrowLeft") {
-        showPreviousItem();
+        setSelectedIndex((currentIndex) => {
+          if (currentIndex === null || galleryItems.length === 0) {
+            return null;
+          }
+
+          return currentIndex === 0
+            ? galleryItems.length - 1
+            : currentIndex - 1;
+        });
       }
 
       if (event.key === "ArrowRight") {
-        showNextItem();
+        setSelectedIndex((currentIndex) => {
+          if (currentIndex === null || galleryItems.length === 0) {
+            return null;
+          }
+
+          return currentIndex === galleryItems.length - 1
+            ? 0
+            : currentIndex + 1;
+        });
       }
     };
 
@@ -181,7 +161,7 @@ function Gallery() {
     return () => {
       window.removeEventListener("keydown", handleKeyboardNavigation);
     };
-  }, [selectedIndex, filteredItems.length]);
+  }, [selectedIndex, galleryItems.length]);
 
   useEffect(() => {
     document.body.style.overflow =
@@ -221,15 +201,26 @@ function Gallery() {
 
             <div className="gallery-hero__stats">
               <div className="gallery-hero__stat">
-                <strong>100+</strong>
-                <span>Festival moments</span>
+                <strong>{galleryItems.length}</strong>
+
+                <span>
+                  Festival{" "}
+                  {galleryItems.length === 1 ? "moment" : "moments"}
+                </span>
               </div>
 
               <div className="gallery-hero__divider" />
 
               <div className="gallery-hero__stat">
-                <strong>5</strong>
-                <span>Unique experiences</span>
+                <strong>
+                  {
+                    galleryItems.filter(
+                      (item) => item.isFeatured,
+                    ).length
+                  }
+                </strong>
+
+                <span>Featured memories</span>
               </div>
 
               <div className="gallery-hero__divider" />
@@ -247,82 +238,109 @@ function Gallery() {
         <div className="gallery-container">
           <div className="gallery-toolbar">
             <div>
-              <span className="gallery-toolbar__label">Explore the festival</span>
+              <span className="gallery-toolbar__label">
+                Explore the festival
+              </span>
+
               <h2>Captured in the moment</h2>
             </div>
 
             <div
               className="gallery-filters"
-              role="group"
-              aria-label="Gallery filters"
+              aria-label="Gallery information"
             >
-              {categories.map((category) => (
-                <button
-                  type="button"
-                  key={category}
-                  className={`gallery-filter ${
-                    activeCategory === category
-                      ? "gallery-filter--active"
-                      : ""
-                  }`}
-                  onClick={() => handleCategoryChange(category)}
-                >
-                  {category}
-                </button>
-              ))}
+              <span className="gallery-filter gallery-filter--active">
+                {galleryItems.length}{" "}
+                {galleryItems.length === 1 ? "Photo" : "Photos"}
+              </span>
             </div>
           </div>
 
-          <div className="gallery-grid">
-            {filteredItems.map((item, index) => (
-              <button
-                type="button"
-                className={`gallery-card gallery-card--${item.size}`}
-                key={item.id}
-                onClick={() => openGalleryItem(index)}
-                aria-label={`Open ${item.title}`}
-              >
-                <img
-                  className="gallery-card__image"
-                  src={item.image}
-                  alt={item.title}
-                />
+          {isLoading && (
+            <div className="gallery-grid">
+              <div>
+                <span className="gallery-toolbar__label">
+                  Loading festival memories...
+                </span>
+              </div>
+            </div>
+          )}
 
-                <div className="gallery-card__shade" />
+          {!isLoading && error && (
+            <div className="gallery-grid">
+              <div>
+                <span className="gallery-toolbar__label">
+                  Gallery unavailable
+                </span>
 
-                <div className="gallery-card__top">
-                  <span className="gallery-card__category">
-                    {item.category}
-                  </span>
+                <p>{error}</p>
+              </div>
+            </div>
+          )}
 
-                  <span className="gallery-card__type">
-                    {item.type === "video" ? (
-                      <>
-                        <Play size={14} fill="currentColor" />
-                        Video
-                      </>
-                    ) : (
-                      <>
+          {!isLoading && !error && galleryItems.length === 0 && (
+            <div className="gallery-grid">
+              <div>
+                <span className="gallery-toolbar__label">
+                  No photos yet
+                </span>
+
+                <p>
+                  Published festival photos will appear here.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && !error && galleryItems.length > 0 && (
+            <div className="gallery-grid">
+              {galleryItems.map((item, index) => {
+                const cardSize = getGalleryCardSize(item, index);
+
+                const eventLabel =
+                  item.event?.title ?? "Waterfall Festival";
+
+                return (
+                  <button
+                    type="button"
+                    className={`gallery-card gallery-card--${cardSize}`}
+                    key={item.id}
+                    onClick={() => openGalleryItem(index)}
+                    aria-label={`Open ${item.title}`}
+                  >
+                    <img
+                      className="gallery-card__image"
+                      src={item.imageUrl}
+                      alt={item.altText ?? item.title}
+                    />
+
+                    <div className="gallery-card__shade" />
+
+                    <div className="gallery-card__top">
+                      <span className="gallery-card__category">
+                        {eventLabel}
+                      </span>
+
+                      <span className="gallery-card__type">
                         <Camera size={14} />
                         Photo
-                      </>
-                    )}
-                  </span>
-                </div>
+                      </span>
+                    </div>
 
-                {item.type === "video" && (
-                  <span className="gallery-card__play" aria-hidden="true">
-                    <Play size={24} fill="currentColor" />
-                  </span>
-                )}
+                    <div className="gallery-card__content">
+                      <span>
+                        {item.isFeatured
+                          ? "Featured Memory"
+                          : "Waterfall Festival"}
+                      </span>
 
-                <div className="gallery-card__content">
-                  <span>Waterfall Festival</span>
-                  <h3>{item.title}</h3>
-                </div>
-              </button>
-            ))}
-          </div>
+                      <h3>{item.title}</h3>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
@@ -343,7 +361,7 @@ function Gallery() {
             <X size={24} />
           </button>
 
-          {filteredItems.length > 1 && (
+          {galleryItems.length > 1 && (
             <>
               <button
                 type="button"
@@ -377,27 +395,31 @@ function Gallery() {
           >
             <div className="gallery-lightbox__image-wrapper">
               <img
-                src={selectedItem.image}
-                alt={selectedItem.title}
+                src={selectedItem.imageUrl}
+                alt={selectedItem.altText ?? selectedItem.title}
                 className="gallery-lightbox__image"
               />
-
-              {selectedItem.type === "video" && (
-                <div className="gallery-lightbox__play">
-                  <Play size={30} fill="currentColor" />
-                </div>
-              )}
             </div>
 
             <div className="gallery-lightbox__details">
               <div>
-                <span>{selectedItem.category}</span>
+                <span>
+                  {selectedItem.event?.title ??
+                    "Waterfall Festival"}
+                </span>
+
                 <h2>{selectedItem.title}</h2>
+
+                {selectedItem.description && (
+                  <p>{selectedItem.description}</p>
+                )}
               </div>
 
               <p>
-                {selectedIndex !== null ? selectedIndex + 1 : 1} /{" "}
-                {filteredItems.length}
+                {selectedIndex !== null
+                  ? selectedIndex + 1
+                  : 1}{" "}
+                / {galleryItems.length}
               </p>
             </div>
           </div>
