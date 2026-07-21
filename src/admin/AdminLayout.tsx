@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -7,11 +7,37 @@ import {
   CircleHelp,
   MessageSquare,
   Settings,
+  LogOut,
+  UserRound,
 } from "lucide-react";
+
+import {
+  clearAuthSession,
+  getAuthenticatedUser,
+} from "../services/auth.service";
 
 import "./style/admin.css";
 
 function AdminLayout() {
+  const navigate = useNavigate();
+
+  const currentUser = getAuthenticatedUser();
+
+  const adminName =
+    [currentUser?.firstName, currentUser?.lastName]
+      .filter(Boolean)
+      .join(" ") ||
+    currentUser?.email ||
+    "Admin";
+
+  function handleLogout(): void {
+    clearAuthSession();
+
+    navigate("/admin/login", {
+      replace: true,
+    });
+  }
+
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
@@ -65,7 +91,32 @@ function AdminLayout() {
             <p>Manage Waterfall Festival website content.</p>
           </div>
 
-          <button className="admin-profile">Admin</button>
+          <div className="admin-topbar-actions">
+            <div className="admin-profile">
+              <span className="admin-profile-icon">
+                <UserRound size={18} />
+              </span>
+
+              <div className="admin-profile-info">
+                <span className="admin-profile-name">
+                  {adminName}
+                </span>
+
+                <span className="admin-profile-role">
+                  Administrator
+                </span>
+              </div>
+            </div>
+
+            <button
+              className="admin-logout-button"
+              type="button"
+              onClick={handleLogout}
+            >
+              <LogOut size={18} />
+              Sign out
+            </button>
+          </div>
         </header>
 
         <main className="admin-content">
