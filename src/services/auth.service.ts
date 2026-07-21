@@ -20,7 +20,19 @@ function getErrorMessage(error: ApiErrorResponse): string {
     return error.message;
   }
 
-  return "Unable to log in. Please try again.";
+  return "Unable to complete the request.";
+}
+
+async function parseResponse(
+  response: Response,
+): Promise<unknown> {
+  const contentType = response.headers.get("content-type");
+
+  if (!contentType?.includes("application/json")) {
+    return null;
+  }
+
+  return response.json();
 }
 
 export async function login(
@@ -42,26 +54,68 @@ export async function login(
     );
   }
 
-  const data = (await response.json()) as
-    | LoginResponse
-    | ApiErrorResponse;
+  const data = await parseResponse(response);
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(data as ApiErrorResponse));
+    throw new Error(
+      getErrorMessage(data as ApiErrorResponse),
+    );
   }
 
   return data as LoginResponse;
 }
 
-export function saveAuthSession(authData: LoginResponse): void {
+export async function getCurrentUser(): Promise<AuthUser> {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    throw new Error("No authentication token was found.");
+  }
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
+    });
+  } catch {
+    throw new Error(
+      "Unable to connect to the server. Make sure the backend is running.",
+    );
+  }
+
+  const data = await parseResponse(response);
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(data as ApiErrorResponse),
+    );
+  }
+
+  return data as AuthUser;
+}
+
+export function saveAuthSession(
+  authData: LoginResponse,
+): void {
   localStorage.setItem(
     ACCESS_TOKEN_KEY,
     authData.accessToken,
   );
 
+  saveAuthenticatedUser(authData.user);
+}
+
+export function saveAuthenticatedUser(
+  user: AuthUser,
+): void {
   localStorage.setItem(
     AUTH_USER_KEY,
-    JSON.stringify(authData.user),
+    JSON.stringify(user),
   );
 }
 

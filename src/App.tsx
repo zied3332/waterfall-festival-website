@@ -1,8 +1,13 @@
 import {
+  useEffect,
+  useState,
+} from "react";
+import {
   BrowserRouter,
   Route,
   Routes,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 
 import AdminLayout from "./admin/AdminLayout";
@@ -32,11 +37,81 @@ import Home from "./pages/Home";
 import Tickets from "./pages/Tickets";
 import Venue from "./pages/Venue";
 
+import {
+  clearAuthSession,
+  getAccessToken,
+  getCurrentUser,
+  saveAuthenticatedUser,
+} from "./services/auth.service";
+
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const [isSessionChecking, setIsSessionChecking] =
+    useState(Boolean(getAccessToken()));
 
   const isAdminPage =
     location.pathname.startsWith("/admin");
+
+  useEffect(() => {
+    const accessToken = getAccessToken();
+
+    if (!accessToken) {
+      setIsSessionChecking(false);
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function restoreSession() {
+      try {
+        const currentUser = await getCurrentUser();
+
+        if (isCancelled) {
+          return;
+        }
+
+        saveAuthenticatedUser(currentUser);
+      } catch {
+        if (isCancelled) {
+          return;
+        }
+
+        clearAuthSession();
+
+        if (
+          location.pathname.startsWith("/admin") &&
+          location.pathname !== "/admin/login"
+        ) {
+          navigate("/admin/login", {
+            replace: true,
+            state: {
+              from: location.pathname,
+            },
+          });
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsSessionChecking(false);
+        }
+      }
+    }
+
+    void restoreSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [location.pathname, navigate]);
+
+  if (isSessionChecking && isAdminPage) {
+    return (
+      <div className="admin-session-loading">
+        Verifying your session...
+      </div>
+    );
+  }
 
   return (
     <>
