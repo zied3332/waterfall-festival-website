@@ -18,3 +18,14 @@ export type Event = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type CreateEventInput = {
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  heroImageUrl?: string;
+  capacity?: number;
+  remainingTickets?: number;
+  status?: EventStatus;
+};
