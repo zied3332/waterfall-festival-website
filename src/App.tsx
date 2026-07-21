@@ -21,7 +21,7 @@ import AdminMessages from "./admin/pages/AdminMessages";
 import AdminSettings from "./admin/pages/AdminSettings";
 import AdminTickets from "./admin/pages/AdminTickets";
 import Dashboard from "./admin/pages/Dashboard";
-
+import AdminEventCreate from "./admin/pages/AdminEventCreate";
 import FloatingChat from "./components/chat/FloatingChat";
 
 import Footer from "./layout/Footer";
@@ -166,49 +166,54 @@ function AppContent() {
             element={<AdminLogin />}
           />
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route
-              index
-              element={<Dashboard />}
-            />
+        <Route
+  path="/admin"
+  element={
+    <ProtectedRoute>
+      <AdminLayout />
+    </ProtectedRoute>
+  }
+>
+  <Route
+    index
+    element={<Dashboard />}
+  />
 
-            <Route
-              path="events"
-              element={<AdminEvents />}
-            />
+  <Route
+    path="events"
+    element={<AdminEvents />}
+  />
 
-            <Route
-              path="tickets"
-              element={<AdminTickets />}
-            />
+  <Route
+    path="events/new"
+    element={<AdminEventCreate />}
+  />
 
-            <Route
-              path="gallery"
-              element={<AdminGallery />}
-            />
+  <Route
+    path="tickets"
+    element={<AdminTickets />}
+  />
 
-            <Route
-              path="messages"
-              element={<AdminMessages />}
-            />
+  <Route
+    path="gallery"
+    element={<AdminGallery />}
+  />
 
-            <Route
-              path="faq"
-              element={<AdminFAQ />}
-            />
+  <Route
+    path="messages"
+    element={<AdminMessages />}
+  />
 
-            <Route
-              path="settings"
-              element={<AdminSettings />}
-            />
-          </Route>
+  <Route
+    path="faq"
+    element={<AdminFAQ />}
+  />
+
+  <Route
+    path="settings"
+    element={<AdminSettings />}
+  />
+</Route>
         </Routes>
       </main>
 
