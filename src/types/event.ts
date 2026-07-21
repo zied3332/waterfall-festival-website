@@ -29,3 +29,5 @@ export type CreateEventInput = {
   remainingTickets?: number;
   status?: EventStatus;
 };
+export type UpdateEventInput =
+  Partial<CreateEventInput>;
