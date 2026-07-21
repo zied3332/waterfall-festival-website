@@ -6,6 +6,8 @@ import {
 } from "react-router-dom";
 
 import AdminLayout from "./admin/AdminLayout";
+import ProtectedRoute from "./admin/components/ProtectedRoute";
+
 import AdminEvents from "./admin/pages/AdminEvents";
 import AdminFAQ from "./admin/pages/AdminFAQ";
 import AdminGallery from "./admin/pages/AdminGallery";
@@ -43,20 +45,46 @@ function AppContent() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/events" element={<Events />} />
+
+          <Route
+            path="/events"
+            element={<Events />}
+          />
+
           <Route
             path="/events/:slug"
             element={<EventDetails />}
           />
-          <Route path="/tickets" element={<Tickets />} />
+
+          <Route
+            path="/tickets"
+            element={<Tickets />}
+          />
+
           <Route
             path="/experience"
             element={<Experience />}
           />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/venue" element={<Venue />} />
-          <Route path="/faq" element={<Faq />} />
-          <Route path="/contact" element={<Contact />} />
+
+          <Route
+            path="/gallery"
+            element={<Gallery />}
+          />
+
+          <Route
+            path="/venue"
+            element={<Venue />}
+          />
+
+          <Route
+            path="/faq"
+            element={<Faq />}
+          />
+
+          <Route
+            path="/contact"
+            element={<Contact />}
+          />
 
           <Route
             path="/admin/login"
@@ -65,9 +93,16 @@ function AppContent() {
 
           <Route
             path="/admin"
-            element={<AdminLayout />}
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
           >
-            <Route index element={<Dashboard />} />
+            <Route
+              index
+              element={<Dashboard />}
+            />
 
             <Route
               path="events"
@@ -89,7 +124,10 @@ function AppContent() {
               element={<AdminMessages />}
             />
 
-            <Route path="faq" element={<AdminFAQ />} />
+            <Route
+              path="faq"
+              element={<AdminFAQ />}
+            />
 
             <Route
               path="settings"

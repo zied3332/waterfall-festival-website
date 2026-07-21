@@ -10,7 +10,10 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import {
   isAuthenticated,
@@ -20,14 +23,30 @@ import {
 
 import "../style/admin-login.css";
 
+type LoginLocationState = {
+  from?: string;
+};
+
 function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const locationState =
+    location.state as LoginLocationState | null;
+
+  const destination =
+    locationState?.from &&
+    locationState.from.startsWith("/admin") &&
+    locationState.from !== "/admin/login"
+      ? locationState.from
+      : "/admin";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [errorMessage, setErrorMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -44,7 +63,9 @@ function AdminLogin() {
 
     setErrorMessage("");
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email
+      .trim()
+      .toLowerCase();
 
     if (!normalizedEmail || !password) {
       setErrorMessage(
@@ -63,7 +84,7 @@ function AdminLogin() {
 
       saveAuthSession(authData);
 
-      navigate("/admin", {
+      navigate(destination, {
         replace: true,
       });
     } catch (error) {
@@ -114,8 +135,8 @@ function AdminLogin() {
               <h2>Welcome back</h2>
 
               <p>
-                Sign in to manage events, tickets, gallery
-                content and messages.
+                Sign in to manage events, tickets,
+                gallery content and messages.
               </p>
             </div>
           </div>
@@ -154,7 +175,10 @@ function AdminLogin() {
               </label>
 
               <div className="admin-login-input-wrapper">
-                <LockKeyhole size={18} aria-hidden="true" />
+                <LockKeyhole
+                  size={18}
+                  aria-hidden="true"
+                />
 
                 <input
                   id="admin-password"
@@ -191,6 +215,7 @@ function AdminLogin() {
                     className="admin-login-spinner"
                     size={19}
                   />
+
                   Signing in...
                 </>
               ) : (
