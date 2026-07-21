@@ -22,7 +22,11 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { getAdminEvents } from "../../services/events.service";
+import {
+  deleteEvent,
+  getAdminEvents,
+} from "../../services/events.service";
+
 import type {
   Event,
   EventStatus,
@@ -119,7 +123,10 @@ function getTicketData(event: Event): {
 
 function AdminEvents() {
   const [events, setEvents] = useState<Event[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+
+  const [searchTerm, setSearchTerm] =
+    useState("");
+
   const [selectedStatus, setSelectedStatus] =
     useState<StatusFilter>("ALL");
 
@@ -129,8 +136,16 @@ function AdminEvents() {
   const [openMenuId, setOpenMenuId] =
     useState<number | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] =
+    useState(true);
+
   const [errorMessage, setErrorMessage] =
+    useState("");
+
+  const [isDeleting, setIsDeleting] =
+    useState(false);
+
+  const [deleteError, setDeleteError] =
     useState("");
 
   async function loadEvents(): Promise<void> {
@@ -138,7 +153,8 @@ function AdminEvents() {
       setIsLoading(true);
       setErrorMessage("");
 
-      const adminEvents = await getAdminEvents();
+      const adminEvents =
+        await getAdminEvents();
 
       setEvents(adminEvents);
     } catch (error) {
@@ -179,14 +195,20 @@ function AdminEvents() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [events, searchTerm, selectedStatus]);
+  }, [
+    events,
+    searchTerm,
+    selectedStatus,
+  ]);
 
   const publishedCount = events.filter(
-    (event) => event.status === "PUBLISHED",
+    (event) =>
+      event.status === "PUBLISHED",
   ).length;
 
   const draftCount = events.filter(
-    (event) => event.status === "DRAFT",
+    (event) =>
+      event.status === "DRAFT",
   ).length;
 
   const totalTicketsSold = events.reduce(
@@ -198,28 +220,58 @@ function AdminEvents() {
     0,
   );
 
-  const formatTicketNumber = (
+  function formatTicketNumber(
     value: number,
-  ): string =>
-    new Intl.NumberFormat("en-US").format(value);
+  ): string {
+    return new Intl.NumberFormat(
+      "en-US",
+    ).format(value);
+  }
 
-  function handleDeleteEvent(): void {
-    if (!eventToDelete) {
+  function openDeleteModal(event: Event): void {
+    setDeleteError("");
+    setEventToDelete(event);
+    setOpenMenuId(null);
+  }
+
+  function closeDeleteModal(): void {
+    if (isDeleting) {
       return;
     }
 
-    /*
-     * Temporary local behavior.
-     * The real DELETE /admin/events/:id request
-     * will be connected in the next step.
-     */
-    setEvents((currentEvents) =>
-      currentEvents.filter(
-        (event) => event.id !== eventToDelete.id,
-      ),
-    );
-
     setEventToDelete(null);
+    setDeleteError("");
+  }
+
+  async function handleDeleteEvent(): Promise<void> {
+    if (!eventToDelete || isDeleting) {
+      return;
+    }
+
+    const eventId = eventToDelete.id;
+
+    try {
+      setIsDeleting(true);
+      setDeleteError("");
+
+      await deleteEvent(eventId);
+
+      setEvents((currentEvents) =>
+        currentEvents.filter(
+          (event) => event.id !== eventId,
+        ),
+      );
+
+      setEventToDelete(null);
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete the event.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -234,8 +286,9 @@ function AdminEvents() {
           <h1>Events</h1>
 
           <p>
-            Create, organize, and manage every festival
-            event displayed on the public website.
+            Create, organize, and manage every
+            festival event displayed on the public
+            website.
           </p>
         </div>
 
@@ -257,7 +310,9 @@ function AdminEvents() {
           <div>
             <span>Total Events</span>
             <strong>{events.length}</strong>
-            <small>All festival events</small>
+            <small>
+              All festival events
+            </small>
           </div>
         </article>
 
@@ -268,8 +323,12 @@ function AdminEvents() {
 
           <div>
             <span>Published</span>
-            <strong>{publishedCount}</strong>
-            <small>Visible on the website</small>
+            <strong>
+              {publishedCount}
+            </strong>
+            <small>
+              Visible on the website
+            </small>
           </div>
         </article>
 
@@ -281,7 +340,9 @@ function AdminEvents() {
           <div>
             <span>Draft Events</span>
             <strong>{draftCount}</strong>
-            <small>Waiting to be published</small>
+            <small>
+              Waiting to be published
+            </small>
           </div>
         </article>
 
@@ -292,10 +353,16 @@ function AdminEvents() {
 
           <div>
             <span>Tickets Sold</span>
+
             <strong>
-              {formatTicketNumber(totalTicketsSold)}
+              {formatTicketNumber(
+                totalTicketsSold,
+              )}
             </strong>
-            <small>Across events with ticket data</small>
+
+            <small>
+              Across events with ticket data
+            </small>
           </div>
         </article>
       </div>
@@ -310,7 +377,9 @@ function AdminEvents() {
               placeholder="Search events by title, location, or slug..."
               value={searchTerm}
               onChange={(event) =>
-                setSearchTerm(event.target.value)
+                setSearchTerm(
+                  event.target.value,
+                )
               }
             />
 
@@ -318,7 +387,9 @@ function AdminEvents() {
               <button
                 type="button"
                 className="admin-events__clear-search"
-                onClick={() => setSearchTerm("")}
+                onClick={() =>
+                  setSearchTerm("")
+                }
                 aria-label="Clear search"
               >
                 <X size={16} />
@@ -327,22 +398,27 @@ function AdminEvents() {
           </div>
 
           <div className="admin-events__filters">
-            {statusOptions.map((status) => (
-              <button
-                type="button"
-                key={status.value}
-                className={
-                  selectedStatus === status.value
-                    ? "admin-events__filter admin-events__filter--active"
-                    : "admin-events__filter"
-                }
-                onClick={() =>
-                  setSelectedStatus(status.value)
-                }
-              >
-                {status.label}
-              </button>
-            ))}
+            {statusOptions.map(
+              (status) => (
+                <button
+                  type="button"
+                  key={status.value}
+                  className={
+                    selectedStatus ===
+                    status.value
+                      ? "admin-events__filter admin-events__filter--active"
+                      : "admin-events__filter"
+                  }
+                  onClick={() =>
+                    setSelectedStatus(
+                      status.value,
+                    )
+                  }
+                >
+                  {status.label}
+                </button>
+              ),
+            )}
           </div>
         </div>
 
@@ -351,7 +427,8 @@ function AdminEvents() {
             <h2>Festival Events</h2>
 
             <p>
-              Showing {filteredEvents.length} of{" "}
+              Showing{" "}
+              {filteredEvents.length} of{" "}
               {events.length} events
             </p>
           </div>
@@ -369,8 +446,10 @@ function AdminEvents() {
             />
 
             <h3>Loading events</h3>
+
             <p>
-              Retrieving festival events from the server.
+              Retrieving festival events from
+              the server.
             </p>
           </div>
         ) : errorMessage ? (
@@ -379,12 +458,17 @@ function AdminEvents() {
               <AlertCircle size={28} />
             </div>
 
-            <h3>Unable to load events</h3>
+            <h3>
+              Unable to load events
+            </h3>
+
             <p>{errorMessage}</p>
 
             <button
               type="button"
-              onClick={() => void loadEvents()}
+              onClick={() =>
+                void loadEvents()
+              }
             >
               <RefreshCw size={16} />
               Try again
@@ -396,7 +480,9 @@ function AdminEvents() {
               <thead>
                 <tr>
                   <th>Event</th>
-                  <th>Date &amp; Location</th>
+                  <th>
+                    Date &amp; Location
+                  </th>
                   <th>Tickets</th>
                   <th>Status</th>
                   <th aria-label="Event actions" />
@@ -404,156 +490,197 @@ function AdminEvents() {
               </thead>
 
               <tbody>
-                {filteredEvents.map((event) => {
-                  const ticketData =
-                    getTicketData(event);
+                {filteredEvents.map(
+                  (event) => {
+                    const ticketData =
+                      getTicketData(event);
 
-                  const statusClass =
-                    event.status.toLowerCase();
+                    const statusClass =
+                      event.status.toLowerCase();
 
-                  return (
-                    <tr key={event.id}>
-                      <td data-label="Event">
-                        <div className="admin-events__event-info">
-                          <div className="admin-events__event-image">
-                            {event.heroImageUrl ? (
-                              <img
-                                src={event.heroImageUrl}
-                                alt=""
-                              />
-                            ) : (
-                              <CalendarDays size={22} />
-                            )}
-                          </div>
+                    return (
+                      <tr key={event.id}>
+                        <td data-label="Event">
+                          <div className="admin-events__event-info">
+                            <div className="admin-events__event-image">
+                              {event.heroImageUrl ? (
+                                <img
+                                  src={
+                                    event.heroImageUrl
+                                  }
+                                  alt=""
+                                />
+                              ) : (
+                                <CalendarDays
+                                  size={22}
+                                />
+                              )}
+                            </div>
 
-                          <div className="admin-events__event-text">
-                            <strong>{event.title}</strong>
-                            <span>/{event.slug}</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td data-label="Date & Location">
-                        <div className="admin-events__details">
-                          <span>
-                            <CalendarDays size={15} />
-                            {formatDate(event.date)}
-                          </span>
-
-                          <span>
-                            <MapPin size={15} />
-                            {event.location}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td data-label="Tickets">
-                        {ticketData ? (
-                          <div className="admin-events__ticket-data">
-                            <div className="admin-events__ticket-numbers">
+                            <div className="admin-events__event-text">
                               <strong>
-                                {formatTicketNumber(
-                                  ticketData.sold,
-                                )}
+                                {event.title}
                               </strong>
 
                               <span>
-                                /{" "}
-                                {formatTicketNumber(
-                                  ticketData.capacity,
-                                )}
+                                /{event.slug}
                               </span>
                             </div>
+                          </div>
+                        </td>
 
-                            <div className="admin-events__ticket-progress">
-                              <span
-                                style={{
-                                  width: `${ticketData.percentage}%`,
-                                }}
+                        <td data-label="Date & Location">
+                          <div className="admin-events__details">
+                            <span>
+                              <CalendarDays
+                                size={15}
                               />
-                            </div>
 
-                            <small>
-                              {ticketData.percentage}% sold
-                            </small>
-                          </div>
-                        ) : (
-                          <span className="admin-events__not-available">
-                            Not configured
-                          </span>
-                        )}
-                      </td>
+                              {formatDate(
+                                event.date,
+                              )}
+                            </span>
 
-                      <td data-label="Status">
-                        <span
-                          className={`admin-events__status admin-events__status--${statusClass}`}
-                        >
-                          <span className="admin-events__status-dot" />
-                          {formatStatus(event.status)}
-                        </span>
-                      </td>
+                            <span>
+                              <MapPin
+                                size={15}
+                              />
 
-                      <td data-label="Actions">
-                        <div className="admin-events__actions">
-                          {event.status === "PUBLISHED" && (
-                            <Link
-                              to={`/events/${event.slug}`}
-                              className="admin-events__action-button"
-                              aria-label={`View ${event.title}`}
-                              title="View event"
-                            >
-                              <Eye size={17} />
-                            </Link>
-                          )}
-
-                          <Link
-                            to={`/admin/events/${event.id}/edit`}
-                            className="admin-events__action-button"
-                            aria-label={`Edit ${event.title}`}
-                            title="Edit event"
-                          >
-                            <Edit3 size={17} />
-                          </Link>
-
-                          <div className="admin-events__more-wrapper">
-                            <button
-                              type="button"
-                              className="admin-events__action-button"
-                              aria-label={`More actions for ${event.title}`}
-                              title="More actions"
-                              onClick={() =>
-                                setOpenMenuId(
-                                  (currentId) =>
-                                    currentId === event.id
-                                      ? null
-                                      : event.id,
-                                )
+                              {
+                                event.location
                               }
-                            >
-                              <MoreHorizontal size={18} />
-                            </button>
-
-                            {openMenuId === event.id && (
-                              <div className="admin-events__action-menu">
-                                <button
-                                  type="button"
-                                  className="admin-events__delete-menu-button"
-                                  onClick={() => {
-                                    setEventToDelete(event);
-                                    setOpenMenuId(null);
-                                  }}
-                                >
-                                  <Trash2 size={16} />
-                                  Delete event
-                                </button>
-                              </div>
-                            )}
+                            </span>
                           </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+
+                        <td data-label="Tickets">
+                          {ticketData ? (
+                            <div className="admin-events__ticket-data">
+                              <div className="admin-events__ticket-numbers">
+                                <strong>
+                                  {formatTicketNumber(
+                                    ticketData.sold,
+                                  )}
+                                </strong>
+
+                                <span>
+                                  /{" "}
+                                  {formatTicketNumber(
+                                    ticketData.capacity,
+                                  )}
+                                </span>
+                              </div>
+
+                              <div className="admin-events__ticket-progress">
+                                <span
+                                  style={{
+                                    width: `${ticketData.percentage}%`,
+                                  }}
+                                />
+                              </div>
+
+                              <small>
+                                {
+                                  ticketData.percentage
+                                }
+                                % sold
+                              </small>
+                            </div>
+                          ) : (
+                            <span className="admin-events__not-available">
+                              Not configured
+                            </span>
+                          )}
+                        </td>
+
+                        <td data-label="Status">
+                          <span
+                            className={`admin-events__status admin-events__status--${statusClass}`}
+                          >
+                            <span className="admin-events__status-dot" />
+
+                            {formatStatus(
+                              event.status,
+                            )}
+                          </span>
+                        </td>
+
+                        <td data-label="Actions">
+                          <div className="admin-events__actions">
+                            {event.status ===
+                              "PUBLISHED" && (
+                              <Link
+                                to={`/events/${event.slug}`}
+                                className="admin-events__action-button"
+                                aria-label={`View ${event.title}`}
+                                title="View event"
+                              >
+                                <Eye
+                                  size={17}
+                                />
+                              </Link>
+                            )}
+
+                            <Link
+                              to={`/admin/events/${event.id}/edit`}
+                              className="admin-events__action-button"
+                              aria-label={`Edit ${event.title}`}
+                              title="Edit event"
+                            >
+                              <Edit3
+                                size={17}
+                              />
+                            </Link>
+
+                            <div className="admin-events__more-wrapper">
+                              <button
+                                type="button"
+                                className="admin-events__action-button"
+                                aria-label={`More actions for ${event.title}`}
+                                title="More actions"
+                                onClick={() =>
+                                  setOpenMenuId(
+                                    (
+                                      currentId,
+                                    ) =>
+                                      currentId ===
+                                      event.id
+                                        ? null
+                                        : event.id,
+                                  )
+                                }
+                              >
+                                <MoreHorizontal
+                                  size={18}
+                                />
+                              </button>
+
+                              {openMenuId ===
+                                event.id && (
+                                <div className="admin-events__action-menu">
+                                  <button
+                                    type="button"
+                                    className="admin-events__delete-menu-button"
+                                    onClick={() =>
+                                      openDeleteModal(
+                                        event,
+                                      )
+                                    }
+                                  >
+                                    <Trash2
+                                      size={16}
+                                    />
+                                    Delete event
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  },
+                )}
               </tbody>
             </table>
           </div>
@@ -566,8 +693,8 @@ function AdminEvents() {
             <h3>No events found</h3>
 
             <p>
-              No events match your current search and
-              filter settings.
+              No events match your current
+              search and filter settings.
             </p>
 
             <button
@@ -587,7 +714,7 @@ function AdminEvents() {
         <div
           className="admin-events__modal-overlay"
           role="presentation"
-          onClick={() => setEventToDelete(null)}
+          onClick={closeDeleteModal}
         >
           <div
             className="admin-events__modal"
@@ -601,8 +728,9 @@ function AdminEvents() {
             <button
               type="button"
               className="admin-events__modal-close"
-              onClick={() => setEventToDelete(null)}
+              onClick={closeDeleteModal}
               aria-label="Close delete confirmation"
+              disabled={isDeleting}
             >
               <X size={19} />
             </button>
@@ -617,17 +745,28 @@ function AdminEvents() {
 
             <p>
               You are about to delete{" "}
-              <strong>{eventToDelete.title}</strong>.
-              This action cannot be undone.
+              <strong>
+                {eventToDelete.title}
+              </strong>
+              . This action cannot be undone.
             </p>
+
+            {deleteError && (
+              <div
+                className="admin-events__delete-error"
+                role="alert"
+              >
+                <AlertCircle size={16} />
+                <span>{deleteError}</span>
+              </div>
+            )}
 
             <div className="admin-events__modal-actions">
               <button
                 type="button"
                 className="admin-events__cancel-button"
-                onClick={() =>
-                  setEventToDelete(null)
-                }
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
               >
                 Cancel
               </button>
@@ -635,10 +774,25 @@ function AdminEvents() {
               <button
                 type="button"
                 className="admin-events__confirm-delete"
-                onClick={handleDeleteEvent}
+                onClick={() =>
+                  void handleDeleteEvent()
+                }
+                disabled={isDeleting}
               >
-                <Trash2 size={16} />
-                Delete Event
+                {isDeleting ? (
+                  <>
+                    <LoaderCircle
+                      size={16}
+                      className="admin-events__loading-icon"
+                    />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete Event
+                  </>
+                )}
               </button>
             </div>
           </div>

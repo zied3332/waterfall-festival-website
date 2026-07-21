@@ -1326,3 +1326,35 @@
     transform: rotate(360deg);
   }
 }
+
+.admin-events__delete-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  margin-top: 16px;
+  padding: 11px 14px;
+
+  border: 1px solid
+    rgba(251, 113, 133, 0.22);
+  border-radius: 10px;
+
+  background:
+    rgba(251, 113, 133, 0.08);
+  color: #fda4af;
+
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.admin-events__delete-error svg {
+  flex-shrink: 0;
+}
+
+.admin-events__confirm-delete:disabled,
+.admin-events__cancel-button:disabled,
+.admin-events__modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

@@ -1,4 +1,5 @@
 import { api } from "./api.service";
+
 import type {
   CreateEventInput,
   Event,
@@ -12,7 +13,10 @@ export function getAdminEvents(): Promise<Event[]> {
 export function createEvent(
   eventData: CreateEventInput,
 ): Promise<Event> {
-  return api.post<Event>("/admin/events", eventData);
+  return api.post<Event>(
+    "/admin/events",
+    eventData,
+  );
 }
 
 export function updateEvent(
@@ -22,5 +26,13 @@ export function updateEvent(
   return api.patch<Event>(
     `/admin/events/${eventId}`,
     eventData,
+  );
+}
+
+export function deleteEvent(
+  eventId: number,
+): Promise<void> {
+  return api.delete<void>(
+    `/admin/events/${eventId}`,
   );
 }
