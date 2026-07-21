@@ -1,112 +1,116 @@
 import {
   Check,
-  CheckSquare,
   Eye,
-  FileImage,
   Image as ImageIcon,
   Pencil,
   Plus,
   Search,
-  Square,
   Trash2,
-  Upload,
   X,
 } from "lucide-react";
 import {
+  useEffect,
   useMemo,
-  useRef,
   useState,
-  type ChangeEvent,
-  type DragEvent,
+  type FormEvent,
 } from "react";
+
+import {
+  createGalleryImage,
+  deleteGalleryImage,
+  getAdminGallery,
+  updateGalleryImage,
+} from "../../services/gallery.service";
+
+import type {
+  CreateGalleryImageInput,
+  GalleryImage,
+  GalleryStatus,
+  UpdateGalleryImageInput,
+} from "../../types/gallery";
+
 import "../style/admin-gallery.css";
 
-type GalleryStatus = "Published" | "Draft";
+type StatusFilter = "ALL" | GalleryStatus;
 
-type GalleryItem = {
-  id: number;
+type GalleryFormState = {
   title: string;
-  category: string;
-  image: string;
+  description: string;
+  imageUrl: string;
+  altText: string;
   status: GalleryStatus;
-  fileName?: string;
+  isFeatured: boolean;
+  sortOrder: string;
 };
 
-type PendingImage = {
-  id: string;
-  file: File;
-  preview: string;
-  title: string;
-  category: string;
-  status: GalleryStatus;
+const emptyForm: GalleryFormState = {
+  title: "",
+  description: "",
+  imageUrl: "",
+  altText: "",
+  status: "DRAFT",
+  isFeatured: false,
+  sortOrder: "0",
 };
 
-const initialGalleryItems: GalleryItem[] = [
-  {
-    id: 1,
-    title: "Main Stage Crowd",
-    category: "Festival",
-    image:
-      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=900&auto=format&fit=crop",
-    status: "Published",
-  },
-  {
-    id: 2,
-    title: "Fire Performance",
-    category: "Show",
-    image:
-      "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=900&auto=format&fit=crop",
-    status: "Published",
-  },
-  {
-    id: 3,
-    title: "Waterfall Venue",
-    category: "Venue",
-    image:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=900&auto=format&fit=crop",
-    status: "Draft",
-  },
-  {
-    id: 4,
-    title: "Night Lights",
-    category: "Experience",
-    image:
-      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=900&auto=format&fit=crop",
-    status: "Published",
-  },
+const statusFilters: StatusFilter[] = [
+  "ALL",
+  "PUBLISHED",
+  "DRAFT",
+  "ARCHIVED",
 ];
 
-const galleryCategories = [
-  "Festival",
-  "Show",
-  "Venue",
-  "Experience",
-  "Artists",
-  "Crowd",
-  "Other",
-];
-
-const statusFilters = ["All", "Published", "Draft"] as const;
+function formatStatus(status: GalleryStatus) {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
 
 function AdminGallery() {
-  const [galleryItems, setGalleryItems] =
-    useState<GalleryItem[]>(initialGalleryItems);
-
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [galleryItems, setGalleryItems] = useState<GalleryImage[]>([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] =
-    useState<(typeof statusFilters)[number]>("All");
+    useState<StatusFilter>("ALL");
 
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const [previewItem, setPreviewItem] = useState<GalleryItem | null>(null);
-  const [itemToDelete, setItemToDelete] = useState<GalleryItem | null>(null);
-  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingItem, setEditingItem] =
+    useState<GalleryImage | null>(null);
+
+  const [previewItem, setPreviewItem] =
+    useState<GalleryImage | null>(null);
+
+  const [form, setForm] =
+    useState<GalleryFormState>(emptyForm);
+
+  const loadGallery = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const data = await getAdminGallery();
+      setGalleryItems(data);
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to load gallery images.";
+
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadGallery();
+  }, []);
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -114,190 +118,231 @@ function AdminGallery() {
     return galleryItems.filter((item) => {
       const matchesSearch =
         item.title.toLowerCase().includes(normalizedSearch) ||
-        item.category.toLowerCase().includes(normalizedSearch);
+        (item.description ?? "")
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        (item.altText ?? "")
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        (item.event?.title ?? "")
+          .toLowerCase()
+          .includes(normalizedSearch);
 
       const matchesStatus =
-        statusFilter === "All" || item.status === statusFilter;
+        statusFilter === "ALL" ||
+        item.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
   }, [galleryItems, searchTerm, statusFilter]);
 
   const publishedCount = galleryItems.filter(
-    (item) => item.status === "Published",
+    (item) => item.status === "PUBLISHED",
   ).length;
 
   const draftCount = galleryItems.filter(
-    (item) => item.status === "Draft",
+    (item) => item.status === "DRAFT",
   ).length;
 
-  const visibleSelectedIds = filteredItems
-    .filter((item) => selectedIds.includes(item.id))
-    .map((item) => item.id);
+  const featuredCount = galleryItems.filter(
+    (item) => item.isFeatured,
+  ).length;
 
-  const allVisibleSelected =
-    filteredItems.length > 0 &&
-    visibleSelectedIds.length === filteredItems.length;
+  const openCreateForm = () => {
+    setEditingItem(null);
+    setForm(emptyForm);
+    setFormError(null);
+    setIsFormOpen(true);
+  };
 
-  const createPendingImages = (files: File[]) => {
-    const imageFiles = files.filter((file) =>
-      file.type.startsWith("image/"),
-    );
+  const openEditForm = (item: GalleryImage) => {
+    setEditingItem(item);
 
-    const newPendingImages: PendingImage[] = imageFiles.map((file) => ({
-      id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
-      file,
-      preview: URL.createObjectURL(file),
-      title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
-      category: "Festival",
-      status: "Published",
-    }));
+    setForm({
+      title: item.title,
+      description: item.description ?? "",
+      imageUrl: item.imageUrl,
+      altText: item.altText ?? "",
+      status: item.status,
+      isFeatured: item.isFeatured,
+      sortOrder: String(item.sortOrder),
+    });
 
-    setPendingImages((currentImages) => [
-      ...currentImages,
-      ...newPendingImages,
-    ]);
+    setFormError(null);
+    setIsFormOpen(true);
+  };
 
-    if (newPendingImages.length > 0) {
-      setIsUploadOpen(true);
+  const closeForm = () => {
+    if (isSubmitting) {
+      return;
     }
+
+    setIsFormOpen(false);
+    setEditingItem(null);
+    setForm(emptyForm);
+    setFormError(null);
   };
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-
-    createPendingImages(files);
-
-    event.target.value = "";
-  };
-
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
-    setIsDragging(false);
 
-    createPendingImages(Array.from(event.dataTransfer.files));
-  };
+    const title = form.title.trim();
+    const imageUrl = form.imageUrl.trim();
+    const sortOrder = Number(form.sortOrder);
 
-  const handleAddImages = () => {
-    const newGalleryItems: GalleryItem[] = pendingImages.map(
-      (pendingImage, index) => ({
-        id: Date.now() + index,
-        title: pendingImage.title.trim() || "Untitled Image",
-        category: pendingImage.category,
-        image: pendingImage.preview,
-        status: pendingImage.status,
-        fileName: pendingImage.file.name,
-      }),
-    );
+    if (!title) {
+      setFormError("The image title is required.");
+      return;
+    }
 
-    setGalleryItems((currentItems) => [
-      ...newGalleryItems,
-      ...currentItems,
-    ]);
+    if (!imageUrl) {
+      setFormError("The image URL is required.");
+      return;
+    }
 
-    setPendingImages([]);
-    setIsUploadOpen(false);
-  };
+    if (!Number.isInteger(sortOrder) || sortOrder < 0) {
+      setFormError(
+        "Sort order must be a positive whole number.",
+      );
+      return;
+    }
 
-  const removePendingImage = (id: string) => {
-    setPendingImages((currentImages) => {
-      const imageToRemove = currentImages.find((image) => image.id === id);
+    try {
+      setIsSubmitting(true);
+      setFormError(null);
 
-      if (imageToRemove) {
-        URL.revokeObjectURL(imageToRemove.preview);
+      if (editingItem) {
+        const updateData: UpdateGalleryImageInput = {
+          title,
+          description: form.description.trim() || null,
+          imageUrl,
+          altText: form.altText.trim() || null,
+          status: form.status,
+          isFeatured: form.isFeatured,
+          sortOrder,
+        };
+
+        const updatedImage = await updateGalleryImage(
+          editingItem.id,
+          updateData,
+        );
+
+        setGalleryItems((currentItems) =>
+          currentItems.map((item) =>
+            item.id === updatedImage.id
+              ? updatedImage
+              : item,
+          ),
+        );
+      } else {
+        const createData: CreateGalleryImageInput = {
+          title,
+          description: form.description.trim() || null,
+          imageUrl,
+          altText: form.altText.trim() || null,
+          status: form.status,
+          isFeatured: form.isFeatured,
+          sortOrder,
+        };
+
+        const createdImage =
+          await createGalleryImage(createData);
+
+        setGalleryItems((currentItems) => [
+          createdImage,
+          ...currentItems,
+        ]);
       }
 
-      return currentImages.filter((image) => image.id !== id);
-    });
+      closeForm();
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : editingItem
+            ? "Failed to update the image."
+            : "Failed to create the image.";
+
+      setFormError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const updatePendingImage = (
-    id: string,
-    field: "title" | "category" | "status",
-    value: string,
-  ) => {
-    setPendingImages((currentImages) =>
-      currentImages.map((image) =>
-        image.id === id
-          ? {
-              ...image,
-              [field]: value,
-            }
-          : image,
-      ),
+  const handleDelete = async (item: GalleryImage) => {
+    const confirmed = window.confirm(
+      `Delete "${item.title}"? This action cannot be undone.`,
     );
-  };
 
-  const closeUploadPanel = () => {
-    pendingImages.forEach((image) => {
-      URL.revokeObjectURL(image.preview);
-    });
+    if (!confirmed) {
+      return;
+    }
 
-    setPendingImages([]);
-    setIsUploadOpen(false);
-  };
+    try {
+      setDeletingId(item.id);
+      setError(null);
 
-  const toggleImageSelection = (id: number) => {
-    setSelectedIds((currentIds) =>
-      currentIds.includes(id)
-        ? currentIds.filter((selectedId) => selectedId !== id)
-        : [...currentIds, id],
-    );
-  };
+      await deleteGalleryImage(item.id);
 
-  const toggleSelectAllVisible = () => {
-    const visibleIds = filteredItems.map((item) => item.id);
-
-    if (allVisibleSelected) {
-      setSelectedIds((currentIds) =>
-        currentIds.filter((id) => !visibleIds.includes(id)),
+      setGalleryItems((currentItems) =>
+        currentItems.filter(
+          (galleryItem) => galleryItem.id !== item.id,
+        ),
       );
 
-      return;
+      if (previewItem?.id === item.id) {
+        setPreviewItem(null);
+      }
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to delete the image.";
+
+      setError(message);
+    } finally {
+      setDeletingId(null);
     }
-
-    setSelectedIds((currentIds) => [
-      ...new Set([...currentIds, ...visibleIds]),
-    ]);
   };
 
-  const deleteSingleItem = () => {
-    if (!itemToDelete) {
-      return;
+  const handleToggleStatus = async (
+    item: GalleryImage,
+  ) => {
+    const nextStatus: GalleryStatus =
+      item.status === "PUBLISHED"
+        ? "DRAFT"
+        : "PUBLISHED";
+
+    try {
+      setUpdatingId(item.id);
+      setError(null);
+
+      const updatedImage = await updateGalleryImage(
+        item.id,
+        {
+          status: nextStatus,
+        },
+      );
+
+      setGalleryItems((currentItems) =>
+        currentItems.map((galleryItem) =>
+          galleryItem.id === updatedImage.id
+            ? updatedImage
+            : galleryItem,
+        ),
+      );
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to update the image status.";
+
+      setError(message);
+    } finally {
+      setUpdatingId(null);
     }
-
-    setGalleryItems((currentItems) =>
-      currentItems.filter((item) => item.id !== itemToDelete.id),
-    );
-
-    setSelectedIds((currentIds) =>
-      currentIds.filter((id) => id !== itemToDelete.id),
-    );
-
-    setItemToDelete(null);
-  };
-
-  const deleteSelectedItems = () => {
-    setGalleryItems((currentItems) =>
-      currentItems.filter((item) => !selectedIds.includes(item.id)),
-    );
-
-    setSelectedIds([]);
-    setShowBulkDeleteModal(false);
-  };
-
-  const toggleItemStatus = (id: number) => {
-    setGalleryItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status:
-                item.status === "Published" ? "Draft" : "Published",
-            }
-          : item,
-      ),
-    );
   };
 
   return (
@@ -312,18 +357,18 @@ function AdminGallery() {
           <h1>Festival Gallery</h1>
 
           <p>
-            Upload, organize, publish, and manage festival photos displayed
-            across the public website.
+            Create, edit, publish, preview, and delete gallery
+            images.
           </p>
         </div>
 
         <button
           type="button"
           className="admin-gallery__add"
-          onClick={() => setIsUploadOpen(true)}
+          onClick={openCreateForm}
         >
           <Plus size={18} />
-          Upload Images
+          Add Image
         </button>
       </header>
 
@@ -334,9 +379,9 @@ function AdminGallery() {
           </div>
 
           <div>
-            <span>Total Media</span>
+            <span>Total Images</span>
             <strong>{galleryItems.length}</strong>
-            <small>Images in the gallery</small>
+            <small>All gallery records</small>
           </div>
         </article>
 
@@ -348,7 +393,7 @@ function AdminGallery() {
           <div>
             <span>Published</span>
             <strong>{publishedCount}</strong>
-            <small>Visible on the website</small>
+            <small>Visible publicly</small>
           </div>
         </article>
 
@@ -358,7 +403,7 @@ function AdminGallery() {
           </div>
 
           <div>
-            <span>Draft Images</span>
+            <span>Drafts</span>
             <strong>{draftCount}</strong>
             <small>Hidden from visitors</small>
           </div>
@@ -366,13 +411,13 @@ function AdminGallery() {
 
         <article className="admin-gallery__stat-card admin-gallery__stat-card--selected">
           <div className="admin-gallery__stat-icon">
-            <CheckSquare size={22} />
+            <Eye size={22} />
           </div>
 
           <div>
-            <span>Selected</span>
-            <strong>{selectedIds.length}</strong>
-            <small>Ready for bulk actions</small>
+            <span>Featured</span>
+            <strong>{featuredCount}</strong>
+            <small>Highlighted images</small>
           </div>
         </article>
       </div>
@@ -384,9 +429,11 @@ function AdminGallery() {
 
             <input
               type="search"
-              placeholder="Search gallery by title or category..."
+              placeholder="Search gallery images..."
               value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              onChange={(event) =>
+                setSearchTerm(event.target.value)
+              }
             />
 
             {searchTerm && (
@@ -412,105 +459,58 @@ function AdminGallery() {
                 }
                 onClick={() => setStatusFilter(status)}
               >
-                {status}
+                {status === "ALL"
+                  ? "All"
+                  : formatStatus(status)}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="admin-gallery__bulk-toolbar">
-          <button
-            type="button"
-            className="admin-gallery__select-all"
-            onClick={toggleSelectAllVisible}
-            disabled={filteredItems.length === 0}
-          >
-            {allVisibleSelected ? (
-              <CheckSquare size={18} />
-            ) : (
-              <Square size={18} />
-            )}
+        {error && (
+          <div className="admin-gallery__empty">
+            <h2>Something went wrong</h2>
+            <p>{error}</p>
 
-            {allVisibleSelected ? "Deselect All" : "Select All"}
-          </button>
+            <button
+              type="button"
+              onClick={() => void loadGallery()}
+            >
+              Try Again
+            </button>
+          </div>
+        )}
 
-          <span>
-            {selectedIds.length > 0
-              ? `${selectedIds.length} image${
-                  selectedIds.length === 1 ? "" : "s"
-                } selected`
-              : `${filteredItems.length} image${
-                  filteredItems.length === 1 ? "" : "s"
-                } shown`}
-          </span>
+        {!error && isLoading && (
+          <div className="admin-gallery__empty">
+            <ImageIcon size={30} />
+            <h2>Loading gallery</h2>
+            <p>Please wait while the images are loaded.</p>
+          </div>
+        )}
 
-          {selectedIds.length > 0 && (
-            <div className="admin-gallery__bulk-actions">
-              <button
-                type="button"
-                onClick={() => setSelectedIds([])}
-              >
-                <X size={16} />
-                Clear
-              </button>
-
-              <button
-                type="button"
-                className="admin-gallery__bulk-delete"
-                onClick={() => setShowBulkDeleteModal(true)}
-              >
-                <Trash2 size={16} />
-                Delete Selected
-              </button>
-            </div>
-          )}
-        </div>
-
-        {filteredItems.length > 0 ? (
-          <div className="admin-gallery__grid">
-            {filteredItems.map((item) => {
-              const isSelected = selectedIds.includes(item.id);
-
-              return (
+        {!error &&
+          !isLoading &&
+          filteredItems.length > 0 && (
+            <div className="admin-gallery__grid">
+              {filteredItems.map((item) => (
                 <article
-                  className={
-                    isSelected
-                      ? "admin-gallery__card admin-gallery__card--selected"
-                      : "admin-gallery__card"
-                  }
+                  className="admin-gallery__card"
                   key={item.id}
                 >
                   <div className="admin-gallery__image-wrap">
-                    <img src={item.image} alt={item.title} />
+                    <img
+                      src={item.imageUrl}
+                      alt={item.altText ?? item.title}
+                    />
 
                     <div className="admin-gallery__image-overlay" />
-
-                    <button
-                      type="button"
-                      className={
-                        isSelected
-                          ? "admin-gallery__select-button admin-gallery__select-button--selected"
-                          : "admin-gallery__select-button"
-                      }
-                      onClick={() => toggleImageSelection(item.id)}
-                      aria-label={
-                        isSelected
-                          ? `Deselect ${item.title}`
-                          : `Select ${item.title}`
-                      }
-                    >
-                      {isSelected ? (
-                        <Check size={17} />
-                      ) : (
-                        <Square size={17} />
-                      )}
-                    </button>
 
                     <span
                       className={`admin-gallery__status admin-gallery__status--${item.status.toLowerCase()}`}
                     >
                       <span />
-                      {item.status}
+                      {formatStatus(item.status)}
                     </span>
 
                     <button
@@ -526,36 +526,50 @@ function AdminGallery() {
                   <div className="admin-gallery__body">
                     <div className="admin-gallery__meta">
                       <ImageIcon size={15} />
-                      <span>{item.category}</span>
+
+                      <span>
+                        {item.event?.title ??
+                          "Waterfall Festival"}
+                      </span>
                     </div>
 
                     <h2>{item.title}</h2>
 
-                    {item.fileName && (
+                    {item.description && (
                       <p className="admin-gallery__file-name">
-                        {item.fileName}
+                        {item.description}
                       </p>
                     )}
 
                     <div className="admin-gallery__actions">
-                      <button type="button">
+                      <button
+                        type="button"
+                        onClick={() => openEditForm(item)}
+                      >
                         <Pencil size={16} />
                         Edit
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => toggleItemStatus(item.id)}
+                        disabled={updatingId === item.id}
+                        onClick={() =>
+                          void handleToggleStatus(item)
+                        }
                       >
-                        {item.status === "Published" ? (
+                        {item.status === "PUBLISHED" ? (
                           <>
                             <Eye size={16} />
-                            Unpublish
+                            {updatingId === item.id
+                              ? "Updating..."
+                              : "Unpublish"}
                           </>
                         ) : (
                           <>
                             <Check size={16} />
-                            Publish
+                            {updatingId === item.id
+                              ? "Updating..."
+                              : "Publish"}
                           </>
                         )}
                       </button>
@@ -563,7 +577,10 @@ function AdminGallery() {
                       <button
                         type="button"
                         className="admin-gallery__delete-action"
-                        onClick={() => setItemToDelete(item)}
+                        disabled={deletingId === item.id}
+                        onClick={() =>
+                          void handleDelete(item)
+                        }
                         aria-label={`Delete ${item.title}`}
                       >
                         <Trash2 size={16} />
@@ -571,209 +588,213 @@ function AdminGallery() {
                     </div>
                   </div>
                 </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="admin-gallery__empty">
-            <div className="admin-gallery__empty-icon">
-              <ImageIcon size={30} />
+              ))}
             </div>
+          )}
 
-            <h2>No gallery images found</h2>
+        {!error &&
+          !isLoading &&
+          filteredItems.length === 0 && (
+            <div className="admin-gallery__empty">
+              <div className="admin-gallery__empty-icon">
+                <ImageIcon size={30} />
+              </div>
 
-            <p>
-              Change your filters or upload new festival images.
-            </p>
+              <h2>No gallery images found</h2>
 
-            <button
-              type="button"
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("All");
-              }}
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
+              <p>
+                Add an image or change your current filters.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("ALL");
+                }}
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
       </div>
 
-      {isUploadOpen && (
+      {isFormOpen && (
         <div
           className="admin-gallery__modal-overlay"
           role="presentation"
-          onClick={closeUploadPanel}
+          onClick={closeForm}
         >
-          <div
+          <form
             className="admin-gallery__upload-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="gallery-upload-title"
+            onSubmit={handleSubmit}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="admin-gallery__modal-header">
               <div>
-                <span>Gallery Upload</span>
-                <h2 id="gallery-upload-title">Add Multiple Images</h2>
+                <span>
+                  {editingItem
+                    ? "Edit Gallery Image"
+                    : "New Gallery Image"}
+                </span>
+
+                <h2>
+                  {editingItem
+                    ? "Update image"
+                    : "Add image"}
+                </h2>
+
                 <p>
-                  Upload several festival photos and configure them before
-                  publishing.
+                  Use a public image URL. File uploads can be
+                  added later with Cloudinary or another storage
+                  service.
                 </p>
               </div>
 
               <button
                 type="button"
                 className="admin-gallery__modal-close"
-                onClick={closeUploadPanel}
-                aria-label="Close upload panel"
+                onClick={closeForm}
+                disabled={isSubmitting}
+                aria-label="Close form"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-              onChange={handleFileChange}
-            />
+            <div className="admin-gallery__pending-fields">
+              <label>
+                Title
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(event) =>
+                    setForm((currentForm) => ({
+                      ...currentForm,
+                      title: event.target.value,
+                    }))
+                  }
+                  placeholder="Main Stage Crowd"
+                  required
+                />
+              </label>
 
-            <div
-              className={
-                isDragging
-                  ? "admin-gallery__drop-zone admin-gallery__drop-zone--dragging"
-                  : "admin-gallery__drop-zone"
-              }
-              onDragEnter={(event) => {
-                event.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={(event) => {
-                event.preventDefault();
-                setIsDragging(false);
-              }}
-              onDrop={handleDrop}
-            >
-              <div className="admin-gallery__drop-icon">
-                <Upload size={28} />
-              </div>
+              <label>
+                Image URL
+                <input
+                  type="url"
+                  value={form.imageUrl}
+                  onChange={(event) =>
+                    setForm((currentForm) => ({
+                      ...currentForm,
+                      imageUrl: event.target.value,
+                    }))
+                  }
+                  placeholder="https://example.com/image.jpg"
+                  required
+                />
+              </label>
 
-              <h3>Drag and drop images here</h3>
+              <label>
+                Alt text
+                <input
+                  type="text"
+                  value={form.altText}
+                  onChange={(event) =>
+                    setForm((currentForm) => ({
+                      ...currentForm,
+                      altText: event.target.value,
+                    }))
+                  }
+                  placeholder="Festival crowd at the main stage"
+                />
+              </label>
 
-              <p>
-                Upload JPG, PNG, WEBP, or other supported image files.
-              </p>
+              <label>
+                Description
+                <textarea
+                  value={form.description}
+                  onChange={(event) =>
+                    setForm((currentForm) => ({
+                      ...currentForm,
+                      description: event.target.value,
+                    }))
+                  }
+                  placeholder="Describe this festival moment..."
+                  rows={4}
+                />
+              </label>
 
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <FileImage size={17} />
-                Choose Images
-              </button>
+              <label>
+                Status
+                <select
+                  value={form.status}
+                  onChange={(event) =>
+                    setForm((currentForm) => ({
+                      ...currentForm,
+                      status: event.target
+                        .value as GalleryStatus,
+                    }))
+                  }
+                >
+                  <option value="DRAFT">Draft</option>
+                  <option value="PUBLISHED">
+                    Published
+                  </option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
+              </label>
+
+              <label>
+                Sort order
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.sortOrder}
+                  onChange={(event) =>
+                    setForm((currentForm) => ({
+                      ...currentForm,
+                      sortOrder: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <label>
+                <input
+                  type="checkbox"
+                  checked={form.isFeatured}
+                  onChange={(event) =>
+                    setForm((currentForm) => ({
+                      ...currentForm,
+                      isFeatured: event.target.checked,
+                    }))
+                  }
+                />
+                Featured image
+              </label>
             </div>
 
-            {pendingImages.length > 0 && (
-              <div className="admin-gallery__pending">
-                <div className="admin-gallery__pending-header">
-                  <div>
-                    <h3>Selected Images</h3>
-                    <p>
-                      {pendingImages.length} image
-                      {pendingImages.length === 1 ? "" : "s"} ready to
-                      upload
-                    </p>
-                  </div>
+            {form.imageUrl && (
+              <div className="admin-gallery__pending-item">
+                <img
+                  src={form.imageUrl}
+                  alt={form.altText || form.title || "Preview"}
+                />
 
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Plus size={16} />
-                    Add More
-                  </button>
+                <div>
+                  <strong>Image preview</strong>
+                  <p>
+                    Confirm that the image URL loads correctly.
+                  </p>
                 </div>
+              </div>
+            )}
 
-                <div className="admin-gallery__pending-list">
-                  {pendingImages.map((image) => (
-                    <article
-                      className="admin-gallery__pending-item"
-                      key={image.id}
-                    >
-                      <img src={image.preview} alt={image.title} />
-
-                      <div className="admin-gallery__pending-fields">
-                        <label>
-                          Image title
-                          <input
-                            type="text"
-                            value={image.title}
-                            onChange={(event) =>
-                              updatePendingImage(
-                                image.id,
-                                "title",
-                                event.target.value,
-                              )
-                            }
-                          />
-                        </label>
-
-                        <label>
-                          Category
-                          <select
-                            value={image.category}
-                            onChange={(event) =>
-                              updatePendingImage(
-                                image.id,
-                                "category",
-                                event.target.value,
-                              )
-                            }
-                          >
-                            {galleryCategories.map((category) => (
-                              <option value={category} key={category}>
-                                {category}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <label>
-                          Status
-                          <select
-                            value={image.status}
-                            onChange={(event) =>
-                              updatePendingImage(
-                                image.id,
-                                "status",
-                                event.target.value,
-                              )
-                            }
-                          >
-                            <option value="Published">Published</option>
-                            <option value="Draft">Draft</option>
-                          </select>
-                        </label>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="admin-gallery__remove-pending"
-                        onClick={() => removePendingImage(image.id)}
-                        aria-label={`Remove ${image.title}`}
-                      >
-                        <Trash2 size={17} />
-                      </button>
-                    </article>
-                  ))}
-                </div>
+            {formError && (
+              <div className="admin-gallery__empty">
+                <p>{formError}</p>
               </div>
             )}
 
@@ -781,23 +802,31 @@ function AdminGallery() {
               <button
                 type="button"
                 className="admin-gallery__cancel"
-                onClick={closeUploadPanel}
+                onClick={closeForm}
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
 
               <button
-                type="button"
+                type="submit"
                 className="admin-gallery__confirm-upload"
-                disabled={pendingImages.length === 0}
-                onClick={handleAddImages}
+                disabled={isSubmitting}
               >
-                <Upload size={17} />
-                Add {pendingImages.length || ""} Image
-                {pendingImages.length === 1 ? "" : "s"}
+                {editingItem ? (
+                  <Pencil size={17} />
+                ) : (
+                  <Plus size={17} />
+                )}
+
+                {isSubmitting
+                  ? "Saving..."
+                  : editingItem
+                    ? "Save Changes"
+                    : "Create Image"}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -821,104 +850,24 @@ function AdminGallery() {
               <X size={21} />
             </button>
 
-            <img src={previewItem.image} alt={previewItem.title} />
+            <img
+              src={previewItem.imageUrl}
+              alt={previewItem.altText ?? previewItem.title}
+            />
 
             <div>
-              <span>{previewItem.category}</span>
+              <span>
+                {previewItem.event?.title ??
+                  "Waterfall Festival"}
+              </span>
+
               <h2>{previewItem.title}</h2>
-              <p>{previewItem.status}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {itemToDelete && (
-        <div
-          className="admin-gallery__confirm-overlay"
-          role="presentation"
-          onClick={() => setItemToDelete(null)}
-        >
-          <div
-            className="admin-gallery__confirm-modal"
-            role="dialog"
-            aria-modal="true"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="admin-gallery__confirm-icon">
-              <Trash2 size={25} />
-            </div>
+              {previewItem.description && (
+                <p>{previewItem.description}</p>
+              )}
 
-            <h2>Delete this image?</h2>
-
-            <p>
-              You are about to delete <strong>{itemToDelete.title}</strong>.
-              This action cannot be undone.
-            </p>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => setItemToDelete(null)}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                className="admin-gallery__confirm-delete"
-                onClick={deleteSingleItem}
-              >
-                <Trash2 size={16} />
-                Delete Image
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showBulkDeleteModal && (
-        <div
-          className="admin-gallery__confirm-overlay"
-          role="presentation"
-          onClick={() => setShowBulkDeleteModal(false)}
-        >
-          <div
-            className="admin-gallery__confirm-modal"
-            role="dialog"
-            aria-modal="true"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="admin-gallery__confirm-icon">
-              <Trash2 size={25} />
-            </div>
-
-            <h2>Delete selected images?</h2>
-
-            <p>
-              You are about to delete{" "}
-              <strong>
-                {selectedIds.length} image
-                {selectedIds.length === 1 ? "" : "s"}
-              </strong>
-              . This action cannot be undone.
-            </p>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowBulkDeleteModal(false)}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                className="admin-gallery__confirm-delete"
-                onClick={deleteSelectedItems}
-              >
-                <Trash2 size={16} />
-                Delete Selected
-              </button>
+              <p>{formatStatus(previewItem.status)}</p>
             </div>
           </div>
         </div>
