@@ -1,29 +1,34 @@
 import {
   Check,
   Eye,
+  FileImage,
   Image as ImageIcon,
+  Images,
   Pencil,
   Plus,
   Search,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import {
   useEffect,
-  useMemo,
+  useRef,
   useState,
+  useMemo,
+  type ChangeEvent,
+  type DragEvent,
   type FormEvent,
 } from "react";
 
 import {
-  createGalleryImage,
   deleteGalleryImage,
   getAdminGallery,
   updateGalleryImage,
+  uploadGalleryImages,
 } from "../../services/gallery.service";
 
 import type {
-  CreateGalleryImageInput,
   GalleryImage,
   GalleryStatus,
   UpdateGalleryImageInput,
@@ -42,6 +47,19 @@ type GalleryFormState = {
   isFeatured: boolean;
   sortOrder: string;
 };
+
+type SelectedFilePreview = {
+  file: File;
+  previewUrl: string;
+};
+
+const MAX_FILES = 10;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_FILE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
 
 const emptyForm: GalleryFormState = {
   title: "",
@@ -62,6 +80,18 @@ const statusFilters: StatusFilter[] = [
 
 function formatStatus(status: GalleryStatus) {
   return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function getFileKey(file: File) {
+  return `${file.name}-${file.size}-${file.lastModified}`;
 }
 
 function AdminGallery() {
@@ -88,6 +118,27 @@ function AdminGallery() {
 
   const [form, setForm] =
     useState<GalleryFormState>(emptyForm);
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFilePreviews, setSelectedFilePreviews] =
+    useState<SelectedFilePreview[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const selectedFilePreviewsRef =
+    useRef<SelectedFilePreview[]>([]);
+
+  useEffect(() => {
+    selectedFilePreviewsRef.current = selectedFilePreviews;
+  }, [selectedFilePreviews]);
+
+  useEffect(() => {
+    return () => {
+      selectedFilePreviewsRef.current.forEach((preview) => {
+        URL.revokeObjectURL(preview.previewUrl);
+      });
+    };
+  }, []);
 
   const loadGallery = async () => {
     try {
@@ -148,14 +199,31 @@ function AdminGallery() {
     (item) => item.isFeatured,
   ).length;
 
+  const clearSelectedFiles = () => {
+    selectedFilePreviewsRef.current.forEach((preview) => {
+      URL.revokeObjectURL(preview.previewUrl);
+    });
+
+    selectedFilePreviewsRef.current = [];
+    setSelectedFilePreviews([]);
+    setSelectedFiles([]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const openCreateForm = () => {
+    clearSelectedFiles();
     setEditingItem(null);
     setForm(emptyForm);
     setFormError(null);
+    setIsDragging(false);
     setIsFormOpen(true);
   };
 
   const openEditForm = (item: GalleryImage) => {
+    clearSelectedFiles();
     setEditingItem(item);
 
     setForm({
@@ -169,6 +237,7 @@ function AdminGallery() {
     });
 
     setFormError(null);
+    setIsDragging(false);
     setIsFormOpen(true);
   };
 
@@ -177,9 +246,137 @@ function AdminGallery() {
       return;
     }
 
+    clearSelectedFiles();
     setIsFormOpen(false);
     setEditingItem(null);
     setForm(emptyForm);
+    setFormError(null);
+    setIsDragging(false);
+  };
+
+  const addSelectedFiles = (incomingFiles: File[]) => {
+    setFormError(null);
+
+    if (incomingFiles.length === 0) {
+      return;
+    }
+
+    const existingKeys = new Set(selectedFiles.map(getFileKey));
+    const acceptedFiles: File[] = [];
+    const validationMessages: string[] = [];
+
+    for (const file of incomingFiles) {
+      if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+        validationMessages.push(
+          `${file.name}: unsupported file type. Use JPG, PNG, or WEBP.`,
+        );
+        continue;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        validationMessages.push(
+          `${file.name}: file is larger than 5 MB.`,
+        );
+        continue;
+      }
+
+      const fileKey = getFileKey(file);
+
+      if (existingKeys.has(fileKey)) {
+        validationMessages.push(
+          `${file.name}: this file is already selected.`,
+        );
+        continue;
+      }
+
+      if (selectedFiles.length + acceptedFiles.length >= MAX_FILES) {
+        validationMessages.push(
+          `You can select a maximum of ${MAX_FILES} images.`,
+        );
+        break;
+      }
+
+      existingKeys.add(fileKey);
+      acceptedFiles.push(file);
+    }
+
+    if (acceptedFiles.length > 0) {
+      const newPreviews = acceptedFiles.map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }));
+
+      setSelectedFiles((currentFiles) => [
+        ...currentFiles,
+        ...acceptedFiles,
+      ]);
+      setSelectedFilePreviews((currentPreviews) => [
+        ...currentPreviews,
+        ...newPreviews,
+      ]);
+    }
+
+    if (validationMessages.length > 0) {
+      setFormError(validationMessages.join(" "));
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    addSelectedFiles(Array.from(event.target.files ?? []));
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    if (!isSubmitting) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+
+    if (isSubmitting) {
+      return;
+    }
+
+    addSelectedFiles(Array.from(event.dataTransfer.files));
+  };
+
+  const removeSelectedFile = (fileToRemove: File) => {
+    if (isSubmitting) {
+      return;
+    }
+
+    const fileKey = getFileKey(fileToRemove);
+    const previewToRemove = selectedFilePreviews.find(
+      (preview) => getFileKey(preview.file) === fileKey,
+    );
+
+    if (previewToRemove) {
+      URL.revokeObjectURL(previewToRemove.previewUrl);
+    }
+
+    setSelectedFiles((currentFiles) =>
+      currentFiles.filter((file) => getFileKey(file) !== fileKey),
+    );
+    setSelectedFilePreviews((currentPreviews) =>
+      currentPreviews.filter(
+        (preview) => getFileKey(preview.file) !== fileKey,
+      ),
+    );
     setFormError(null);
   };
 
@@ -197,14 +394,19 @@ function AdminGallery() {
       return;
     }
 
-    if (!imageUrl) {
-      setFormError("The image URL is required.");
+    if (editingItem && !imageUrl) {
+      setFormError("The image URL is required when editing.");
+      return;
+    }
+
+    if (!editingItem && selectedFiles.length === 0) {
+      setFormError("Select at least one image to upload.");
       return;
     }
 
     if (!Number.isInteger(sortOrder) || sortOrder < 0) {
       setFormError(
-        "Sort order must be a positive whole number.",
+        "Sort order must be a non-negative whole number.",
       );
       return;
     }
@@ -216,9 +418,10 @@ function AdminGallery() {
       if (editingItem) {
         const updateData: UpdateGalleryImageInput = {
           title,
-          description: form.description.trim() || null,
+          description: form.description.trim() || undefined,
+
           imageUrl,
-          altText: form.altText.trim() || null,
+          altText: form.altText.trim() || undefined,
           status: form.status,
           isFeatured: form.isFeatured,
           sortOrder,
@@ -237,33 +440,35 @@ function AdminGallery() {
           ),
         );
       } else {
-        const createData: CreateGalleryImageInput = {
+        const response = await uploadGalleryImages({
+          files: selectedFiles,
           title,
-          description: form.description.trim() || null,
-          imageUrl,
-          altText: form.altText.trim() || null,
+          description: form.description.trim() || undefined,
+          altText: form.altText.trim() || undefined,
           status: form.status,
           isFeatured: form.isFeatured,
           sortOrder,
-        };
-
-        const createdImage =
-          await createGalleryImage(createData);
+        });
 
         setGalleryItems((currentItems) => [
-          createdImage,
+          ...response.images,
           ...currentItems,
         ]);
       }
 
-      closeForm();
+      clearSelectedFiles();
+      setIsFormOpen(false);
+      setEditingItem(null);
+      setForm(emptyForm);
+      setFormError(null);
+      setIsDragging(false);
     } catch (requestError) {
       const message =
         requestError instanceof Error
           ? requestError.message
           : editingItem
             ? "Failed to update the image."
-            : "Failed to create the image.";
+            : "Failed to upload the images.";
 
       setFormError(message);
     } finally {
@@ -368,7 +573,7 @@ function AdminGallery() {
           onClick={openCreateForm}
         >
           <Plus size={18} />
-          Add Image
+          Add Images
         </button>
       </header>
 
@@ -635,19 +840,19 @@ function AdminGallery() {
                 <span>
                   {editingItem
                     ? "Edit Gallery Image"
-                    : "New Gallery Image"}
+                    : "Upload Images"}
                 </span>
 
                 <h2>
                   {editingItem
                     ? "Update image"
-                    : "Add image"}
+                    : "Upload gallery images"}
                 </h2>
 
                 <p>
-                  Use a public image URL. File uploads can be
-                  added later with Cloudinary or another storage
-                  service.
+                  {editingItem
+                    ? "Update the metadata and existing image URL for this gallery record."
+                    : "Choose up to 10 JPG, PNG, or WEBP images and apply shared metadata to the full batch."}
                 </p>
               </div>
 
@@ -662,141 +867,284 @@ function AdminGallery() {
               </button>
             </div>
 
-            <div className="admin-gallery__pending-fields">
-              <label>
-                Title
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(event) =>
-                    setForm((currentForm) => ({
-                      ...currentForm,
-                      title: event.target.value,
-                    }))
-                  }
-                  placeholder="Main Stage Crowd"
-                  required
-                />
-              </label>
+            <div className="admin-gallery__modal-body">
+              {!editingItem && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    className="admin-gallery__file-input"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    onChange={handleFileChange}
+                    disabled={isSubmitting}
+                  />
 
-              <label>
-                Image URL
-                <input
-                  type="url"
-                  value={form.imageUrl}
-                  onChange={(event) =>
-                    setForm((currentForm) => ({
-                      ...currentForm,
-                      imageUrl: event.target.value,
-                    }))
-                  }
-                  placeholder="https://example.com/image.jpg"
-                  required
-                />
-              </label>
+                  <div
+                    className={`admin-gallery__drop-zone${
+                      isDragging
+                        ? " admin-gallery__drop-zone--dragging"
+                        : ""
+                    }${
+                      isSubmitting
+                        ? " admin-gallery__drop-zone--disabled"
+                        : ""
+                    }`}
+                    role="button"
+                    tabIndex={isSubmitting ? -1 : 0}
+                    onClick={() => {
+                      if (!isSubmitting) {
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (
+                        !isSubmitting &&
+                        (event.key === "Enter" || event.key === " ")
+                      ) {
+                        event.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <div className="admin-gallery__drop-icon">
+                      <Upload size={27} />
+                    </div>
 
-              <label>
-                Alt text
-                <input
-                  type="text"
-                  value={form.altText}
-                  onChange={(event) =>
-                    setForm((currentForm) => ({
-                      ...currentForm,
-                      altText: event.target.value,
-                    }))
-                  }
-                  placeholder="Festival crowd at the main stage"
-                />
-              </label>
+                    <h3>Drop festival images here</h3>
 
-              <label>
-                Description
-                <textarea
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm((currentForm) => ({
-                      ...currentForm,
-                      description: event.target.value,
-                    }))
-                  }
-                  placeholder="Describe this festival moment..."
-                  rows={4}
-                />
-              </label>
+                    <p>
+                      JPG, PNG, or WEBP · maximum 5 MB each · up
+                      to 10 files
+                    </p>
 
-              <label>
-                Status
-                <select
-                  value={form.status}
-                  onChange={(event) =>
-                    setForm((currentForm) => ({
-                      ...currentForm,
-                      status: event.target
-                        .value as GalleryStatus,
-                    }))
-                  }
-                >
-                  <option value="DRAFT">Draft</option>
-                  <option value="PUBLISHED">
-                    Published
-                  </option>
-                  <option value="ARCHIVED">Archived</option>
-                </select>
-              </label>
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <Images size={16} />
+                      Choose Images
+                    </button>
+                  </div>
 
-              <label>
-                Sort order
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={form.sortOrder}
-                  onChange={(event) =>
-                    setForm((currentForm) => ({
-                      ...currentForm,
-                      sortOrder: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+                  {selectedFilePreviews.length > 0 && (
+                    <div className="admin-gallery__pending">
+                      <div className="admin-gallery__pending-header">
+                        <div>
+                          <h3>Selected images</h3>
+                          <p>
+                            {selectedFilePreviews.length} of {MAX_FILES}
+                            {" "}files selected
+                          </p>
+                        </div>
 
-              <label>
-                <input
-                  type="checkbox"
-                  checked={form.isFeatured}
-                  onChange={(event) =>
-                    setForm((currentForm) => ({
-                      ...currentForm,
-                      isFeatured: event.target.checked,
-                    }))
-                  }
-                />
-                Featured image
-              </label>
-            </div>
+                        <button
+                          type="button"
+                          onClick={clearSelectedFiles}
+                          disabled={isSubmitting}
+                        >
+                          <Trash2 size={15} />
+                          Clear all
+                        </button>
+                      </div>
 
-            {form.imageUrl && (
-              <div className="admin-gallery__pending-item">
-                <img
-                  src={form.imageUrl}
-                  alt={form.altText || form.title || "Preview"}
-                />
+                      <div className="admin-gallery__pending-list">
+                        {selectedFilePreviews.map((preview) => (
+                          <article
+                            className="admin-gallery__pending-item"
+                            key={getFileKey(preview.file)}
+                          >
+                            <img
+                              src={preview.previewUrl}
+                              alt={preview.file.name}
+                            />
 
-                <div>
-                  <strong>Image preview</strong>
-                  <p>
-                    Confirm that the image URL loads correctly.
-                  </p>
+                            <div className="admin-gallery__file-details">
+                              <FileImage size={17} />
+
+                              <div>
+                                <strong className="admin-gallery__file-name-text">
+                                  {preview.file.name}
+                                </strong>
+                                <span className="admin-gallery__file-size">
+                                  {formatFileSize(preview.file.size)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="admin-gallery__remove-pending"
+                              onClick={() =>
+                                removeSelectedFile(preview.file)
+                              }
+                              disabled={isSubmitting}
+                              aria-label={`Remove ${preview.file.name}`}
+                            >
+                              <X size={17} />
+                            </button>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="admin-gallery__pending-fields admin-gallery__metadata-fields">
+                <label>
+                  Title
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(event) =>
+                      setForm((currentForm) => ({
+                        ...currentForm,
+                        title: event.target.value,
+                      }))
+                    }
+                    placeholder="Main Stage Crowd"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </label>
+
+                {editingItem && (
+                  <label>
+                    Image URL
+                    <input
+                      type="url"
+                      value={form.imageUrl}
+                      onChange={(event) =>
+                        setForm((currentForm) => ({
+                          ...currentForm,
+                          imageUrl: event.target.value,
+                        }))
+                      }
+                      placeholder="https://example.com/image.jpg"
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </label>
+                )}
+
+                <label>
+                  Alt text
+                  <input
+                    type="text"
+                    value={form.altText}
+                    onChange={(event) =>
+                      setForm((currentForm) => ({
+                        ...currentForm,
+                        altText: event.target.value,
+                      }))
+                    }
+                    placeholder="Festival crowd at the main stage"
+                    disabled={isSubmitting}
+                  />
+                </label>
+
+                <label className="admin-gallery__description-field">
+                  Description
+                  <textarea
+                    value={form.description}
+                    onChange={(event) =>
+                      setForm((currentForm) => ({
+                        ...currentForm,
+                        description: event.target.value,
+                      }))
+                    }
+                    placeholder="Describe this festival moment..."
+                    rows={4}
+                    disabled={isSubmitting}
+                  />
+                </label>
+
+                <label>
+                  Status
+                  <select
+                    value={form.status}
+                    onChange={(event) =>
+                      setForm((currentForm) => ({
+                        ...currentForm,
+                        status: event.target
+                          .value as GalleryStatus,
+                      }))
+                    }
+                    disabled={isSubmitting}
+                  >
+                    <option value="DRAFT">Draft</option>
+                    <option value="PUBLISHED">
+                      Published
+                    </option>
+                    <option value="ARCHIVED">Archived</option>
+                  </select>
+                </label>
+
+                <label>
+                  Sort order
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={form.sortOrder}
+                    onChange={(event) =>
+                      setForm((currentForm) => ({
+                        ...currentForm,
+                        sortOrder: event.target.value,
+                      }))
+                    }
+                    disabled={isSubmitting}
+                  />
+                </label>
+
+                <label className="admin-gallery__featured-field">
+                  <input
+                    type="checkbox"
+                    checked={form.isFeatured}
+                    onChange={(event) =>
+                      setForm((currentForm) => ({
+                        ...currentForm,
+                        isFeatured: event.target.checked,
+                      }))
+                    }
+                    disabled={isSubmitting}
+                  />
+                  Featured image
+                </label>
+              </div>
+
+              {editingItem && form.imageUrl && (
+                <div className="admin-gallery__edit-preview">
+                  <img
+                    src={form.imageUrl}
+                    alt={form.altText || form.title || "Preview"}
+                  />
+
+                  <div>
+                    <strong>Current image preview</strong>
+                    <p>
+                      Confirm that the existing image URL loads
+                      correctly.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {formError && (
-              <div className="admin-gallery__empty">
-                <p>{formError}</p>
-              </div>
-            )}
+              {formError && (
+                <div className="admin-gallery__upload-error">
+                  <X size={17} />
+                  <p>{formError}</p>
+                </div>
+              )}
+            </div>
 
             <div className="admin-gallery__modal-footer">
               <button
@@ -816,14 +1164,16 @@ function AdminGallery() {
                 {editingItem ? (
                   <Pencil size={17} />
                 ) : (
-                  <Plus size={17} />
+                  <Upload size={17} />
                 )}
 
                 {isSubmitting
-                  ? "Saving..."
+                  ? editingItem
+                    ? "Saving..."
+                    : "Uploading..."
                   : editingItem
                     ? "Save Changes"
-                    : "Create Image"}
+                    : "Upload Images"}
               </button>
             </div>
           </form>

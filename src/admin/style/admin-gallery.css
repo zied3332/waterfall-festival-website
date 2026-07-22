@@ -1509,3 +1509,315 @@
     grid-template-columns: 1fr;
   }
 }
+/* =========================
+   Multiple Upload Additions
+========================= */
+
+.admin-gallery__modal-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 24px;
+}
+
+.admin-gallery__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.admin-gallery__drop-zone {
+  cursor: pointer;
+}
+
+.admin-gallery__drop-zone:focus-visible {
+  outline: none;
+  border-color: rgba(34, 211, 238, 0.7);
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.09);
+}
+
+.admin-gallery__drop-zone--disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.admin-gallery__drop-zone--disabled > button {
+  cursor: not-allowed;
+}
+
+.admin-gallery__pending {
+  overflow: visible;
+}
+
+.admin-gallery__pending-header > button:disabled,
+.admin-gallery__remove-pending:disabled,
+.admin-gallery__modal-close:disabled,
+.admin-gallery__cancel:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.admin-gallery__file-details {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  color: #22d3ee;
+}
+
+.admin-gallery__file-details > svg {
+  flex-shrink: 0;
+}
+
+.admin-gallery__file-details > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admin-gallery__file-name-text {
+  overflow: hidden;
+
+  color: rgba(255, 255, 255, 0.82);
+
+  font-size: 0.73rem;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.admin-gallery__file-size {
+  color: rgba(255, 255, 255, 0.35);
+
+  font-size: 0.64rem;
+  font-weight: 650;
+}
+
+.admin-gallery__metadata-fields {
+  margin: 0 26px;
+}
+
+.admin-gallery__pending-fields textarea {
+  width: 100%;
+  min-height: 104px;
+  resize: vertical;
+
+  padding: 11px;
+
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 10px;
+  outline: none;
+
+  background: #141622;
+  color: #ffffff;
+
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.admin-gallery__pending-fields input:focus,
+.admin-gallery__pending-fields select:focus,
+.admin-gallery__pending-fields textarea:focus {
+  border-color: rgba(34, 211, 238, 0.32);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.055);
+}
+
+.admin-gallery__pending-fields input:disabled,
+.admin-gallery__pending-fields select:disabled,
+.admin-gallery__pending-fields textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.admin-gallery__description-field {
+  grid-column: 1 / -1;
+}
+
+.admin-gallery__featured-field {
+  align-self: end;
+  min-height: 38px;
+
+  display: inline-flex !important;
+  align-items: center;
+  flex-direction: row !important;
+  gap: 9px !important;
+
+  padding: 0 2px;
+
+  color: rgba(255, 255, 255, 0.68) !important;
+}
+
+.admin-gallery__featured-field input {
+  width: 16px;
+  min-height: 16px;
+  height: 16px;
+  margin: 0;
+
+  accent-color: #22d3ee;
+}
+
+.admin-gallery__edit-preview {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+
+  margin: 18px 26px 0;
+  padding: 13px;
+
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 15px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.admin-gallery__edit-preview img {
+  width: 120px;
+  height: 88px;
+
+  border-radius: 11px;
+
+  object-fit: cover;
+}
+
+.admin-gallery__edit-preview strong {
+  color: rgba(255, 255, 255, 0.86);
+
+  font-size: 0.76rem;
+}
+
+.admin-gallery__edit-preview p {
+  margin: 6px 0 0;
+
+  color: rgba(255, 255, 255, 0.36);
+
+  font-size: 0.67rem;
+  line-height: 1.55;
+}
+
+.admin-gallery__upload-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin: 18px 26px 0;
+  padding: 12px 14px;
+
+  border: 1px solid rgba(251, 113, 133, 0.2);
+  border-radius: 12px;
+
+  background: rgba(251, 113, 133, 0.075);
+  color: #fb7185;
+}
+
+.admin-gallery__upload-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.admin-gallery__upload-error p {
+  margin: 0;
+
+  color: #fda4af;
+
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.admin-gallery__modal-footer {
+  position: sticky;
+  z-index: 3;
+  bottom: 0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 850px) {
+  .admin-gallery__metadata-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-gallery__description-field {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 650px) {
+  .admin-gallery__metadata-fields,
+  .admin-gallery__edit-preview,
+  .admin-gallery__upload-error {
+    margin-right: 18px;
+    margin-left: 18px;
+  }
+
+  .admin-gallery__pending-header {
+    align-items: flex-start;
+  }
+
+  .admin-gallery__pending-item {
+    grid-template-columns: 76px minmax(0, 1fr) auto;
+  }
+
+  .admin-gallery__pending-item > img {
+    width: 76px;
+    height: 70px;
+  }
+}
+
+@media (max-width: 440px) {
+  .admin-gallery__pending-header {
+    flex-direction: column;
+  }
+
+  .admin-gallery__pending-header > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-gallery__pending-item {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-gallery__pending-item > img {
+    width: 100%;
+    height: 170px;
+  }
+
+  .admin-gallery__file-details {
+    align-items: flex-start;
+  }
+
+  .admin-gallery__file-name-text {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-gallery__remove-pending {
+    width: 100%;
+  }
+
+  .admin-gallery__metadata-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-gallery__description-field {
+    grid-column: auto;
+  }
+
+  .admin-gallery__edit-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-gallery__edit-preview img {
+    width: 100%;
+    height: 180px;
+  }
+}
