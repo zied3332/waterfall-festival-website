@@ -67,4 +67,18 @@
   color: #b91c1c;
   background: #fef2f2;
   border-color: #fecaca;
+}.events-section__message {
+  margin-top: 40px;
+  padding: 26px;
+  text-align: center;
+  color: #6b7280;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+}
+
+.events-section__message--error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
 }
