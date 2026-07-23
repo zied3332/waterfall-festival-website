@@ -1,13 +1,14 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
+  Bell,
   CalendarDays,
-  Ticket,
-  Images,
   CircleHelp,
+  Images,
+  LayoutDashboard,
+  LogOut,
   MessageSquare,
   Settings,
-  LogOut,
+  Ticket,
   UserRound,
 } from "lucide-react";
 
@@ -36,6 +37,13 @@ function AdminLayout() {
     navigate("/admin/login", {
       replace: true,
     });
+  }
+
+  function handleNotificationClick(): void {
+    /*
+     * The notification dropdown will be connected here
+     * after creating the notification service and component.
+     */
   }
 
   return (
@@ -86,12 +94,31 @@ function AdminLayout() {
 
       <div className="admin-main">
         <header className="admin-topbar">
-          <div>
+          <div className="admin-topbar-heading">
             <h1>Dashboard</h1>
             <p>Manage Waterfall Festival website content.</p>
           </div>
 
           <div className="admin-topbar-actions">
+            <div className="admin-notification-wrapper">
+              <button
+                className="admin-notification-button"
+                type="button"
+                aria-label="Open notifications"
+                title="Notifications"
+                onClick={handleNotificationClick}
+              >
+                <Bell size={20} />
+
+                <span
+                  className="admin-notification-badge"
+                  aria-label="0 unread notifications"
+                >
+                  0
+                </span>
+              </button>
+            </div>
+
             <div className="admin-profile">
               <span className="admin-profile-icon">
                 <UserRound size={18} />

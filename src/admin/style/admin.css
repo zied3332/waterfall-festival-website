@@ -296,3 +296,73 @@
     padding: 0 11px;
   }
 }
+/* =========================
+   Notification Bell
+========================= */
+
+.admin-topbar-heading {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-notification-wrapper {
+  position: relative;
+}
+
+.admin-notification-button {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+
+  cursor: pointer;
+
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.admin-notification-button:hover {
+  transform: translateY(-2px);
+
+  background: rgba(124, 58, 237, 0.18);
+
+  border-color: rgba(124, 58, 237, 0.45);
+}
+
+.admin-notification-badge {
+  position: absolute;
+
+  top: -5px;
+  right: -5px;
+
+  min-width: 20px;
+  height: 20px;
+
+  padding: 0 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: #ef4444;
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  border: 2px solid #080814;
+}
