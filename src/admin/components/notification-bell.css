@@ -1,0 +1,536 @@
+/* =========================
+   Notification Wrapper
+========================= */
+
+.admin-notification-wrapper {
+  position: relative;
+  z-index: 5000;
+
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  opacity: 1;
+}
+
+/* =========================
+   Bell Button
+========================= */
+
+.admin-notification-button {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+  padding: 0;
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+
+  background-color: #11131f;
+  background-image: none;
+
+  color: #f8fafc;
+
+  font: inherit;
+
+  cursor: pointer;
+
+  opacity: 1;
+  appearance: none;
+
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.admin-notification-button:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(34, 211, 238, 0.5);
+  background-color: #191d2c;
+}
+
+.admin-notification-button:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 3px;
+}
+
+/* =========================
+   Unread Badge
+========================= */
+
+.admin-notification-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+
+  border: 2px solid #11131f;
+  border-radius: 999px;
+
+  background-color: #ef4444;
+  background-image: none;
+
+  color: #ffffff;
+
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+
+  opacity: 1;
+}
+
+/* =========================
+   Dropdown
+========================= */
+
+.admin-notification-dropdown {
+  position: absolute;
+  top: calc(100% + 16px);
+  right: 0;
+  z-index: 99999;
+
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  max-height: 510px;
+
+  overflow: hidden;
+
+  border: 1px solid #252a3a;
+  border-radius: 18px;
+
+  background: #0b0d16 !important;
+  background-color: #0b0d16 !important;
+  background-image: none !important;
+
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.85),
+    0 12px 30px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  opacity: 1 !important;
+
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  isolation: isolate;
+}
+
+/*
+  This creates an extra solid layer behind all dropdown content.
+  It prevents parent glass effects from showing through.
+*/
+
+.admin-notification-dropdown::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  border-radius: inherit;
+
+  background: #0b0d16 !important;
+  opacity: 1 !important;
+
+  pointer-events: none;
+}
+
+/* Dropdown arrow */
+
+.admin-notification-dropdown::before {
+  content: "";
+
+  position: absolute;
+  top: -8px;
+  right: 16px;
+  z-index: 4;
+
+  width: 15px;
+  height: 15px;
+
+  border-top: 1px solid #252a3a;
+  border-left: 1px solid #252a3a;
+
+  background: #111420 !important;
+  background-color: #111420 !important;
+
+  transform: rotate(45deg);
+
+  opacity: 1 !important;
+}
+
+/* =========================
+   Dropdown Header
+========================= */
+
+.admin-notification-dropdown-header {
+  position: relative;
+  z-index: 3;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  min-height: 66px;
+  padding: 16px 20px;
+
+  border-bottom: 1px solid #252a3a;
+
+  background: #111420 !important;
+  background-color: #111420 !important;
+  background-image: none !important;
+
+  opacity: 1 !important;
+
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.admin-notification-dropdown-header h3 {
+  margin: 0;
+
+  color: #f8fafc;
+
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.admin-notification-dropdown-header span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  min-height: 28px;
+  padding: 0 10px;
+
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  border-radius: 999px;
+
+  background-color: #102832;
+  background-image: none;
+
+  color: #67e8f9;
+
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+
+  opacity: 1;
+}
+
+/* =========================
+   Notification List
+========================= */
+
+.admin-notification-list {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+
+  max-height: 430px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  background: #0b0d16 !important;
+  background-color: #0b0d16 !important;
+  background-image: none !important;
+
+  opacity: 1 !important;
+
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* =========================
+   Notification Item
+========================= */
+
+.admin-notification-item {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+
+  width: 100%;
+  min-height: 112px;
+
+  margin: 0;
+  padding: 17px 20px 17px 24px;
+
+  border: 0;
+  border-bottom: 1px solid #202432;
+  border-radius: 0;
+
+  background: #0b0d16 !important;
+  background-color: #0b0d16 !important;
+  background-image: none !important;
+
+  color: #f8fafc;
+
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  opacity: 1 !important;
+  appearance: none;
+
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  transition:
+    background-color 160ms ease,
+    padding-left 160ms ease;
+}
+
+.admin-notification-item:last-child {
+  border-bottom: 0;
+}
+
+.admin-notification-item:hover {
+  padding-left: 28px;
+
+  background: #151927 !important;
+  background-color: #151927 !important;
+}
+
+.admin-notification-item:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: -3px;
+}
+
+/* =========================
+   Unread Item
+========================= */
+
+.admin-notification-item--unread {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(34, 211, 238, 0.13) 0%,
+      rgba(34, 211, 238, 0.04) 55%,
+      transparent 100%
+    ),
+    #101722 !important;
+
+  background-color: #101722 !important;
+}
+
+.admin-notification-item--unread::before {
+  content: "";
+
+  position: absolute;
+  top: 22px;
+  left: 10px;
+
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background-color: #22d3ee;
+
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.9);
+}
+
+.admin-notification-item--unread:hover {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(34, 211, 238, 0.19) 0%,
+      rgba(124, 58, 237, 0.07) 65%,
+      transparent 100%
+    ),
+    #171c2a !important;
+
+  background-color: #171c2a !important;
+}
+
+/* =========================
+   Notification Text
+========================= */
+
+.admin-notification-item strong {
+  display: block;
+  width: 100%;
+
+  margin: 0 0 7px;
+
+  color: #f8fafc;
+
+  font-size: 0.91rem;
+  font-weight: 800;
+  line-height: 1.35;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-notification-item p {
+  display: block;
+  width: 100%;
+
+  margin: 0 0 10px;
+
+  color: #bec8d8;
+
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.55;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-notification-item small {
+  display: block;
+  width: 100%;
+
+  margin: 0;
+
+  color: #738095;
+
+  font-size: 0.69rem;
+  font-weight: 500;
+  line-height: 1.35;
+
+  white-space: normal;
+}
+
+/* =========================
+   Empty / Loading State
+========================= */
+
+.admin-notification-empty {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 160px;
+  padding: 32px 20px;
+
+  background: #0b0d16 !important;
+  background-color: #0b0d16 !important;
+  background-image: none !important;
+
+  color: #94a3b8;
+
+  font-size: 0.86rem;
+  text-align: center;
+
+  opacity: 1 !important;
+
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* =========================
+   Scrollbar
+========================= */
+
+.admin-notification-list {
+  scrollbar-width: thin;
+  scrollbar-color: #33394d #0b0d16;
+}
+
+.admin-notification-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.admin-notification-list::-webkit-scrollbar-track {
+  background: #0b0d16;
+}
+
+.admin-notification-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background-color: #33394d;
+}
+
+.admin-notification-list::-webkit-scrollbar-thumb:hover {
+  background-color: #48516b;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 700px) {
+  .admin-notification-dropdown {
+    position: fixed;
+
+    top: 90px;
+    right: 16px;
+    left: 16px;
+
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 110px);
+  }
+
+  .admin-notification-dropdown::before {
+    display: none;
+  }
+
+  .admin-notification-list {
+    max-height: calc(100vh - 180px);
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-notification-dropdown {
+    top: 82px;
+    right: 10px;
+    left: 10px;
+
+    border-radius: 14px;
+  }
+
+  .admin-notification-dropdown-header {
+    min-height: 60px;
+    padding: 14px 16px;
+  }
+
+  .admin-notification-dropdown-header h3 {
+    font-size: 0.94rem;
+  }
+
+  .admin-notification-item {
+    min-height: 104px;
+    padding: 15px 16px 15px 22px;
+  }
+
+  .admin-notification-item:hover {
+    padding-left: 24px;
+  }
+}

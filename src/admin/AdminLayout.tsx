@@ -1,6 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  Bell,
   CalendarDays,
   CircleHelp,
   Images,
@@ -11,6 +10,10 @@ import {
   Ticket,
   UserRound,
 } from "lucide-react";
+
+import NotificationBell from "./components/NotificationBell";
+
+import type { AdminNotification } from "../services/notifications.service";
 
 import {
   clearAuthSession,
@@ -39,11 +42,14 @@ function AdminLayout() {
     });
   }
 
-  function handleNotificationClick(): void {
-    /*
-     * The notification dropdown will be connected here
-     * after creating the notification service and component.
-     */
+  function handleNotificationClick(
+    notification: AdminNotification,
+  ): void {
+    console.log(notification);
+
+    if (notification.link) {
+      navigate(notification.link);
+    }
   }
 
   return (
@@ -100,24 +106,9 @@ function AdminLayout() {
           </div>
 
           <div className="admin-topbar-actions">
-            <div className="admin-notification-wrapper">
-              <button
-                className="admin-notification-button"
-                type="button"
-                aria-label="Open notifications"
-                title="Notifications"
-                onClick={handleNotificationClick}
-              >
-                <Bell size={20} />
-
-                <span
-                  className="admin-notification-badge"
-                  aria-label="0 unread notifications"
-                >
-                  0
-                </span>
-              </button>
-            </div>
+            <NotificationBell
+              onNotificationClick={handleNotificationClick}
+            />
 
             <div className="admin-profile">
               <span className="admin-profile-icon">
