@@ -1,10 +1,24 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
+
   background:
-    radial-gradient(circle at 15% 10%, rgba(34, 211, 238, 0.12), transparent 28%),
-    radial-gradient(circle at 85% 15%, rgba(124, 58, 237, 0.15), transparent 32%),
-    linear-gradient(180deg, #080814 0%, #05050d 100%);
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(34, 211, 238, 0.12),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(124, 58, 237, 0.15),
+      transparent 32%
+    ),
+    linear-gradient(
+      180deg,
+      #080814 0%,
+      #05050d 100%
+    );
+
   color: #ffffff;
 }
 
@@ -13,30 +27,38 @@
 ========================= */
 
 .admin-sidebar {
-  width: 270px;
-  min-height: 100vh;
-  background: #04040b;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 28px 20px;
   position: sticky;
   top: 0;
+
+  width: 270px;
+  min-height: 100vh;
+  padding: 28px 20px;
+
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+
+  background: #04040b;
 }
 
 .admin-logo {
   padding: 0 10px 28px;
+
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .admin-logo h2 {
   margin: 0;
+
+  color: #ffffff;
+
   font-size: 28px;
   font-weight: 900;
-  color: #ffffff;
 }
 
 .admin-logo p {
   margin-top: 8px;
+
   color: rgba(255, 255, 255, 0.55);
+
   font-size: 14px;
 }
 
@@ -45,9 +67,10 @@
 ========================= */
 
 .admin-nav {
-  margin-top: 28px;
   display: grid;
   gap: 10px;
+
+  margin-top: 28px;
 }
 
 .admin-nav a {
@@ -60,8 +83,9 @@
   border-radius: 14px;
 
   color: rgba(255, 255, 255, 0.75);
-  text-decoration: none;
+
   font-weight: 700;
+  text-decoration: none;
 
   transition:
     background 0.25s ease,
@@ -70,15 +94,25 @@
 }
 
 .admin-nav a:hover {
-  background: rgba(124, 58, 237, 0.25);
-  color: white;
   transform: translateX(4px);
+
+  background: rgba(124, 58, 237, 0.25);
+
+  color: #ffffff;
 }
 
 .admin-nav a.active {
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
-  color: white;
-  box-shadow: 0 12px 30px rgba(124, 58, 237, 0.35);
+  background:
+    linear-gradient(
+      135deg,
+      #7c3aed,
+      #9333ea
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 12px 30px rgba(124, 58, 237, 0.35);
 }
 
 /* =========================
@@ -86,10 +120,15 @@
 ========================= */
 
 .admin-main {
-  flex: 1;
-  min-width: 0;
+  position: relative;
+
   display: flex;
+  flex: 1;
   flex-direction: column;
+
+  min-width: 0;
+
+  overflow: visible;
 }
 
 /* =========================
@@ -97,50 +136,185 @@
 ========================= */
 
 .admin-topbar {
-  height: 90px;
+  position: relative;
+  z-index: 1000;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
+  height: 90px;
   padding: 0 36px;
 
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(18px);
+  overflow: visible;
 
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(255, 255, 255, 0.03);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.admin-topbar-heading {
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-topbar h1 {
   margin: 0;
+
+  color: #ffffff;
+
   font-size: 28px;
   font-weight: 900;
-  color: #ffffff;
 }
 
 .admin-topbar p {
   margin-top: 5px;
+
   color: rgba(255, 255, 255, 0.58);
 }
 
+/* =========================
+   Topbar Actions
+========================= */
+
+.admin-topbar-actions {
+  position: relative;
+  z-index: 1100;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  overflow: visible;
+}
+
+/* =========================
+   Profile
+========================= */
+
 .admin-profile {
-  border: none;
-  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 
   padding: 12px 22px;
 
-  background: linear-gradient(135deg, #22d3ee, #7c3aed);
+  border: 0;
+  border-radius: 999px;
 
-  color: white;
+  background:
+    linear-gradient(
+      135deg,
+      #22d3ee,
+      #7c3aed
+    );
+
+  color: #ffffff;
+
   font-weight: 800;
 
   cursor: pointer;
 
-  transition: transform .2s ease;
+  transition: transform 0.2s ease;
 }
 
 .admin-profile:hover {
   transform: translateY(-2px);
+}
+
+.admin-profile-icon {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 50%;
+
+  background: rgba(6, 182, 212, 0.12);
+
+  color: #67e8f9;
+}
+
+.admin-profile-info {
+  display: flex;
+  flex-direction: column;
+
+  text-align: left;
+}
+
+.admin-profile-name {
+  color: #f8fafc;
+
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.admin-profile-role {
+  color: #94a3b8;
+
+  font-size: 0.72rem;
+}
+
+/* =========================
+   Logout Button
+========================= */
+
+.admin-logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 40px;
+  padding: 0 14px;
+
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 10px;
+
+  background: rgba(127, 29, 29, 0.12);
+
+  color: #fecaca;
+
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.admin-logout-button:hover {
+  transform: translateY(-1px);
+
+  border-color: rgba(248, 113, 113, 0.45);
+
+  background: rgba(127, 29, 29, 0.25);
+}
+
+/* =========================
+   Notification Placement
+========================= */
+
+/*
+  Notification visuals stay inside notification-bell.css.
+  This file only controls positioning and stacking.
+*/
+
+.admin-notification-wrapper {
+  position: relative;
+  z-index: 1200;
+
+  flex-shrink: 0;
+
+  overflow: visible;
 }
 
 /* =========================
@@ -148,7 +322,11 @@
 ========================= */
 
 .admin-content {
+  position: relative;
+  z-index: 1;
+
   flex: 1;
+
   padding: 40px;
 }
 
@@ -161,24 +339,25 @@
 }
 
 .admin-content::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,.12);
   border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* =========================
-   Responsive
+   Responsive - Tablet
 ========================= */
 
 @media (max-width: 900px) {
-
   .admin-layout {
     flex-direction: column;
   }
 
   .admin-sidebar {
+    position: static;
+
     width: 100%;
     min-height: auto;
-    position: static;
   }
 
   .admin-nav {
@@ -186,11 +365,12 @@
   }
 
   .admin-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+
     height: auto;
     padding: 24px;
-    gap: 16px;
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .admin-content {
@@ -198,8 +378,31 @@
   }
 }
 
-@media (max-width: 600px) {
+/* =========================
+   Responsive - Small Tablet
+========================= */
 
+@media (max-width: 700px) {
+  .admin-topbar-actions {
+    width: 100%;
+
+    justify-content: space-between;
+  }
+
+  .admin-profile-role {
+    display: none;
+  }
+
+  .admin-logout-button {
+    padding: 0 11px;
+  }
+}
+
+/* =========================
+   Responsive - Mobile
+========================= */
+
+@media (max-width: 600px) {
   .admin-nav {
     grid-template-columns: 1fr;
   }
@@ -215,154 +418,4 @@
   .admin-topbar h1 {
     font-size: 24px;
   }
-}
-.admin-topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.admin-profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.admin-profile-icon {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border-radius: 50%;
-  color: #67e8f9;
-  background: rgba(6, 182, 212, 0.12);
-}
-
-.admin-profile-info {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.admin-profile-name {
-  color: #f8fafc;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.admin-profile-role {
-  color: #94a3b8;
-  font-size: 0.72rem;
-}
-
-.admin-logout-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid rgba(248, 113, 113, 0.25);
-  border-radius: 10px;
-  color: #fecaca;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: rgba(127, 29, 29, 0.12);
-  transition:
-    background 160ms ease,
-    border-color 160ms ease,
-    transform 160ms ease;
-}
-
-.admin-logout-button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(248, 113, 113, 0.45);
-  background: rgba(127, 29, 29, 0.25);
-}
-
-@media (max-width: 700px) {
-  .admin-topbar-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .admin-profile-role {
-    display: none;
-  }
-
-  .admin-logout-button {
-    padding: 0 11px;
-  }
-}
-/* =========================
-   Notification Bell
-========================= */
-
-.admin-topbar-heading {
-  display: flex;
-  flex-direction: column;
-}
-
-.admin-notification-wrapper {
-  position: relative;
-}
-
-.admin-notification-button {
-  position: relative;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 46px;
-  height: 46px;
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-
-  background: rgba(255, 255, 255, 0.05);
-  color: #f8fafc;
-
-  cursor: pointer;
-
-  transition:
-    background 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease;
-}
-
-.admin-notification-button:hover {
-  transform: translateY(-2px);
-
-  background: rgba(124, 58, 237, 0.18);
-
-  border-color: rgba(124, 58, 237, 0.45);
-}
-
-.admin-notification-badge {
-  position: absolute;
-
-  top: -5px;
-  right: -5px;
-
-  min-width: 20px;
-  height: 20px;
-
-  padding: 0 5px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 999px;
-
-  background: #ef4444;
-  color: #ffffff;
-
-  font-size: 11px;
-  font-weight: 700;
-
-  border: 2px solid #080814;
 }
