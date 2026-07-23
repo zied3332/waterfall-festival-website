@@ -12,10 +12,13 @@ async function request<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   const token = getAccessToken();
-
   const headers = new Headers(options.headers);
 
-  headers.set("Content-Type", "application/json");
+  const isFormData = options.body instanceof FormData;
+
+  if (!isFormData && options.body !== undefined) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -32,20 +35,45 @@ async function request<T>(
 
   if (contentType?.includes("application/json")) {
     data = await response.json();
+  } else if (response.status !== 204) {
+    data = await response.text();
   }
 
   if (!response.ok) {
-    const message =
+    let message = "Request failed.";
+
+    if (
       typeof data === "object" &&
       data !== null &&
       "message" in data
-        ? (data as { message?: string }).message
-        : "Request failed.";
+    ) {
+      const responseMessage = (
+        data as {
+          message?: string | string[];
+        }
+      ).message;
+
+      if (Array.isArray(responseMessage)) {
+        message = responseMessage.join(" ");
+      } else if (responseMessage) {
+        message = responseMessage;
+      }
+    } else if (typeof data === "string" && data.trim()) {
+      message = data;
+    }
 
     throw new Error(message);
   }
 
   return data as T;
+}
+
+function prepareBody(body: unknown): BodyInit {
+  if (body instanceof FormData) {
+    return body;
+  }
+
+  return JSON.stringify(body);
 }
 
 export const api = {
@@ -56,14 +84,14 @@ export const api = {
   post<T>(endpoint: string, body: unknown) {
     return request<T>(endpoint, {
       method: "POST",
-      body: JSON.stringify(body),
+      body: prepareBody(body),
     });
   },
 
   patch<T>(endpoint: string, body: unknown) {
     return request<T>(endpoint, {
       method: "PATCH",
-      body: JSON.stringify(body),
+      body: prepareBody(body),
     });
   },
 
