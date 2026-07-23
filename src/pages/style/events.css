@@ -52,4 +52,19 @@
   .events-title {
     font-size: 42px;
   }
+}.events-page__message {
+  max-width: 700px;
+  margin: 48px auto 0;
+  padding: 28px;
+  color: #6b7280;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+}
+
+.events-page__message--error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
 }
