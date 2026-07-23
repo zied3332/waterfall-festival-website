@@ -1,4 +1,9 @@
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -11,223 +16,295 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+
+import { faqService } from "../../services/faq.service";
+import type {
+  CreateFaqInput,
+  Faq,
+  FaqStatus,
+  UpdateFaqInput,
+} from "../../types/faq";
+
 import "../style/admin-faq.css";
 
-type FAQStatus = "Published" | "Draft";
+type StatusFilter = "ALL" | FaqStatus;
 
-type FAQItem = {
-  id: number;
+type FaqFormData = {
   question: string;
   answer: string;
   category: string;
-  status: FAQStatus;
+  status: FaqStatus;
+  sortOrder: string;
 };
 
-type FAQFormData = {
-  question: string;
-  answer: string;
-  category: string;
-  status: FAQStatus;
-};
-
-const initialFAQs: FAQItem[] = [
-  {
-    id: 1,
-    question: "What should I bring to the festival?",
-    answer:
-      "Bring your ticket, a valid ID, comfortable clothing, sunscreen, cash or a payment card, and a fully charged phone.",
-    category: "General",
-    status: "Published",
-  },
-  {
-    id: 2,
-    question: "Can I buy tickets at the entrance?",
-    answer:
-      "Tickets may be available at the entrance, but purchasing online is strongly recommended because some events can sell out.",
-    category: "Tickets",
-    status: "Published",
-  },
-  {
-    id: 3,
-    question: "Is parking available near the venue?",
-    answer:
-      "Parking areas are available near the venue. Availability may be limited during busy festival nights.",
-    category: "Venue",
-    status: "Published",
-  },
-  {
-    id: 4,
-    question: "What items are prohibited?",
-    answer:
-      "Outside alcohol, illegal substances, weapons, dangerous objects, and other restricted items are not permitted inside the venue.",
-    category: "Rules",
-    status: "Published",
-  },
-  {
-    id: 5,
-    question: "Is the festival suitable for children?",
-    answer:
-      "Age restrictions may vary depending on the event. Visitors should review the event details before purchasing tickets.",
-    category: "General",
-    status: "Draft",
-  },
-];
-
-const emptyForm: FAQFormData = {
+const emptyForm: FaqFormData = {
   question: "",
   answer: "",
   category: "General",
-  status: "Draft",
+  status: "DRAFT",
+  sortOrder: "0",
+};
+
+const statusLabels: Record<FaqStatus, string> = {
+  DRAFT: "Draft",
+  PUBLISHED: "Published",
+  ARCHIVED: "Archived",
 };
 
 function AdminFAQ() {
-  const [faqs, setFaqs] = useState<FAQItem[]>(initialFAQs);
+  const [faqs, setFaqs] = useState<Faq[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "All" | FAQStatus
-  >("All");
-  const [expandedId, setExpandedId] = useState<number | null>(
-    initialFAQs[0]?.id ?? null,
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingFAQId, setEditingFAQId] = useState<number | null>(
-    null,
-  );
+  const [statusFilter, setStatusFilter] =
+    useState<StatusFilter>("ALL");
+  const [expandedId, setExpandedId] =
+    useState<number | null>(null);
+  const [editingFaqId, setEditingFaqId] =
+    useState<number | null>(null);
   const [formData, setFormData] =
-    useState<FAQFormData>(emptyForm);
+    useState<FaqFormData>(emptyForm);
 
-  const filteredFAQs = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
+  const [isModalOpen, setIsModalOpen] =
+    useState(false);
+  const [isLoading, setIsLoading] =
+    useState(true);
+  const [isSaving, setIsSaving] =
+    useState(false);
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const loadFaqs = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const data = await faqService.getAll();
+      setFaqs(data);
+
+      setExpandedId((currentId) => {
+        if (
+          currentId !== null &&
+          data.some((faq) => faq.id === currentId)
+        ) {
+          return currentId;
+        }
+
+        return data[0]?.id ?? null;
+      });
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Could not load FAQs.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadFaqs();
+  }, []);
+
+  const filteredFaqs = useMemo(() => {
+    const search = searchTerm.trim().toLowerCase();
 
     return faqs.filter((faq) => {
       const matchesSearch =
-        faq.question.toLowerCase().includes(normalizedSearch) ||
-        faq.answer.toLowerCase().includes(normalizedSearch) ||
-        faq.category.toLowerCase().includes(normalizedSearch);
+        !search ||
+        faq.question.toLowerCase().includes(search) ||
+        faq.answer.toLowerCase().includes(search) ||
+        faq.category?.toLowerCase().includes(search);
 
       const matchesStatus =
-        statusFilter === "All" || faq.status === statusFilter;
+        statusFilter === "ALL" ||
+        faq.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
   }, [faqs, searchTerm, statusFilter]);
 
   const publishedCount = faqs.filter(
-    (faq) => faq.status === "Published",
+    (faq) => faq.status === "PUBLISHED",
   ).length;
 
   const draftCount = faqs.filter(
-    (faq) => faq.status === "Draft",
+    (faq) => faq.status === "DRAFT",
   ).length;
 
   const openCreateModal = () => {
-    setEditingFAQId(null);
+    setEditingFaqId(null);
     setFormData(emptyForm);
+    setError(null);
     setIsModalOpen(true);
   };
 
-  const openEditModal = (faq: FAQItem) => {
-    setEditingFAQId(faq.id);
+  const openEditModal = (faq: Faq) => {
+    setEditingFaqId(faq.id);
     setFormData({
       question: faq.question,
       answer: faq.answer,
-      category: faq.category,
+      category: faq.category ?? "",
       status: faq.status,
+      sortOrder: String(faq.sortOrder),
     });
+    setError(null);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
+    if (isSaving) {
+      return;
+    }
+
     setIsModalOpen(false);
-    setEditingFAQId(null);
+    setEditingFaqId(null);
     setFormData(emptyForm);
   };
 
-  const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>,
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
     const question = formData.question.trim();
     const answer = formData.answer.trim();
+    const category = formData.category.trim();
+    const sortOrder = Number(formData.sortOrder);
 
     if (!question || !answer) {
+      setError("Question and answer are required.");
       return;
     }
 
-    if (editingFAQId !== null) {
-      setFaqs((currentFAQs) =>
-        currentFAQs.map((faq) =>
-          faq.id === editingFAQId
-            ? {
-                ...faq,
-                question,
-                answer,
-                category: formData.category,
-                status: formData.status,
-              }
-            : faq,
-        ),
+    if (
+      !Number.isInteger(sortOrder) ||
+      sortOrder < 0
+    ) {
+      setError(
+        "Sort order must be a non-negative integer.",
       );
-    } else {
-      const newFAQ: FAQItem = {
-        id: Date.now(),
-        question,
-        answer,
-        category: formData.category,
-        status: formData.status,
-      };
-
-      setFaqs((currentFAQs) => [newFAQ, ...currentFAQs]);
-      setExpandedId(newFAQ.id);
+      return;
     }
 
-    closeModal();
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      const data: CreateFaqInput = {
+        question,
+        answer,
+        category: category || undefined,
+        status: formData.status,
+        sortOrder,
+      };
+
+      if (editingFaqId !== null) {
+        const updatedFaq = await faqService.update(
+          editingFaqId,
+          data,
+        );
+
+        setFaqs((currentFaqs) =>
+          currentFaqs.map((faq) =>
+            faq.id === updatedFaq.id
+              ? updatedFaq
+              : faq,
+          ),
+        );
+      } else {
+        const createdFaq =
+          await faqService.create(data);
+
+        setFaqs((currentFaqs) => [
+          createdFaq,
+          ...currentFaqs,
+        ]);
+        setExpandedId(createdFaq.id);
+      }
+
+      setIsModalOpen(false);
+      setEditingFaqId(null);
+      setFormData(emptyForm);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Could not save the FAQ.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDelete = (faqId: number) => {
+  const handleDelete = async (faq: Faq) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this FAQ?",
+      `Delete "${faq.question}"?`,
     );
 
     if (!confirmed) {
       return;
     }
 
-    setFaqs((currentFAQs) =>
-      currentFAQs.filter((faq) => faq.id !== faqId),
-    );
+    try {
+      setError(null);
+      await faqService.remove(faq.id);
 
-    if (expandedId === faqId) {
-      setExpandedId(null);
+      setFaqs((currentFaqs) =>
+        currentFaqs.filter(
+          (currentFaq) =>
+            currentFaq.id !== faq.id,
+        ),
+      );
+
+      if (expandedId === faq.id) {
+        setExpandedId(null);
+      }
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Could not delete the FAQ.",
+      );
     }
   };
 
-  const toggleStatus = (faqId: number) => {
-    setFaqs((currentFAQs) =>
-      currentFAQs.map((faq) =>
-        faq.id === faqId
-          ? {
-              ...faq,
-              status:
-                faq.status === "Published"
-                  ? "Draft"
-                  : "Published",
-            }
-          : faq,
-      ),
-    );
-  };
+  const toggleStatus = async (faq: Faq) => {
+    const nextStatus: FaqStatus =
+      faq.status === "PUBLISHED"
+        ? "DRAFT"
+        : "PUBLISHED";
 
-  const toggleExpanded = (faqId: number) => {
-    setExpandedId((currentId) =>
-      currentId === faqId ? null : faqId,
-    );
+    const data: UpdateFaqInput = {
+      status: nextStatus,
+    };
+
+    try {
+      setError(null);
+
+      const updatedFaq = await faqService.update(
+        faq.id,
+        data,
+      );
+
+      setFaqs((currentFaqs) =>
+        currentFaqs.map((currentFaq) =>
+          currentFaq.id === updatedFaq.id
+            ? updatedFaq
+            : currentFaq,
+        ),
+      );
+    } catch (statusError) {
+      setError(
+        statusError instanceof Error
+          ? statusError.message
+          : "Could not update the FAQ status.",
+      );
+    }
   };
 
   return (
     <section className="admin-faq">
-      <div className="admin-faq__header">
+      <header className="admin-faq__header">
         <div>
           <span className="admin-faq__eyebrow">
             FAQ Management
@@ -236,8 +313,8 @@ function AdminFAQ() {
           <h1>Frequently Asked Questions</h1>
 
           <p>
-            Create, edit, publish, and organize common festival
-            questions.
+            Create, edit, publish, and organize common
+            festival questions.
           </p>
         </div>
 
@@ -249,13 +326,11 @@ function AdminFAQ() {
           <Plus size={19} />
           Add FAQ
         </button>
-      </div>
+      </header>
 
       <div className="admin-faq__stats">
         <article className="admin-faq__stat-card">
-          <div className="admin-faq__stat-icon">
-            <CircleHelp size={22} />
-          </div>
+          <CircleHelp size={22} />
 
           <div>
             <span>Total FAQs</span>
@@ -264,9 +339,7 @@ function AdminFAQ() {
         </article>
 
         <article className="admin-faq__stat-card">
-          <div className="admin-faq__stat-icon">
-            <Eye size={22} />
-          </div>
+          <Eye size={22} />
 
           <div>
             <span>Published</span>
@@ -275,9 +348,7 @@ function AdminFAQ() {
         </article>
 
         <article className="admin-faq__stat-card">
-          <div className="admin-faq__stat-icon">
-            <EyeOff size={22} />
-          </div>
+          <EyeOff size={22} />
 
           <div>
             <span>Drafts</span>
@@ -292,39 +363,75 @@ function AdminFAQ() {
 
           <input
             type="search"
-            placeholder="Search questions, answers, or categories..."
+            placeholder="Search FAQs..."
             value={searchTerm}
             onChange={(event) =>
               setSearchTerm(event.target.value)
             }
-            aria-label="Search FAQs"
           />
         </div>
 
         <div className="admin-faq__filters">
-          {(["All", "Published", "Draft"] as const).map(
-            (status) => (
-              <button
-                key={status}
-                type="button"
-                className={
-                  statusFilter === status
-                    ? "admin-faq__filter admin-faq__filter--active"
-                    : "admin-faq__filter"
-                }
-                onClick={() => setStatusFilter(status)}
-              >
-                {status}
-              </button>
-            ),
-          )}
+          {(
+            [
+              "ALL",
+              "PUBLISHED",
+              "DRAFT",
+              "ARCHIVED",
+            ] as const
+          ).map((status) => (
+            <button
+              key={status}
+              type="button"
+              className={
+                statusFilter === status
+                  ? "admin-faq__filter admin-faq__filter--active"
+                  : "admin-faq__filter"
+              }
+              onClick={() =>
+                setStatusFilter(status)
+              }
+            >
+              {status === "ALL"
+                ? "All"
+                : statusLabels[status]}
+            </button>
+          ))}
         </div>
       </div>
 
+      {error && !isModalOpen && (
+        <div className="admin-faq__message admin-faq__message--error">
+          {error}
+        </div>
+      )}
+
       <div className="admin-faq__list">
-        {filteredFAQs.length > 0 ? (
-          filteredFAQs.map((faq, index) => {
-            const isExpanded = expandedId === faq.id;
+        {isLoading ? (
+          <div className="admin-faq__empty">
+            <CircleHelp size={40} />
+            <h2>Loading FAQs...</h2>
+          </div>
+        ) : filteredFaqs.length === 0 ? (
+          <div className="admin-faq__empty">
+            <CircleHelp size={40} />
+            <h2>No FAQs found</h2>
+            <p>
+              Change the filters or create a new FAQ.
+            </p>
+
+            <button
+              type="button"
+              onClick={openCreateModal}
+            >
+              <Plus size={18} />
+              Add FAQ
+            </button>
+          </div>
+        ) : (
+          filteredFaqs.map((faq, index) => {
+            const isExpanded =
+              expandedId === faq.id;
 
             return (
               <article
@@ -338,47 +445,57 @@ function AdminFAQ() {
                 <button
                   type="button"
                   className="admin-faq__question-row"
-                  onClick={() => toggleExpanded(faq.id)}
+                  onClick={() =>
+                    setExpandedId(
+                      isExpanded ? null : faq.id,
+                    )
+                  }
                   aria-expanded={isExpanded}
                 >
-                  <div className="admin-faq__number">
-                    {String(index + 1).padStart(2, "0")}
-                  </div>
+                  <span className="admin-faq__number">
+                    {String(index + 1).padStart(
+                      2,
+                      "0",
+                    )}
+                  </span>
 
-                  <div className="admin-faq__question-content">
-                    <div className="admin-faq__badges">
+                  <span className="admin-faq__question-content">
+                    <span className="admin-faq__badges">
                       <span className="admin-faq__category">
-                        {faq.category}
+                        {faq.category || "General"}
                       </span>
 
                       <span
                         className={`admin-faq__status admin-faq__status--${faq.status.toLowerCase()}`}
                       >
-                        {faq.status}
+                        {statusLabels[faq.status]}
                       </span>
-                    </div>
+                    </span>
 
-                    <h2>{faq.question}</h2>
-                  </div>
-
-                  <span className="admin-faq__expand-icon">
-                    {isExpanded ? (
-                      <ChevronUp size={22} />
-                    ) : (
-                      <ChevronDown size={22} />
-                    )}
+                    <strong>{faq.question}</strong>
                   </span>
+
+                  {isExpanded ? (
+                    <ChevronUp size={22} />
+                  ) : (
+                    <ChevronDown size={22} />
+                  )}
                 </button>
 
                 {isExpanded && (
                   <div className="admin-faq__answer">
                     <p>{faq.answer}</p>
 
+                    <div className="admin-faq__details">
+                      Sort order: {faq.sortOrder}
+                    </div>
+
                     <div className="admin-faq__actions">
                       <button
                         type="button"
-                        className="admin-faq__action-button"
-                        onClick={() => openEditModal(faq)}
+                        onClick={() =>
+                          openEditModal(faq)
+                        }
                       >
                         <Edit3 size={17} />
                         Edit
@@ -386,24 +503,29 @@ function AdminFAQ() {
 
                       <button
                         type="button"
-                        className="admin-faq__action-button"
-                        onClick={() => toggleStatus(faq.id)}
+                        onClick={() =>
+                          void toggleStatus(faq)
+                        }
                       >
-                        {faq.status === "Published" ? (
+                        {faq.status ===
+                        "PUBLISHED" ? (
                           <EyeOff size={17} />
                         ) : (
                           <Eye size={17} />
                         )}
 
-                        {faq.status === "Published"
+                        {faq.status ===
+                        "PUBLISHED"
                           ? "Move to Draft"
                           : "Publish"}
                       </button>
 
                       <button
                         type="button"
-                        className="admin-faq__action-button admin-faq__action-button--delete"
-                        onClick={() => handleDelete(faq.id)}
+                        className="admin-faq__delete-button"
+                        onClick={() =>
+                          void handleDelete(faq)
+                        }
                       >
                         <Trash2 size={17} />
                         Delete
@@ -414,55 +536,37 @@ function AdminFAQ() {
               </article>
             );
           })
-        ) : (
-          <div className="admin-faq__empty">
-            <CircleHelp size={40} />
-
-            <h2>No FAQs found</h2>
-
-            <p>
-              Try another search term or create a new FAQ.
-            </p>
-
-            <button
-              type="button"
-              onClick={openCreateModal}
-            >
-              <Plus size={18} />
-              Add FAQ
-            </button>
-          </div>
         )}
       </div>
 
       {isModalOpen && (
         <div
           className="admin-faq__modal-backdrop"
-          role="presentation"
           onMouseDown={closeModal}
         >
           <div
             className="admin-faq__modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="faq-modal-title"
-            onMouseDown={(event) => event.stopPropagation()}
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
           >
             <div className="admin-faq__modal-header">
               <div>
                 <span>FAQ Editor</span>
 
-                <h2 id="faq-modal-title">
-                  {editingFAQId !== null
-                    ? "Edit FAQ"
-                    : "Create New FAQ"}
+                <h2>
+                  {editingFaqId === null
+                    ? "Create FAQ"
+                    : "Edit FAQ"}
                 </h2>
               </div>
 
               <button
                 type="button"
                 onClick={closeModal}
-                aria-label="Close FAQ editor"
+                aria-label="Close modal"
               >
                 <X size={21} />
               </button>
@@ -472,6 +576,12 @@ function AdminFAQ() {
               className="admin-faq__form"
               onSubmit={handleSubmit}
             >
+              {error && (
+                <div className="admin-faq__message admin-faq__message--error">
+                  {error}
+                </div>
+              )}
+
               <label>
                 Question
 
@@ -479,12 +589,11 @@ function AdminFAQ() {
                   type="text"
                   value={formData.question}
                   onChange={(event) =>
-                    setFormData((currentData) => ({
-                      ...currentData,
+                    setFormData((current) => ({
+                      ...current,
                       question: event.target.value,
                     }))
                   }
-                  placeholder="Enter the FAQ question"
                   required
                 />
               </label>
@@ -495,12 +604,11 @@ function AdminFAQ() {
                 <textarea
                   value={formData.answer}
                   onChange={(event) =>
-                    setFormData((currentData) => ({
-                      ...currentData,
+                    setFormData((current) => ({
+                      ...current,
                       answer: event.target.value,
                     }))
                   }
-                  placeholder="Enter the FAQ answer"
                   required
                 />
               </label>
@@ -509,24 +617,17 @@ function AdminFAQ() {
                 <label>
                   Category
 
-                  <select
+                  <input
+                    type="text"
                     value={formData.category}
                     onChange={(event) =>
-                      setFormData((currentData) => ({
-                        ...currentData,
-                        category: event.target.value,
+                      setFormData((current) => ({
+                        ...current,
+                        category:
+                          event.target.value,
                       }))
                     }
-                  >
-                    <option value="General">General</option>
-                    <option value="Tickets">Tickets</option>
-                    <option value="Venue">Venue</option>
-                    <option value="Rules">Rules</option>
-                    <option value="Schedule">Schedule</option>
-                    <option value="Accessibility">
-                      Accessibility
-                    </option>
-                  </select>
+                  />
                 </label>
 
                 <label>
@@ -535,26 +636,50 @@ function AdminFAQ() {
                   <select
                     value={formData.status}
                     onChange={(event) =>
-                      setFormData((currentData) => ({
-                        ...currentData,
+                      setFormData((current) => ({
+                        ...current,
                         status: event.target
-                          .value as FAQStatus,
+                          .value as FaqStatus,
                       }))
                     }
                   >
-                    <option value="Draft">Draft</option>
-                    <option value="Published">
+                    <option value="DRAFT">
+                      Draft
+                    </option>
+                    <option value="PUBLISHED">
                       Published
+                    </option>
+                    <option value="ARCHIVED">
+                      Archived
                     </option>
                   </select>
                 </label>
               </div>
+
+              <label>
+                Sort order
+
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.sortOrder}
+                  onChange={(event) =>
+                    setFormData((current) => ({
+                      ...current,
+                      sortOrder:
+                        event.target.value,
+                    }))
+                  }
+                />
+              </label>
 
               <div className="admin-faq__form-actions">
                 <button
                   type="button"
                   className="admin-faq__cancel-button"
                   onClick={closeModal}
+                  disabled={isSaving}
                 >
                   Cancel
                 </button>
@@ -562,10 +687,13 @@ function AdminFAQ() {
                 <button
                   type="submit"
                   className="admin-faq__save-button"
+                  disabled={isSaving}
                 >
-                  {editingFAQId !== null
-                    ? "Save Changes"
-                    : "Create FAQ"}
+                  {isSaving
+                    ? "Saving..."
+                    : editingFaqId === null
+                      ? "Create FAQ"
+                      : "Save Changes"}
                 </button>
               </div>
             </form>

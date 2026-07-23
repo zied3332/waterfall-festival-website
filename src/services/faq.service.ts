@@ -1,43 +1,55 @@
-import { api } from "./api.service";
-
 import type {
   CreateFaqInput,
   Faq,
   UpdateFaqInput,
 } from "../types/faq";
 
-const PUBLIC_BASE = "/faq";
-const ADMIN_BASE = "/admin/faq";
+import { api } from "./api.service";
+
+const PUBLIC_FAQ_ENDPOINT = "/faq";
+const ADMIN_FAQ_ENDPOINT = "/admin/faq";
 
 export const faqService = {
-  // Public
-  getPublished: () =>
-    api.get<Faq[]>(PUBLIC_BASE),
+  getPublished() {
+    return api.get<Faq[]>(PUBLIC_FAQ_ENDPOINT);
+  },
 
-  getPublishedById: (id: number) =>
-    api.get<Faq>(`${PUBLIC_BASE}/${id}`),
+  getPublishedById(id: number) {
+    return api.get<Faq>(
+      `${PUBLIC_FAQ_ENDPOINT}/${id}`,
+    );
+  },
 
-  // Admin
-  getAll: () =>
-    api.get<Faq[]>(ADMIN_BASE),
+  getAll() {
+    return api.get<Faq[]>(ADMIN_FAQ_ENDPOINT);
+  },
 
-  getById: (id: number) =>
-    api.get<Faq>(`${ADMIN_BASE}/${id}`),
+  getById(id: number) {
+    return api.get<Faq>(
+      `${ADMIN_FAQ_ENDPOINT}/${id}`,
+    );
+  },
 
-  create: (data: CreateFaqInput) =>
-    api.post<Faq>(ADMIN_BASE, data),
+  create(data: CreateFaqInput) {
+    return api.post<Faq>(
+      ADMIN_FAQ_ENDPOINT,
+      data,
+    );
+  },
 
-  update: (
+  update(
     id: number,
     data: UpdateFaqInput,
-  ) =>
-    api.patch<Faq>(
-      `${ADMIN_BASE}/${id}`,
+  ) {
+    return api.patch<Faq>(
+      `${ADMIN_FAQ_ENDPOINT}/${id}`,
       data,
-    ),
+    );
+  },
 
-  remove: (id: number) =>
-    api.delete(`${ADMIN_BASE}/${id}`),
+  remove(id: number) {
+    return api.delete<Faq>(
+      `${ADMIN_FAQ_ENDPOINT}/${id}`,
+    );
+  },
 };
-
-export default faqService;
