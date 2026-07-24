@@ -84,4 +84,34 @@
   padding: 16px;
   font-weight: 700;
   color: white;
+}.contact-form-message {
+  margin: 0;
+  padding: 12px 14px;
+
+  border: 1px solid transparent;
+  border-radius: 10px;
+
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.contact-form-message--success {
+  border-color: rgba(34, 197, 94, 0.35);
+
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+}
+
+.contact-form-message--error {
+  border-color: rgba(239, 68, 68, 0.35);
+
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+
+.contact-input:disabled,
+.contact-textarea:disabled,
+.contact-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
