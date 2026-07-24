@@ -1,124 +1,283 @@
-import { Eye, MailCheck, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  Eye,
+  LoaderCircle,
+  MailCheck,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
+
+import {
+  getAdminMessages,
+  type AdminContactMessage,
+} from "../../services/contact.service";
+
 import "../style/admin-messages.css";
 
-const messages = [
-  {
-    id: 1,
-    name: "John Carter",
-    email: "john.carter@gmail.com",
-    subject: "VIP ticket question",
-    date: "12 Aug 2026",
-    status: "New",
-  },
-  {
-    id: 2,
-    name: "Alice Morgan",
-    email: "alice@mail.com",
-    subject: "Ticket refund request",
-    date: "10 Aug 2026",
-    status: "Read",
-  },
-  {
-    id: 3,
-    name: "Omar Ben Ali",
-    email: "omar@mail.com",
-    subject: "Sponsorship opportunity",
-    date: "08 Aug 2026",
-    status: "New",
-  },
-  {
-    id: 4,
-    name: "Maya Chen",
-    email: "maya.chen@mail.com",
-    subject: "Venue location details",
-    date: "05 Aug 2026",
-    status: "Read",
-  },
-];
+function formatMessageDate(date: string) {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Invalid date";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(parsedDate);
+}
+
+function formatStatus(status: string) {
+  return status
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unable to load contact messages.";
+}
 
 function AdminMessages() {
+  const [messages, setMessages] = useState<AdminContactMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadMessages(showRefreshState = false) {
+    try {
+      if (showRefreshState) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      setError(null);
+
+      const response = await getAdminMessages();
+
+      setMessages(response.data);
+    } catch (loadError: unknown) {
+      setError(getErrorMessage(loadError));
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadMessages();
+  }, []);
+
+  const statistics = useMemo(() => {
+    return {
+      total: messages.length,
+      new: messages.filter(
+        (message) => message.status === "NEW",
+      ).length,
+      read: messages.filter(
+        (message) => message.status === "READ",
+      ).length,
+    };
+  }, [messages]);
+
   return (
     <section className="admin-messages">
       <div className="admin-messages__header">
         <div>
-          <span className="admin-messages__eyebrow">Contact Inbox</span>
+          <span className="admin-messages__eyebrow">
+            Contact Inbox
+          </span>
+
           <h1>Messages</h1>
-          <p>Review contact form messages, mark them as read, or remove old requests.</p>
+
+          <p>
+            Review contact form messages, mark them as read, or
+            remove old requests.
+          </p>
         </div>
+
+        <button
+          type="button"
+          className="admin-messages__refresh-button"
+          onClick={() => void loadMessages(true)}
+          disabled={isLoading || isRefreshing}
+        >
+          <RefreshCw
+            size={17}
+            className={
+              isRefreshing
+                ? "admin-messages__spinning-icon"
+                : undefined
+            }
+          />
+
+          <span>
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </span>
+        </button>
       </div>
 
       <div className="admin-messages__stats">
         <div className="admin-messages__stat-card">
           <span>Total Messages</span>
-          <strong>4</strong>
+          <strong>{statistics.total}</strong>
         </div>
 
         <div className="admin-messages__stat-card">
           <span>New Messages</span>
-          <strong>2</strong>
+          <strong>{statistics.new}</strong>
         </div>
 
         <div className="admin-messages__stat-card">
           <span>Read Messages</span>
-          <strong>2</strong>
+          <strong>{statistics.read}</strong>
         </div>
       </div>
 
       <div className="admin-messages__table-card">
         <div className="admin-messages__table-header">
           <h2>Contact Messages</h2>
-          <p>Static dummy messages for now. Backend inbox will be connected later.</p>
+
+          <p>
+            Messages submitted through the public contact form.
+          </p>
         </div>
 
-        <div className="admin-messages__table-wrap">
-          <table className="admin-messages__table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Subject</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th className="admin-messages__actions-title">Actions</th>
-              </tr>
-            </thead>
+        {isLoading ? (
+          <div className="admin-messages__state">
+            <LoaderCircle
+              size={34}
+              className="admin-messages__spinning-icon"
+            />
 
-            <tbody>
-              {messages.map((message) => (
-                <tr key={message.id}>
-                  <td>
-                    <strong>{message.name}</strong>
-                  </td>
-                  <td>{message.email}</td>
-                  <td>{message.subject}</td>
-                  <td>{message.date}</td>
-                  <td>
-                    <span
-                      className={`admin-messages__status admin-messages__status--${message.status.toLowerCase()}`}
-                    >
-                      {message.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-messages__actions">
-                      <button title="View message">
-                        <Eye size={16} />
-                      </button>
+            <h3>Loading messages</h3>
 
-                      <button title="Mark as read">
-                        <MailCheck size={16} />
-                      </button>
+            <p>
+              Contacting the server and retrieving your inbox.
+            </p>
+          </div>
+        ) : error ? (
+          <div className="admin-messages__state admin-messages__state--error">
+            <AlertCircle size={34} />
 
-                      <button className="danger" title="Delete message">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+            <h3>Messages could not be loaded</h3>
+
+            <p>{error}</p>
+
+            <button
+              type="button"
+              onClick={() => void loadMessages()}
+            >
+              Try again
+            </button>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="admin-messages__state">
+            <MailCheck size={34} />
+
+            <h3>No contact messages yet</h3>
+
+            <p>
+              New messages submitted through the contact form will
+              appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="admin-messages__table-wrap">
+            <table className="admin-messages__table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Subject</th>
+                  <th>Date</th>
+                  <th>Status</th>
+
+                  <th className="admin-messages__actions-title">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+
+              <tbody>
+                {messages.map((message) => {
+                  const statusClass = message.status
+                    .toLowerCase()
+                    .replace(/_/g, "-");
+
+                  return (
+                    <tr key={message.id}>
+                      <td>
+                        <strong>{message.name}</strong>
+                      </td>
+
+                      <td>
+                        <a
+                          className="admin-messages__email"
+                          href={`mailto:${message.email}`}
+                        >
+                          {message.email}
+                        </a>
+                      </td>
+
+                      <td>
+                        {message.subject?.trim() || "No subject"}
+                      </td>
+
+                      <td>
+                        {formatMessageDate(message.createdAt)}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`admin-messages__status admin-messages__status--${statusClass}`}
+                        >
+                          {formatStatus(message.status)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="admin-messages__actions">
+                          <button
+                            type="button"
+                            title="View message — Phase 2"
+                            aria-label={`View message from ${message.name}`}
+                          >
+                            <Eye size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            title="Mark as read — Phase 2"
+                            aria-label={`Mark message from ${message.name} as read`}
+                          >
+                            <MailCheck size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="danger"
+                            title="Delete message — Phase 2"
+                            aria-label={`Delete message from ${message.name}`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </section>
   );

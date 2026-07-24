@@ -214,7 +214,10 @@ function AppContent() {
               path="messages"
               element={<AdminMessages />}
             />
-
+<Route
+  path="messages/:messageId"
+  element={<AdminMessages />}
+/>
             <Route
               path="faq"
               element={<AdminFAQ />}
