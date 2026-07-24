@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 
 import {
-  getRecentNotifications,
+   getRecentNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
   type AdminNotification,
 } from "../../services/notifications.service";
 
@@ -367,7 +369,62 @@ function NotificationBell({
       (currentValue) => !currentValue,
     );
   }
+async function handleReadNotification(
+  notification: AdminNotification,
+): Promise<void> {
+  if (!notification.isRead) {
+    try {
+      await markNotificationAsRead(notification.id);
 
+      setNotifications((current) =>
+        current.map((item) =>
+          item.id === notification.id
+            ? {
+                ...item,
+                isRead: true,
+                readAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      );
+
+      setUnreadCount((current) =>
+        Math.max(current - 1, 0),
+      );
+    } catch (error) {
+      console.error(
+        "Unable to mark notification as read:",
+        error,
+      );
+    }
+  }
+
+  onNotificationClick?.(notification);
+  setIsOpen(false);
+}
+
+async function handleReadAll(): Promise<void> {
+  try {
+    await markAllNotificationsAsRead();
+
+    setNotifications((current) =>
+      current.map((notification) => ({
+        ...notification,
+        isRead: true,
+        readAt:
+          notification.readAt ??
+          new Date().toISOString(),
+      })),
+    );
+
+    setUnreadCount(0);
+  } catch (error) {
+    console.error(
+      "Unable to mark all notifications as read:",
+      error,
+    );
+  }
+}
   return (
     <div
       className="admin-notification-wrapper"
@@ -414,15 +471,13 @@ function NotificationBell({
               </span>
             </div>
 
-            <button
-              className="admin-notification-see-all"
-              type="button"
-              onClick={() =>
-                setActivePeriod("all")
-              }
-            >
-              See all
-            </button>
+          <button
+  className="admin-notification-see-all"
+  type="button"
+  onClick={() => void handleReadAll()}
+>
+  Mark all as read
+</button>
           </div>
 
           <div
@@ -506,13 +561,11 @@ function NotificationBell({
                         ? ""
                         : "admin-notification-item--unread"
                     }`}
-                    onClick={() =>
-                      handleNotificationClick(
-                        notification,
-                      )
-                    }
+                 onClick={() =>
+  void handleReadNotification(notification)
+}
                   >
-                    <span className="admin-notification-item-icon">
+                    <span className="admin-notification-item-iSee allcon">
                       {getNotificationIcon(
                         notification,
                       )}
