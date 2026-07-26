@@ -7,6 +7,7 @@ import {
   LogOut,
   MessageSquare,
   Settings,
+  Sparkles,
   Ticket,
   UserRound,
 } from "lucide-react";
@@ -79,6 +80,11 @@ function AdminLayout() {
           <NavLink to="/admin/gallery">
             <Images size={18} />
             Gallery
+          </NavLink>
+
+          <NavLink to="/admin/experience">
+            <Sparkles size={18} />
+            Experience
           </NavLink>
 
           <NavLink to="/admin/faq">
