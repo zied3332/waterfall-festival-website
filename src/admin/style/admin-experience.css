@@ -518,3 +518,372 @@
   font-size: 0.86rem;
   line-height: 1.65;
 }
+
+
+/* =========================================================
+   Admin Experience Page
+   Part 2: Form grid, fields, inputs, counters, and actions
+========================================================= */
+
+/* =========================================================
+   Form Grid
+========================================================= */
+
+.experience-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.experience-form-field {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.experience-form-field--full {
+  grid-column: 1 / -1;
+}
+
+.experience-form-field label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #dbeafe;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.experience-form-field label span {
+  color: #fb7185;
+}
+
+.experience-form-field input,
+.experience-form-field textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  outline: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.76),
+      rgba(8, 12, 25, 0.9)
+    );
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 0.92rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.experience-form-field input {
+  min-height: 48px;
+  padding: 0 15px;
+  border-radius: 13px;
+}
+
+.experience-form-field textarea {
+  min-height: 130px;
+  padding: 14px 15px 34px;
+  border-radius: 15px;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.experience-form-field textarea#storyDescription {
+  min-height: 210px;
+}
+
+.experience-form-field input::placeholder,
+.experience-form-field textarea::placeholder {
+  color: #55657b;
+}
+
+.experience-form-field input:hover:not(:disabled),
+.experience-form-field textarea:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.experience-form-field input:focus,
+.experience-form-field textarea:focus {
+  border-color: rgba(34, 211, 238, 0.68);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.94),
+      rgba(8, 12, 25, 0.98)
+    );
+  box-shadow:
+    0 0 0 3px rgba(34, 211, 238, 0.08),
+    0 12px 28px rgba(8, 145, 178, 0.08);
+}
+
+.experience-form-field input:focus-visible,
+.experience-form-field textarea:focus-visible {
+  outline: none;
+}
+
+.experience-form-field input:disabled,
+.experience-form-field textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.experience-form-field input:invalid:not(:placeholder-shown),
+.experience-form-field
+  textarea:invalid:not(:placeholder-shown) {
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+.experience-form-field__hint {
+  color: #64748b;
+  font-size: 0.73rem;
+  line-height: 1.55;
+}
+
+.experience-form-field__counter {
+  position: absolute;
+  right: 13px;
+  bottom: 11px;
+  padding: 3px 7px;
+  border: 1px solid rgba(148, 163, 184, 0.11);
+  border-radius: 7px;
+  background: rgba(8, 12, 25, 0.76);
+  color: #64748b;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* =========================================================
+   Input Autofill
+========================================================= */
+
+.experience-form-field input:-webkit-autofill,
+.experience-form-field input:-webkit-autofill:hover,
+.experience-form-field input:-webkit-autofill:focus,
+.experience-form-field textarea:-webkit-autofill,
+.experience-form-field textarea:-webkit-autofill:hover,
+.experience-form-field textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc;
+  box-shadow: 0 0 0 1000px #0c1425 inset;
+  caret-color: #f8fafc;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* =========================================================
+   Optional Visual Field Accent
+========================================================= */
+
+.experience-form-section:nth-of-type(1)
+  .experience-form-field
+  input:focus,
+.experience-form-section:nth-of-type(1)
+  .experience-form-field
+  textarea:focus {
+  border-color: rgba(34, 211, 238, 0.68);
+  box-shadow:
+    0 0 0 3px rgba(34, 211, 238, 0.08),
+    0 12px 28px rgba(8, 145, 178, 0.08);
+}
+
+.experience-form-section:nth-of-type(2)
+  .experience-form-field
+  input:focus,
+.experience-form-section:nth-of-type(2)
+  .experience-form-field
+  textarea:focus {
+  border-color: rgba(139, 92, 246, 0.7);
+  box-shadow:
+    0 0 0 3px rgba(139, 92, 246, 0.09),
+    0 12px 28px rgba(109, 40, 217, 0.08);
+}
+
+.experience-form-section:nth-of-type(3)
+  .experience-form-field
+  input:focus,
+.experience-form-section:nth-of-type(3)
+  .experience-form-field
+  textarea:focus {
+  border-color: rgba(45, 212, 191, 0.68);
+  box-shadow:
+    0 0 0 3px rgba(45, 212, 191, 0.08),
+    0 12px 28px rgba(13, 148, 136, 0.08);
+}
+
+/* =========================================================
+   Form Actions
+========================================================= */
+
+.experience-form-actions {
+  position: sticky;
+  bottom: 18px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(15, 23, 42, 0.9),
+      rgba(8, 12, 25, 0.94)
+    );
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(18px);
+}
+
+.experience-form-button {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.experience-form-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.experience-form-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.experience-form-button:focus-visible {
+  outline: 3px solid rgba(34, 211, 238, 0.2);
+  outline-offset: 3px;
+}
+
+.experience-form-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.experience-form-button--secondary {
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.72);
+  color: #cbd5e1;
+}
+
+.experience-form-button--secondary:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.3);
+  background: rgba(30, 41, 59, 0.88);
+  color: #f8fafc;
+}
+
+.experience-form-button--primary {
+  border-color: rgba(34, 211, 238, 0.28);
+  background:
+    linear-gradient(
+      135deg,
+      #0891b2,
+      #7c3aed
+    );
+  color: #ffffff;
+  box-shadow:
+    0 12px 28px rgba(8, 145, 178, 0.18),
+    0 8px 20px rgba(124, 58, 237, 0.16);
+}
+
+.experience-form-button--primary:hover:not(:disabled) {
+  border-color: rgba(103, 232, 249, 0.42);
+  box-shadow:
+    0 16px 34px rgba(8, 145, 178, 0.25),
+    0 12px 26px rgba(124, 58, 237, 0.2);
+}
+
+/* =========================================================
+   Saving State
+========================================================= */
+
+.experience-form-button--primary:disabled {
+  position: relative;
+  overflow: hidden;
+}
+
+.experience-form-button--primary:disabled::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.08),
+      transparent
+    );
+  content: "";
+  animation:
+    admin-experience-saving 1.25s linear infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes admin-experience-saving {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* =========================================================
+   Selection Styling
+========================================================= */
+
+.admin-experience-page ::selection {
+  background: rgba(34, 211, 238, 0.25);
+  color: #ffffff;
+}
+
+/* =========================================================
+   Scrollbar Styling for Textareas
+========================================================= */
+
+.experience-form-field textarea {
+  scrollbar-color:
+    rgba(100, 116, 139, 0.55)
+    rgba(15, 23, 42, 0.4);
+  scrollbar-width: thin;
+}
+
+.experience-form-field textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.experience-form-field textarea::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.experience-form-field textarea::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(15, 23, 42, 0.4);
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.58);
+}
+
+.experience-form-field
+  textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
