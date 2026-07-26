@@ -555,15 +555,13 @@ function AdminGallery() {
       <header className="admin-gallery__header">
         <div className="admin-gallery__heading">
           <span className="admin-gallery__eyebrow">
-            <ImageIcon size={16} />
-            Gallery Management
+            <ImageIcon size={15} />
+            Gallery overview
           </span>
 
-          <h1>Festival Gallery</h1>
-
           <p>
-            Create, edit, publish, preview, and delete gallery
-            images.
+            Manage festival images, visibility, featured content,
+            and display order.
           </p>
         </div>
 
@@ -572,7 +570,7 @@ function AdminGallery() {
           className="admin-gallery__add"
           onClick={openCreateForm}
         >
-          <Plus size={18} />
+          <Plus size={17} />
           Add Images
         </button>
       </header>
@@ -580,7 +578,7 @@ function AdminGallery() {
       <div className="admin-gallery__stats">
         <article className="admin-gallery__stat-card">
           <div className="admin-gallery__stat-icon">
-            <ImageIcon size={22} />
+            <ImageIcon size={18} />
           </div>
 
           <div>
@@ -592,7 +590,7 @@ function AdminGallery() {
 
         <article className="admin-gallery__stat-card admin-gallery__stat-card--published">
           <div className="admin-gallery__stat-icon">
-            <Check size={22} />
+            <Check size={18} />
           </div>
 
           <div>
@@ -604,7 +602,7 @@ function AdminGallery() {
 
         <article className="admin-gallery__stat-card admin-gallery__stat-card--draft">
           <div className="admin-gallery__stat-icon">
-            <Pencil size={22} />
+            <Pencil size={18} />
           </div>
 
           <div>
@@ -616,7 +614,7 @@ function AdminGallery() {
 
         <article className="admin-gallery__stat-card admin-gallery__stat-card--selected">
           <div className="admin-gallery__stat-icon">
-            <Eye size={22} />
+            <Eye size={18} />
           </div>
 
           <div>
