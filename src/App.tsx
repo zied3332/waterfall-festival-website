@@ -16,6 +16,7 @@ import ProtectedRoute from "./admin/components/ProtectedRoute";
 import AdminEventCreate from "./admin/pages/AdminEventCreate";
 import AdminEventEdit from "./admin/pages/AdminEventEdit";
 import AdminEvents from "./admin/pages/AdminEvents";
+import AdminExperience from "./admin/pages/AdminExperience";
 import AdminFAQ from "./admin/pages/AdminFAQ";
 import AdminGallery from "./admin/pages/AdminGallery";
 import AdminLogin from "./admin/pages/AdminLogin";
@@ -211,13 +212,20 @@ function AppContent() {
             />
 
             <Route
+              path="experience"
+              element={<AdminExperience />}
+            />
+
+            <Route
               path="messages"
               element={<AdminMessages />}
             />
-<Route
-  path="messages/:messageId"
-  element={<AdminMessages />}
-/>
+
+            <Route
+              path="messages/:messageId"
+              element={<AdminMessages />}
+            />
+
             <Route
               path="faq"
               element={<AdminFAQ />}

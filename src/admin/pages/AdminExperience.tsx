@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -17,156 +18,352 @@ import type {
   ExperiencePage,
 } from "../../types/experience";
 
-import "../styles/admin-experience.css";
+import "../style/admin-experience.css";
 
-type FeedbackState = {
+type Feedback = {
   type: "success" | "error";
   message: string;
-} | null;
+};
+
+type LoadState =
+  | {
+      status: "loading";
+    }
+  | {
+      status: "ready";
+    }
+  | {
+      status: "error";
+      message: string;
+    };
+
+type FormattedTimestamp = {
+  label: string;
+  dateTime?: string;
+};
+
+const lastUpdatedFormatter = new Intl.DateTimeFormat(
+  "en",
+  {
+    dateStyle: "medium",
+    timeStyle: "short",
+  },
+);
+
+function isRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null
+  );
+}
+
+function getErrorResponse(
+  error: unknown,
+): Record<string, unknown> | undefined {
+  if (!isRecord(error)) {
+    return undefined;
+  }
+
+  const response = error.response;
+
+  return isRecord(response)
+    ? response
+    : undefined;
+}
+
+function getErrorStatus(
+  error: unknown,
+): number | undefined {
+  const response = getErrorResponse(error);
+  const status = response?.status;
+
+  return typeof status === "number"
+    ? status
+    : undefined;
+}
+
+function getErrorMessage(
+  error: unknown,
+  fallbackMessage: string,
+): string {
+  const response = getErrorResponse(error);
+  const data = response?.data;
+
+  if (isRecord(data)) {
+    const responseMessage = data.message;
+
+    if (typeof responseMessage === "string") {
+      const message = responseMessage.trim();
+
+      if (message) {
+        return message;
+      }
+    }
+
+    if (Array.isArray(responseMessage)) {
+      const messages = responseMessage.filter(
+        (message): message is string =>
+          typeof message === "string" &&
+          Boolean(message.trim()),
+      );
+
+      if (messages.length > 0) {
+        return messages.join(" ");
+      }
+    }
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.trim();
+
+    if (message) {
+      return message;
+    }
+  }
+
+  return fallbackMessage;
+}
+
+function formatLastUpdated(
+  updatedAt: string | Date | undefined,
+): FormattedTimestamp {
+  if (!updatedAt) {
+    return {
+      label: "Not saved yet",
+    };
+  }
+
+  const date = new Date(updatedAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return {
+      label: "Recently updated",
+    };
+  }
+
+  return {
+    label: lastUpdatedFormatter.format(date),
+    dateTime: date.toISOString(),
+  };
+}
 
 function AdminExperience() {
   const [page, setPage] =
     useState<ExperiencePage | null>(null);
-
-  const [isLoading, setIsLoading] =
-    useState(true);
-
+  const [loadState, setLoadState] =
+    useState<LoadState>({
+      status: "loading",
+    });
   const [isSaving, setIsSaving] =
     useState(false);
-
   const [feedback, setFeedback] =
-    useState<FeedbackState>(null);
+    useState<Feedback | null>(null);
 
-  const loadExperiencePage = useCallback(
-    async () => {
-      setIsLoading(true);
-      setFeedback(null);
+  const loadRequestIdRef = useRef(0);
+
+  const loadExperiencePage =
+    useCallback(async (): Promise<void> => {
+      const requestId =
+        loadRequestIdRef.current + 1;
+
+      loadRequestIdRef.current = requestId;
+
+      setLoadState({
+        status: "loading",
+      });
 
       try {
         const experiencePage =
           await getAdminExperiencePage();
 
-        setPage(experiencePage);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to load the Experience page.";
+        if (
+          loadRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
 
-        setFeedback({
-          type: "error",
-          message,
+        setPage(experiencePage);
+        setLoadState({
+          status: "ready",
         });
-      } finally {
-        setIsLoading(false);
+      } catch (error: unknown) {
+        if (
+          loadRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
+
+        if (getErrorStatus(error) === 404) {
+          setPage(null);
+          setLoadState({
+            status: "ready",
+          });
+
+          return;
+        }
+
+        setLoadState({
+          status: "error",
+          message: getErrorMessage(
+            error,
+            "The Experience page could not be loaded. Please try again.",
+          ),
+        });
       }
-    },
-    [],
-  );
+    }, []);
 
   useEffect(() => {
     void loadExperiencePage();
+
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
   }, [loadExperiencePage]);
 
-  async function handleSubmit(
-    data: CreateExperiencePageDto,
-  ) {
-    setIsSaving(true);
-    setFeedback(null);
+  const handleSubmit = useCallback(
+    async (
+      data: CreateExperiencePageDto,
+    ): Promise<void> => {
+      if (isSaving) {
+        return;
+      }
 
-    try {
-      const savedPage = page
-        ? await updateExperiencePage(data)
-        : await createExperiencePage(data);
+      const isCreating = page === null;
 
-      setPage(savedPage);
+      setIsSaving(true);
+      setFeedback(null);
 
-      setFeedback({
-        type: "success",
-        message: page
-          ? "Experience page updated successfully."
-          : "Experience page created successfully.",
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to save the Experience page.";
+      try {
+        const savedPage = isCreating
+          ? await createExperiencePage(data)
+          : await updateExperiencePage(data);
 
-      setFeedback({
-        type: "error",
-        message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }
+        setPage(savedPage);
+        setFeedback({
+          type: "success",
+          message: isCreating
+            ? "The Experience page was created successfully."
+            : "The Experience page was updated successfully.",
+        });
+      } catch (error: unknown) {
+        setFeedback({
+          type: "error",
+          message: getErrorMessage(
+            error,
+            "The Experience page could not be saved. Please check the form and try again.",
+          ),
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [isSaving, page],
+  );
 
-  if (isLoading) {
+  if (loadState.status === "loading") {
     return (
-      <main className="admin-experience-page">
-        <div className="admin-experience-page__loading">
+      <div className="admin-experience-page">
+        <div
+          className="admin-experience-page__loading"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
           <div
             className="admin-experience-page__spinner"
             aria-hidden="true"
           />
 
-          <p>Loading Experience content...</p>
+          <p>Loading the Experience page...</p>
         </div>
-      </main>
+      </div>
     );
   }
 
+  if (loadState.status === "error") {
+    return (
+      <div className="admin-experience-page">
+        <div
+          className="admin-experience-error-state"
+          role="alert"
+        >
+          <div
+            className="admin-experience-error-state__icon"
+            aria-hidden="true"
+          >
+            !
+          </div>
+
+          <h2>Unable to load Experience</h2>
+
+          <p>{loadState.message}</p>
+
+          <button
+            type="button"
+            onClick={() => {
+              void loadExperiencePage();
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isPublished =
+    page?.isPublished ?? false;
+  const lastUpdated = formatLastUpdated(
+    page?.updatedAt,
+  );
+
   return (
-    <main className="admin-experience-page">
+    <div className="admin-experience-page">
       <header className="admin-experience-header">
         <div>
           <span className="admin-experience-header__eyebrow">
-            Content management
+            Website content
           </span>
 
-          <h1>Experience page</h1>
+          <h1>Experience Page</h1>
 
           <p>
-            Manage the hero content, festival story,
-            call-to-action, and publication status of the
-            public Experience page.
+            Manage the main content, story, publication
+            status, and presentation of the public
+            Experience page.
           </p>
         </div>
 
         <div className="admin-experience-header__status">
           <span
-            className={
-              page?.isPublished
-                ? "admin-experience-status admin-experience-status--published"
-                : "admin-experience-status admin-experience-status--draft"
-            }
+            className={`admin-experience-status ${
+              isPublished
+                ? "admin-experience-status--published"
+                : "admin-experience-status--draft"
+            }`}
           >
             <span
               className="admin-experience-status__dot"
               aria-hidden="true"
             />
 
-            {page?.isPublished
-              ? "Published"
-              : "Draft"}
+            {isPublished ? "Published" : "Draft"}
           </span>
 
-          {page?.updatedAt ? (
-            <span className="admin-experience-header__updated">
-              Last updated{" "}
-              {new Intl.DateTimeFormat("en", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }).format(
-                new Date(page.updatedAt),
-              )}
-            </span>
-          ) : (
-            <span className="admin-experience-header__updated">
-              No page created yet
-            </span>
-          )}
+          <span className="admin-experience-header__updated">
+            Last updated
+            <br />
+
+            {lastUpdated.dateTime ? (
+              <time dateTime={lastUpdated.dateTime}>
+                {lastUpdated.label}
+              </time>
+            ) : (
+              lastUpdated.label
+            )}
+          </span>
         </div>
       </header>
 
@@ -178,12 +375,17 @@ function AdminExperience() {
               ? "alert"
               : "status"
           }
+          aria-live={
+            feedback.type === "error"
+              ? "assertive"
+              : "polite"
+          }
         >
           <div>
             <strong>
               {feedback.type === "success"
-                ? "Success"
-                : "Something went wrong"}
+                ? "Changes saved"
+                : "Unable to save changes"}
             </strong>
 
             <p>{feedback.message}</p>
@@ -191,97 +393,62 @@ function AdminExperience() {
 
           <button
             type="button"
+            aria-label="Dismiss feedback"
+            title="Dismiss"
             onClick={() => {
               setFeedback(null);
             }}
-            aria-label="Dismiss message"
           >
             ×
           </button>
         </div>
       )}
 
-      {!page && feedback?.type === "error" ? (
-        <section className="admin-experience-error-state">
-          <span className="admin-experience-error-state__icon">
-            !
+      {!page && (
+        <section className="admin-experience-empty-state">
+          <span className="admin-experience-empty-state__eyebrow">
+            Initial setup
           </span>
 
-          <h2>Unable to load the Experience page</h2>
+          <h2>Create your Experience page</h2>
 
           <p>
-            Check that the backend is running and that your
-            administrator session is still valid.
+            No Experience page exists yet. Complete the form
+            below and save it to create the first version.
           </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              void loadExperiencePage();
-            }}
-          >
-            Try again
-          </button>
         </section>
-      ) : (
-        <>
-          {!page && (
-            <section className="admin-experience-empty-state">
-              <div>
-                <span className="admin-experience-empty-state__eyebrow">
-                  First-time setup
-                </span>
-
-                <h2>Create the Experience page</h2>
-
-                <p>
-                  There is no Experience page in the database
-                  yet. Complete the form below to create it.
-                </p>
-              </div>
-            </section>
-          )}
-
-          <ExperiencePageForm
-            page={page}
-            isSaving={isSaving}
-            onSubmit={handleSubmit}
-          />
-
-          <section className="admin-experience-placeholder-section">
-            <div>
-              <span className="admin-experience-placeholder-section__eyebrow">
-                Coming next
-              </span>
-
-              <h2>Experience highlights</h2>
-
-              <p>
-                The next section will let you create, edit,
-                hide, reorder, and delete Experience
-                highlights.
-              </p>
-            </div>
-          </section>
-
-          <section className="admin-experience-placeholder-section">
-            <div>
-              <span className="admin-experience-placeholder-section__eyebrow">
-                Coming next
-              </span>
-
-              <h2>Experience images</h2>
-
-              <p>
-                The image manager will let you add image URLs,
-                update captions and alt text, control
-                visibility, and select a featured image.
-              </p>
-            </div>
-          </section>
-        </>
       )}
-    </main>
+
+      <ExperiencePageForm
+        page={page}
+        isSaving={isSaving}
+        onSubmit={handleSubmit}
+      />
+
+      <section className="admin-experience-placeholder-section">
+        <div>
+          <span className="admin-experience-placeholder-section__eyebrow">
+            Coming next
+          </span>
+
+          <h2>Experience Highlights</h2>
+
+          <p>Coming next</p>
+        </div>
+      </section>
+
+      <section className="admin-experience-placeholder-section">
+        <div>
+          <span className="admin-experience-placeholder-section__eyebrow">
+            Coming next
+          </span>
+
+          <h2>Experience Images</h2>
+
+          <p>Coming next</p>
+        </div>
+      </section>
+    </div>
   );
 }
 
