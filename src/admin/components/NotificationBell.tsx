@@ -565,7 +565,7 @@ async function handleReadAll(): Promise<void> {
   void handleReadNotification(notification)
 }
                   >
-                    <span className="admin-notification-item-iSee allcon">
+                    <span className="admin-notification-item-icon">
                       {getNotificationIcon(
                         notification,
                       )}
