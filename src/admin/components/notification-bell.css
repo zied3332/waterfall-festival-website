@@ -4,13 +4,11 @@
 
 .admin-notification-wrapper {
   position: relative;
-  z-index: 5000;
+  z-index: 1400;
 
   display: flex;
   align-items: center;
   flex-shrink: 0;
-
-  overflow: visible;
 }
 
 /* =========================
@@ -24,19 +22,17 @@
   align-items: center;
   justify-content: center;
 
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   padding: 0;
 
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 9px;
 
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
 
-  box-shadow:
-    0 10px 25px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: var(--admin-shadow-sm);
 
   font: inherit;
 
@@ -44,26 +40,22 @@
   appearance: none;
 
   transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    background 160ms ease,
-    box-shadow 160ms ease;
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
-.admin-notification-button:hover {
-  transform: translateY(-2px);
+.admin-notification-button:hover,
+.admin-notification-button--open {
+  border-color: var(--admin-border-strong);
 
-  border-color: rgba(167, 139, 250, 0.7);
-  background: rgba(124, 58, 237, 0.18);
-
-  box-shadow:
-    0 14px 30px rgba(0, 0, 0, 0.28),
-    0 0 0 3px rgba(167, 139, 250, 0.08);
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
 }
 
 .admin-notification-button:focus-visible {
-  outline: 2px solid #a78bfa;
-  outline-offset: 3px;
+  outline: 3px solid var(--admin-focus);
+  outline-offset: 2px;
 }
 
 /* =========================
@@ -72,33 +64,25 @@
 
 .admin-notification-badge {
   position: absolute;
-  top: -7px;
-  right: -7px;
+  top: -5px;
+  right: -5px;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  min-width: 21px;
-  height: 21px;
-  padding: 0 5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
 
-  border: 2px solid #11131f;
+  border: 2px solid var(--admin-surface);
   border-radius: 999px;
 
-  background: linear-gradient(
-    135deg,
-    #a78bfa,
-    #7c3aed
-  );
-
+  background: var(--admin-accent);
   color: #ffffff;
 
-  box-shadow:
-    0 4px 12px rgba(124, 58, 237, 0.45);
-
-  font-size: 0.68rem;
-  font-weight: 800;
+  font-size: 0.58rem;
+  font-weight: 750;
   line-height: 1;
 }
 
@@ -108,51 +92,22 @@
 
 .admin-notification-dropdown {
   position: absolute;
-  top: calc(100% + 16px);
+  top: calc(100% + 10px);
   right: 0;
-  z-index: 99999;
+  z-index: 1800;
 
-  width: 410px;
+  width: 390px;
   max-width: calc(100vw - 32px);
-  max-height: 540px;
 
   overflow: hidden;
 
-  border: 1px solid #d9e0ea;
-  border-radius: 22px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
 
-  background: #f7f9fd;
+  background: var(--admin-surface);
+  color: var(--admin-text);
 
-  box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.42),
-    0 14px 36px rgba(0, 0, 0, 0.24);
-
-  opacity: 1;
-
-  filter: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-
-  isolation: isolate;
-}
-
-.admin-notification-dropdown::before {
-  content: "";
-
-  position: absolute;
-  top: -8px;
-  right: 16px;
-  z-index: 10;
-
-  width: 16px;
-  height: 16px;
-
-  border-top: 1px solid #d9e0ea;
-  border-left: 1px solid #d9e0ea;
-
-  background: #f7f9fd;
-
-  transform: rotate(45deg);
+  box-shadow: var(--admin-shadow-lg);
 }
 
 /* =========================
@@ -160,84 +115,94 @@
 ========================= */
 
 .admin-notification-dropdown-header {
-  position: relative;
-  z-index: 3;
-
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 
-  padding: 20px 22px 14px;
+  padding: 17px 17px 14px;
 
-  background: #f7f9fd;
+  border-bottom: 1px solid var(--admin-border);
 }
 
-.admin-notification-dropdown-header > div {
+.admin-notification-header-copy {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+
+  min-width: 0;
 }
 
-.admin-notification-dropdown-header h3 {
+.admin-notification-header-copy h2 {
   margin: 0;
 
-  color: #172033;
+  color: var(--admin-text);
 
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1.2;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
   letter-spacing: -0.015em;
 }
 
 .admin-notification-header-count {
-  color: #768195;
+  color: var(--admin-text-muted);
 
-  font-size: 0.72rem;
-  font-weight: 500;
+  font-size: 0.68rem;
+  font-weight: 450;
+  line-height: 1.4;
 }
 
-.admin-notification-see-all {
+/* =========================
+   Mark All Read
+========================= */
+
+.admin-notification-read-all {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
 
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 32px;
+  padding: 0 9px;
 
-  border: 1px solid #d4dce7;
-  border-radius: 9px;
+  border: 1px solid var(--admin-border);
+  border-radius: 7px;
 
-  background: #ffffff;
-  color: #667085;
-
-  box-shadow:
-    0 3px 9px rgba(71, 85, 105, 0.08);
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
 
   font: inherit;
-  font-size: 0.74rem;
-  font-weight: 700;
+  font-size: 0.68rem;
+  font-weight: 600;
 
   cursor: pointer;
   appearance: none;
 
   transition:
-    color 160ms ease,
-    background 160ms ease,
-    transform 160ms ease,
-    border-color 160ms ease;
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
-.admin-notification-see-all:hover {
-  transform: translateY(-1px);
+.admin-notification-read-all:hover:not(
+    :disabled
+  ) {
+  border-color: var(--admin-border-strong);
 
-  border-color: #b9c4d2;
-  background: #ffffff;
-  color: #334155;
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
 }
 
-.admin-notification-see-all:focus-visible {
-  outline: 2px solid #8b5cf6;
+.admin-notification-read-all:disabled {
+  color: var(--admin-text-muted);
+
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.admin-notification-read-all:focus-visible {
+  outline: 3px solid var(--admin-focus);
   outline-offset: 2px;
 }
 
@@ -246,63 +211,81 @@
 ========================= */
 
 .admin-notification-tabs {
-  position: relative;
-  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 3px;
 
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  padding: 9px 12px;
 
-  margin: 0 18px 8px;
-  padding: 4px;
+  border-bottom: 1px solid var(--admin-border);
 
-  border: 1px solid #d8e0ea;
-  border-radius: 12px;
+  background: var(--admin-surface-secondary);
 
-  background: #e9eef6;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
 
-  box-shadow:
-    inset 0 1px 3px rgba(148, 163, 184, 0.15);
+.admin-notification-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-notification-tab {
-  min-height: 32px;
+  flex-shrink: 0;
+
+  min-height: 30px;
   padding: 0 10px;
 
-  border: 0;
-  border-radius: 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
 
   background: transparent;
-  color: #7d8798;
+  color: var(--admin-text-muted);
 
   font: inherit;
-  font-size: 0.74rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 550;
 
   cursor: pointer;
   appearance: none;
 
   transition:
-    color 160ms ease,
-    background 160ms ease,
-    box-shadow 160ms ease;
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
 .admin-notification-tab:hover {
-  color: #334155;
+  background: var(--admin-surface-hover);
+  color: var(--admin-text-secondary);
 }
 
 .admin-notification-tab--active {
-  background: #ffffff;
-  color: #4c3e8c;
+  border-color: var(--admin-border);
 
-  box-shadow:
-    0 3px 10px rgba(100, 116, 139, 0.16);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+
+  box-shadow: var(--admin-shadow-sm);
+
+  font-weight: 650;
 }
 
 .admin-notification-tab:focus-visible {
-  outline: 2px solid #8b5cf6;
-  outline-offset: 1px;
+  outline: 3px solid var(--admin-focus);
+  outline-offset: -1px;
+}
+
+/* =========================
+   Body
+========================= */
+
+.admin-notification-body {
+  min-height: 180px;
+  max-height: 440px;
+
+  overflow: hidden;
+
+  background: var(--admin-surface);
 }
 
 /* =========================
@@ -310,22 +293,18 @@
 ========================= */
 
 .admin-notification-list {
-  position: relative;
-  z-index: 2;
-
   display: flex;
   flex-direction: column;
 
-  max-height: 410px;
-  padding: 0 18px 14px;
+  max-height: 440px;
 
   overflow-x: hidden;
   overflow-y: auto;
 
-  background: #f7f9fd;
-
   scrollbar-width: thin;
-  scrollbar-color: #b7c1ce #f7f9fd;
+  scrollbar-color:
+    var(--admin-border-strong)
+    transparent;
 }
 
 /* =========================
@@ -336,21 +315,19 @@
   position: relative;
 
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr);
   align-items: flex-start;
-  gap: 12px;
+  gap: 11px;
 
   width: 100%;
-
-  margin: 0;
-  padding: 15px 0;
+  padding: 14px 16px;
 
   border: 0;
-  border-bottom: 1px solid #dce3ec;
+  border-bottom: 1px solid var(--admin-border);
   border-radius: 0;
 
   background: transparent;
-  color: #1e293b;
+  color: var(--admin-text);
 
   font: inherit;
   text-align: left;
@@ -358,12 +335,7 @@
   cursor: pointer;
   appearance: none;
 
-  transition:
-    background 160ms ease,
-    padding 160ms ease,
-    margin 160ms ease,
-    border-radius 160ms ease,
-    box-shadow 160ms ease;
+  transition: background 150ms ease;
 }
 
 .admin-notification-item:last-child {
@@ -371,26 +343,27 @@
 }
 
 .admin-notification-item:hover {
-  width: calc(100% + 16px);
+  background: var(--admin-surface-hover);
+}
 
-  margin-right: -8px;
-  margin-left: -8px;
-  padding-right: 8px;
-  padding-left: 8px;
+.admin-notification-item--unread {
+  background: var(--admin-accent-soft);
+}
 
-  border-radius: 13px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 6px 18px rgba(100, 116, 139, 0.1);
+.admin-notification-item--unread:hover {
+  background: color-mix(
+    in srgb,
+    var(--admin-accent-soft) 78%,
+    var(--admin-surface-hover)
+  );
 }
 
 .admin-notification-item:focus-visible {
-  outline: 2px solid #8b5cf6;
-  outline-offset: -2px;
+  position: relative;
+  z-index: 1;
 
-  border-radius: 12px;
+  outline: 3px solid var(--admin-focus);
+  outline-offset: -3px;
 }
 
 /* =========================
@@ -401,21 +374,24 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  width: 40px;
-  height: 40px;
-  margin-top: 1px;
-
-  border: 1px solid #d5dde8;
-  border-radius: 50%;
-
-  background: #ffffff;
-  color: #6d5ac4;
-
-  box-shadow:
-    0 4px 12px rgba(100, 116, 139, 0.1);
-
   flex-shrink: 0;
+
+  width: 34px;
+  height: 34px;
+
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-secondary);
+}
+
+.admin-notification-item--unread
+  .admin-notification-item-icon {
+  border-color: var(--admin-accent-border);
+
+  background: var(--admin-surface);
+  color: var(--admin-accent);
 }
 
 /* =========================
@@ -434,103 +410,107 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 
-  width: 100%;
+  min-width: 0;
 }
 
 .admin-notification-item-heading strong {
-  display: flex;
-  align-items: center;
-
   min-width: 0;
-  margin: 0;
+  overflow: hidden;
 
-  color: #1e293b;
+  color: var(--admin-text);
 
-  font-size: 0.84rem;
-  font-weight: 800;
-  line-height: 1.35;
-
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
-.admin-notification-item-heading small {
-  display: block;
-  flex-shrink: 0;
-
-  margin-top: 1px;
-
-  color: #788397;
-
-  font-size: 0.67rem;
-  font-weight: 600;
-  line-height: 1.35;
-
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.4;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.admin-notification-item-message {
-  display: block;
-
-  color: #556176;
-
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.48;
-
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
-.admin-notification-item-date {
-  display: block;
-
-  margin-top: 1px;
-
-  color: #98a2b3;
-
-  font-size: 0.64rem;
-  font-weight: 500;
-  line-height: 1.35;
-}
-
-/* =========================
-   Unread Item
-========================= */
 
 .admin-notification-item--unread
   .admin-notification-item-heading
   strong {
-  color: #172033;
+  font-weight: 700;
 }
 
-.admin-notification-item--unread
-  .admin-notification-item-icon {
-  border-color: #cec5fa;
+.admin-notification-item-heading > time {
+  flex-shrink: 0;
 
-  background: #f4f1ff;
-  color: #7459d9;
+  margin-top: 1px;
 
-  box-shadow:
-    0 4px 12px rgba(124, 58, 237, 0.12);
+  color: var(--admin-text-muted);
+
+  font-size: 0.61rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.admin-notification-item-message {
+  display: -webkit-box;
+  overflow: hidden;
+
+  color: var(--admin-text-secondary);
+
+  font-size: 0.7rem;
+  font-weight: 450;
+  line-height: 1.5;
+
+  overflow-wrap: anywhere;
+
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.admin-notification-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  min-width: 0;
+  margin-top: 1px;
+}
+
+.admin-notification-item-footer > time {
+  overflow: hidden;
+
+  color: var(--admin-text-muted);
+
+  font-size: 0.6rem;
+  font-weight: 450;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================
+   Unread Label
+========================= */
+
+.admin-notification-unread-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+
+  color: var(--admin-accent);
+
+  font-size: 0.6rem;
+  font-weight: 650;
 }
 
 .admin-notification-unread-dot {
   display: inline-block;
   flex-shrink: 0;
 
-  width: 6px;
-  height: 6px;
-  margin-right: 7px;
+  width: 5px;
+  height: 5px;
 
   border-radius: 50%;
 
-  background: #9b7af5;
-
-  box-shadow:
-    0 0 8px rgba(139, 92, 246, 0.6);
+  background: var(--admin-accent);
 }
 
 /* =========================
@@ -538,26 +518,66 @@
 ========================= */
 
 .admin-notification-empty {
-  position: relative;
-  z-index: 2;
-
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 5px;
 
-  min-height: 150px;
-  margin: 8px 18px 18px;
-  padding: 30px 20px;
+  min-height: 190px;
+  padding: 28px 20px;
 
-  border: 1px dashed #d2dae5;
-  border-radius: 16px;
+  color: var(--admin-text-muted);
 
-  background: #ffffff;
-  color: #6f7a8c;
-
-  font-size: 0.8rem;
-  font-weight: 500;
   text-align: center;
+}
+
+.admin-notification-empty strong {
+  margin-top: 3px;
+
+  color: var(--admin-text-secondary);
+
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.admin-notification-empty > span:last-child {
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.admin-notification-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  border: 1px solid var(--admin-border);
+  border-radius: 9px;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-muted);
+}
+
+.admin-notification-loading-indicator {
+  width: 22px;
+  height: 22px;
+
+  border: 2px solid var(--admin-border);
+  border-top-color: var(--admin-accent);
+  border-radius: 50%;
+
+  animation:
+    admin-notification-spin
+    700ms linear infinite;
+}
+
+@keyframes admin-notification-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* =========================
@@ -569,16 +589,17 @@
 }
 
 .admin-notification-list::-webkit-scrollbar-track {
-  background: #f7f9fd;
+  background: transparent;
 }
 
 .admin-notification-list::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: #b7c1ce;
+
+  background: var(--admin-border-strong);
 }
 
 .admin-notification-list::-webkit-scrollbar-thumb:hover {
-  background: #8d99aa;
+  background: var(--admin-text-muted);
 }
 
 /* =========================
@@ -589,72 +610,68 @@
   .admin-notification-dropdown {
     position: fixed;
 
-    top: 90px;
+    top: 78px;
     right: 16px;
     left: 16px;
 
     width: auto;
     max-width: none;
-    max-height: calc(100vh - 110px);
+
+    border-radius: 12px;
   }
 
-  .admin-notification-dropdown::before {
-    display: none;
-  }
-
+  .admin-notification-body,
   .admin-notification-list {
-    max-height: calc(100vh - 230px);
+    max-height: calc(100vh - 220px);
   }
 }
 
 @media (max-width: 480px) {
   .admin-notification-dropdown {
-    top: 82px;
+    top: 70px;
     right: 10px;
     left: 10px;
-
-    border-radius: 18px;
   }
 
   .admin-notification-dropdown-header {
-    padding: 18px 16px 11px;
+    padding: 14px;
   }
 
-  .admin-notification-dropdown-header h3 {
-    font-size: 0.92rem;
+  .admin-notification-read-all {
+    min-height: 30px;
+    padding: 0 8px;
+
+    font-size: 0.63rem;
   }
 
-  .admin-notification-see-all {
-    min-height: 31px;
-    padding: 0 10px;
-
-    font-size: 0.69rem;
+  .admin-notification-read-all svg {
+    display: none;
   }
 
   .admin-notification-tabs {
-    margin-right: 13px;
-    margin-left: 13px;
+    padding-right: 9px;
+    padding-left: 9px;
   }
 
-  .admin-notification-list {
-    padding-right: 14px;
-    padding-left: 14px;
+  .admin-notification-tab {
+    padding: 0 8px;
+
+    font-size: 0.63rem;
   }
 
   .admin-notification-item {
     grid-template-columns:
-      38px
+      33px
       minmax(0, 1fr);
 
-    gap: 10px;
+    gap: 9px;
 
-    padding-top: 14px;
-    padding-bottom: 14px;
+    padding: 13px 12px;
   }
 
   .admin-notification-item-icon {
-    width: 37px;
-    height: 37px;
+    width: 32px;
+    height: 32px;
   }
 
   .admin-notification-item-heading {
@@ -662,18 +679,19 @@
   }
 
   .admin-notification-item-heading strong {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
   }
 
-  .admin-notification-item-heading small {
-    font-size: 0.62rem;
+  .admin-notification-item-heading > time {
+    font-size: 0.57rem;
   }
 
   .admin-notification-item-message {
-    font-size: 0.71rem;
+    font-size: 0.66rem;
   }
 
-  .admin-notification-item-date {
-    font-size: 0.61rem;
+  .admin-notification-item-footer > time,
+  .admin-notification-unread-label {
+    font-size: 0.57rem;
   }
 }

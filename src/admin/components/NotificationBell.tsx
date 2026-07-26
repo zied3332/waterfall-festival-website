@@ -1,7 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import {
   Bell,
   CalendarDays,
+  CheckCheck,
   CircleHelp,
   Image as ImageIcon,
   MessageSquare,
@@ -10,9 +18,9 @@ import {
 } from "lucide-react";
 
 import {
-   getRecentNotifications,
-  markNotificationAsRead,
+  getRecentNotifications,
   markAllNotificationsAsRead,
+  markNotificationAsRead,
   type AdminNotification,
 } from "../../services/notifications.service";
 
@@ -30,10 +38,41 @@ type NotificationPeriod =
   | "week"
   | "earlier";
 
+const NOTIFICATION_REFRESH_INTERVAL = 15_000;
+
+const notificationPeriods: Array<{
+  value: NotificationPeriod;
+  label: string;
+}> = [
+  {
+    value: "all",
+    label: "All",
+  },
+  {
+    value: "today",
+    label: "Today",
+  },
+  {
+    value: "week",
+    label: "This week",
+  },
+  {
+    value: "earlier",
+    label: "Earlier",
+  },
+];
+
 function getNotificationPeriod(
   createdAt: string,
 ): Exclude<NotificationPeriod, "all"> {
   const notificationDate = new Date(createdAt);
+
+  if (
+    Number.isNaN(notificationDate.getTime())
+  ) {
+    return "earlier";
+  }
+
   const currentDate = new Date();
 
   const startOfToday = new Date(
@@ -63,11 +102,12 @@ function formatRelativeTime(
   createdAt: string,
 ): string {
   const createdDate = new Date(createdAt);
-  const currentDate = new Date();
 
   if (Number.isNaN(createdDate.getTime())) {
     return "";
   }
+
+  const currentDate = new Date();
 
   const differenceInMilliseconds =
     currentDate.getTime() -
@@ -86,7 +126,7 @@ function formatRelativeTime(
   }
 
   if (differenceInMinutes < 60) {
-    return `${differenceInMinutes} min ago`;
+    return `${differenceInMinutes}m ago`;
   }
 
   const differenceInHours = Math.floor(
@@ -156,22 +196,28 @@ function getNotificationIcon(
   const notificationType =
     notification.type.toLowerCase();
 
-  const notificationText = `
-    ${notification.type}
-    ${notification.title}
-    ${notification.message}
-  `.toLowerCase();
+  const notificationText = [
+    notification.type,
+    notification.title,
+    notification.message,
+  ]
+    .join(" ")
+    .toLowerCase();
 
   if (
     notificationType.includes("contact") ||
-    notificationText.includes("contact message") ||
+    notificationText.includes(
+      "contact message",
+    ) ||
     notificationText.includes("contact form") ||
-    notificationText.includes("message received")
+    notificationText.includes(
+      "message received",
+    )
   ) {
     return (
       <MessageSquare
-        size={18}
-        strokeWidth={1.9}
+        size={17}
+        strokeWidth={1.8}
       />
     );
   }
@@ -182,8 +228,8 @@ function getNotificationIcon(
   ) {
     return (
       <CalendarDays
-        size={18}
-        strokeWidth={1.9}
+        size={17}
+        strokeWidth={1.8}
       />
     );
   }
@@ -196,8 +242,8 @@ function getNotificationIcon(
   ) {
     return (
       <ImageIcon
-        size={18}
-        strokeWidth={1.9}
+        size={17}
+        strokeWidth={1.8}
       />
     );
   }
@@ -209,8 +255,8 @@ function getNotificationIcon(
   ) {
     return (
       <CircleHelp
-        size={18}
-        strokeWidth={1.9}
+        size={17}
+        strokeWidth={1.8}
       />
     );
   }
@@ -221,8 +267,8 @@ function getNotificationIcon(
   ) {
     return (
       <Ticket
-        size={18}
-        strokeWidth={1.9}
+        size={17}
+        strokeWidth={1.8}
       />
     );
   }
@@ -235,16 +281,16 @@ function getNotificationIcon(
   ) {
     return (
       <Settings
-        size={18}
-        strokeWidth={1.9}
+        size={17}
+        strokeWidth={1.8}
       />
     );
   }
 
   return (
     <Bell
-      size={18}
-      strokeWidth={1.9}
+      size={17}
+      strokeWidth={1.8}
     />
   );
 }
@@ -258,6 +304,9 @@ function NotificationBell({
   const [isLoading, setIsLoading] =
     useState(true);
 
+  const [isMarkingAllAsRead, setIsMarkingAllAsRead] =
+    useState(false);
+
   const [activePeriod, setActivePeriod] =
     useState<NotificationPeriod>("all");
 
@@ -270,39 +319,44 @@ function NotificationBell({
   const wrapperRef =
     useRef<HTMLDivElement>(null);
 
-  async function loadNotifications(): Promise<void> {
-    try {
-      const response =
-        await getRecentNotifications();
+  const loadNotifications =
+    useCallback(async (): Promise<void> => {
+      try {
+        const response =
+          await getRecentNotifications();
 
-      setNotifications(response.data);
-      setUnreadCount(response.unreadCount);
-    } catch (error) {
-      console.error(
-        "Unable to load notifications:",
-        error,
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
+        setNotifications(response.data);
+        setUnreadCount(response.unreadCount);
+      } catch (error) {
+        console.error(
+          "Unable to load notifications:",
+          error,
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }, []);
 
   useEffect(() => {
     void loadNotifications();
 
-    const interval = window.setInterval(
+    const intervalId = window.setInterval(
       () => {
         void loadNotifications();
       },
-      15000,
+      NOTIFICATION_REFRESH_INTERVAL,
     );
 
     return () => {
-      window.clearInterval(interval);
+      window.clearInterval(intervalId);
     };
-  }, []);
+  }, [loadNotifications]);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     function handleClickOutside(
       event: MouseEvent,
     ): void {
@@ -345,101 +399,126 @@ function NotificationBell({
         handleEscapeKey,
       );
     };
-  }, []);
+  }, [isOpen]);
 
-  const filteredNotifications =
-    activePeriod === "all"
-      ? notifications
-      : notifications.filter(
-          (notification) =>
-            getNotificationPeriod(
-              notification.createdAt,
-            ) === activePeriod,
-        );
-
-  function handleNotificationClick(
-    notification: AdminNotification,
-  ): void {
-    onNotificationClick?.(notification);
-    setIsOpen(false);
-  }
+  const filteredNotifications = useMemo(
+    () =>
+      activePeriod === "all"
+        ? notifications
+        : notifications.filter(
+            (notification) =>
+              getNotificationPeriod(
+                notification.createdAt,
+              ) === activePeriod,
+          ),
+    [activePeriod, notifications],
+  );
 
   function handleToggleDropdown(): void {
     setIsOpen(
       (currentValue) => !currentValue,
     );
   }
-async function handleReadNotification(
-  notification: AdminNotification,
-): Promise<void> {
-  if (!notification.isRead) {
+
+  async function handleReadNotification(
+    notification: AdminNotification,
+  ): Promise<void> {
+    if (!notification.isRead) {
+      try {
+        await markNotificationAsRead(
+          notification.id,
+        );
+
+        setNotifications(
+          (currentNotifications) =>
+            currentNotifications.map(
+              (currentNotification) =>
+                currentNotification.id ===
+                notification.id
+                  ? {
+                      ...currentNotification,
+                      isRead: true,
+                      readAt:
+                        new Date().toISOString(),
+                    }
+                  : currentNotification,
+            ),
+        );
+
+        setUnreadCount((currentCount) =>
+          Math.max(currentCount - 1, 0),
+        );
+      } catch (error) {
+        console.error(
+          "Unable to mark notification as read:",
+          error,
+        );
+      }
+    }
+
+    onNotificationClick?.(notification);
+    setIsOpen(false);
+  }
+
+  async function handleReadAll(): Promise<void> {
+    if (
+      unreadCount === 0 ||
+      isMarkingAllAsRead
+    ) {
+      return;
+    }
+
+    setIsMarkingAllAsRead(true);
+
     try {
-      await markNotificationAsRead(notification.id);
+      await markAllNotificationsAsRead();
 
-      setNotifications((current) =>
-        current.map((item) =>
-          item.id === notification.id
-            ? {
-                ...item,
-                isRead: true,
-                readAt: new Date().toISOString(),
-              }
-            : item,
-        ),
+      const readAt =
+        new Date().toISOString();
+
+      setNotifications(
+        (currentNotifications) =>
+          currentNotifications.map(
+            (notification) => ({
+              ...notification,
+              isRead: true,
+              readAt:
+                notification.readAt ?? readAt,
+            }),
+          ),
       );
 
-      setUnreadCount((current) =>
-        Math.max(current - 1, 0),
-      );
+      setUnreadCount(0);
     } catch (error) {
       console.error(
-        "Unable to mark notification as read:",
+        "Unable to mark all notifications as read:",
         error,
       );
+    } finally {
+      setIsMarkingAllAsRead(false);
     }
   }
 
-  onNotificationClick?.(notification);
-  setIsOpen(false);
-}
-
-async function handleReadAll(): Promise<void> {
-  try {
-    await markAllNotificationsAsRead();
-
-    setNotifications((current) =>
-      current.map((notification) => ({
-        ...notification,
-        isRead: true,
-        readAt:
-          notification.readAt ??
-          new Date().toISOString(),
-      })),
-    );
-
-    setUnreadCount(0);
-  } catch (error) {
-    console.error(
-      "Unable to mark all notifications as read:",
-      error,
-    );
-  }
-}
   return (
     <div
       className="admin-notification-wrapper"
       ref={wrapperRef}
     >
       <button
-        className="admin-notification-button"
+        className={`admin-notification-button ${
+          isOpen
+            ? "admin-notification-button--open"
+            : ""
+        }`}
         type="button"
         aria-label="Open notifications"
+        aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={handleToggleDropdown}
       >
         <Bell
-          size={20}
-          strokeWidth={1.9}
+          size={19}
+          strokeWidth={1.8}
         />
 
         {unreadCount > 0 && (
@@ -455,169 +534,199 @@ async function handleReadAll(): Promise<void> {
       </button>
 
       {isOpen && (
-        <div
+        <section
           className="admin-notification-dropdown"
           role="dialog"
-          aria-label="Notifications"
+          aria-modal="false"
+          aria-labelledby="admin-notification-title"
         >
-          <div className="admin-notification-dropdown-header">
-            <div>
-              <h3>Notifications</h3>
+          <header className="admin-notification-dropdown-header">
+            <div className="admin-notification-header-copy">
+              <h2 id="admin-notification-title">
+                Notifications
+              </h2>
 
               <span className="admin-notification-header-count">
                 {unreadCount === 0
                   ? "You're all caught up"
-                  : `${unreadCount} unread`}
+                  : `${unreadCount} unread ${
+                      unreadCount === 1
+                        ? "notification"
+                        : "notifications"
+                    }`}
               </span>
             </div>
 
-          <button
-  className="admin-notification-see-all"
-  type="button"
-  onClick={() => void handleReadAll()}
->
-  Mark all as read
-</button>
-          </div>
+            <button
+              className="admin-notification-read-all"
+              type="button"
+              disabled={
+                unreadCount === 0 ||
+                isMarkingAllAsRead
+              }
+              onClick={() =>
+                void handleReadAll()
+              }
+            >
+              <CheckCheck
+                size={15}
+                strokeWidth={1.9}
+              />
+
+              {isMarkingAllAsRead
+                ? "Updating..."
+                : "Mark all read"}
+            </button>
+          </header>
 
           <div
             className="admin-notification-tabs"
             role="tablist"
-            aria-label="Notification periods"
+            aria-label="Filter notifications"
           >
-            <button
-              className={`admin-notification-tab ${
-                activePeriod === "today"
-                  ? "admin-notification-tab--active"
-                  : ""
-              }`}
-              type="button"
-              role="tab"
-              aria-selected={
-                activePeriod === "today"
-              }
-              onClick={() =>
-                setActivePeriod("today")
-              }
-            >
-              Today
-            </button>
-
-            <button
-              className={`admin-notification-tab ${
-                activePeriod === "week"
-                  ? "admin-notification-tab--active"
-                  : ""
-              }`}
-              type="button"
-              role="tab"
-              aria-selected={
-                activePeriod === "week"
-              }
-              onClick={() =>
-                setActivePeriod("week")
-              }
-            >
-              This Week
-            </button>
-
-            <button
-              className={`admin-notification-tab ${
-                activePeriod === "earlier"
-                  ? "admin-notification-tab--active"
-                  : ""
-              }`}
-              type="button"
-              role="tab"
-              aria-selected={
-                activePeriod === "earlier"
-              }
-              onClick={() =>
-                setActivePeriod("earlier")
-              }
-            >
-              Earlier
-            </button>
+            {notificationPeriods.map(
+              (period) => (
+                <button
+                  key={period.value}
+                  className={`admin-notification-tab ${
+                    activePeriod ===
+                    period.value
+                      ? "admin-notification-tab--active"
+                      : ""
+                  }`}
+                  type="button"
+                  role="tab"
+                  aria-selected={
+                    activePeriod ===
+                    period.value
+                  }
+                  onClick={() =>
+                    setActivePeriod(
+                      period.value,
+                    )
+                  }
+                >
+                  {period.label}
+                </button>
+              ),
+            )}
           </div>
 
-          {isLoading ? (
-            <div className="admin-notification-empty">
-              Loading notifications...
-            </div>
-          ) : filteredNotifications.length ===
-            0 ? (
-            <div className="admin-notification-empty">
-              No notifications in this period.
-            </div>
-          ) : (
-            <div className="admin-notification-list">
-              {filteredNotifications.map(
-                (notification) => (
-                  <button
-                    key={notification.id}
-                    type="button"
-                    className={`admin-notification-item ${
-                      notification.isRead
-                        ? ""
-                        : "admin-notification-item--unread"
-                    }`}
-                 onClick={() =>
-  void handleReadNotification(notification)
-}
-                  >
-                    <span className="admin-notification-item-icon">
-                      {getNotificationIcon(
-                        notification,
-                      )}
-                    </span>
+          <div className="admin-notification-body">
+            {isLoading ? (
+              <div
+                className="admin-notification-empty"
+                role="status"
+              >
+                <span className="admin-notification-loading-indicator" />
 
-                    <span className="admin-notification-item-content">
-                      <span className="admin-notification-item-heading">
-                        <strong>
-                          {!notification.isRead && (
-                            <span
-                              className="admin-notification-unread-dot"
-                              aria-hidden="true"
-                            />
-                          )}
+                <strong>
+                  Loading notifications
+                </strong>
 
-                          {formatNotificationTitle(
-                            notification.title,
-                          )}
-                        </strong>
+                <span>
+                  Retrieving recent activity.
+                </span>
+              </div>
+            ) : filteredNotifications.length ===
+              0 ? (
+              <div className="admin-notification-empty">
+                <span className="admin-notification-empty-icon">
+                  <Bell
+                    size={20}
+                    strokeWidth={1.7}
+                  />
+                </span>
 
-                        <small
-                          title={formatNotificationDate(
-                            notification.createdAt,
-                          )}
-                        >
-                          {formatRelativeTime(
-                            notification.createdAt,
-                          )}
-                        </small>
-                      </span>
+                <strong>
+                  No notifications
+                </strong>
 
-                      <span className="admin-notification-item-message">
-                        {notification.message}
-                      </span>
-
-                      <time
-                        className="admin-notification-item-date"
-                        dateTime={
-                          notification.createdAt
-                        }
-                      >
-                        {formatNotificationDate(
-                          notification.createdAt,
+                <span>
+                  There is no activity in this
+                  period.
+                </span>
+              </div>
+            ) : (
+              <div className="admin-notification-list">
+                {filteredNotifications.map(
+                  (notification) => (
+                    <button
+                      key={notification.id}
+                      type="button"
+                      className={`admin-notification-item ${
+                        notification.isRead
+                          ? ""
+                          : "admin-notification-item--unread"
+                      }`}
+                      onClick={() =>
+                        void handleReadNotification(
+                          notification,
+                        )
+                      }
+                    >
+                      <span className="admin-notification-item-icon">
+                        {getNotificationIcon(
+                          notification,
                         )}
-                      </time>
-                    </span>
-                  </button>
-                ),
-              )}
-            </div>
-          )}
-        </div>
+                      </span>
+
+                      <span className="admin-notification-item-content">
+                        <span className="admin-notification-item-heading">
+                          <strong>
+                            {formatNotificationTitle(
+                              notification.title,
+                            )}
+                          </strong>
+
+                          <time
+                            dateTime={
+                              notification.createdAt
+                            }
+                            title={formatNotificationDate(
+                              notification.createdAt,
+                            )}
+                          >
+                            {formatRelativeTime(
+                              notification.createdAt,
+                            )}
+                          </time>
+                        </span>
+
+                        <span className="admin-notification-item-message">
+                          {notification.message}
+                        </span>
+
+                        <span className="admin-notification-item-footer">
+                          <time
+                            dateTime={
+                              notification.createdAt
+                            }
+                          >
+                            {formatNotificationDate(
+                              notification.createdAt,
+                            )}
+                          </time>
+
+                          {!notification.isRead && (
+                            <span className="admin-notification-unread-label">
+                              <span
+                                className="admin-notification-unread-dot"
+                                aria-hidden="true"
+                              />
+
+                              Unread
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                    </button>
+                  ),
+                )}
+              </div>
+            )}
+          </div>
+        </section>
       )}
     </div>
   );
