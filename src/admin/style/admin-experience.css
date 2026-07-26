@@ -887,3 +887,489 @@
   textarea::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.7);
 }
+/* =========================================================
+   Admin Experience Page
+   Part 3: Publish panel, toggle, responsive layout, polish
+========================================================= */
+
+/* =========================================================
+   Publish Panel
+========================================================= */
+
+.experience-publish-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 26px 28px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 22px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(34, 211, 238, 0.08),
+      transparent 38%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(15, 23, 42, 0.86),
+      rgba(8, 12, 25, 0.94)
+    );
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.experience-publish-panel__content {
+  min-width: 0;
+}
+
+.experience-publish-panel__label {
+  display: inline-block;
+  margin-bottom: 7px;
+  color: #67e8f9;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.experience-publish-panel h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.28rem;
+  letter-spacing: -0.02em;
+}
+
+.experience-publish-panel p {
+  max-width: 650px;
+  margin: 9px 0 0;
+  color: #94a3b8;
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+/* =========================================================
+   Publish Toggle
+========================================================= */
+
+.experience-publish-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 160px;
+  justify-content: flex-end;
+  cursor: pointer;
+  user-select: none;
+}
+
+.experience-publish-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.experience-publish-toggle__track {
+  position: relative;
+  display: inline-flex;
+  width: 54px;
+  height: 30px;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.92);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.experience-publish-toggle__thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #94a3b8;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.28);
+  transition:
+    transform 0.22s ease,
+    background-color 0.22s ease;
+}
+
+.experience-publish-toggle__text {
+  min-width: 66px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: left;
+}
+
+.experience-publish-toggle
+  input:checked
+  + .experience-publish-toggle__track {
+  border-color: rgba(52, 211, 153, 0.4);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(5, 150, 105, 0.86),
+      rgba(13, 148, 136, 0.82)
+    );
+  box-shadow:
+    0 0 0 3px rgba(52, 211, 153, 0.08),
+    0 8px 18px rgba(16, 185, 129, 0.12);
+}
+
+.experience-publish-toggle
+  input:checked
+  + .experience-publish-toggle__track
+  .experience-publish-toggle__thumb {
+  background: #ecfdf5;
+  transform: translateX(24px);
+}
+
+.experience-publish-toggle
+  input:focus-visible
+  + .experience-publish-toggle__track {
+  outline: 3px solid rgba(34, 211, 238, 0.2);
+  outline-offset: 3px;
+}
+
+.experience-publish-toggle:hover
+  .experience-publish-toggle__track {
+  border-color: rgba(148, 163, 184, 0.38);
+}
+
+.experience-publish-toggle input:disabled
+  + .experience-publish-toggle__track {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.experience-publish-toggle:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+/* =========================================================
+   Focus and Accessibility Polish
+========================================================= */
+
+.admin-experience-page button,
+.admin-experience-page input,
+.admin-experience-page textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-experience-page button:focus-visible,
+.admin-experience-feedback button:focus-visible,
+.admin-experience-error-state button:focus-visible {
+  outline: 3px solid rgba(34, 211, 238, 0.2);
+  outline-offset: 3px;
+}
+
+.admin-experience-feedback button:focus-visible {
+  border-radius: 8px;
+}
+
+/* =========================================================
+   Hover Elevation
+========================================================= */
+
+.experience-form-section,
+.experience-publish-panel,
+.admin-experience-placeholder-section {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.experience-form-section:hover {
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow:
+    0 22px 56px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.experience-publish-panel:hover {
+  border-color: rgba(34, 211, 238, 0.18);
+  box-shadow:
+    0 22px 56px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.admin-experience-placeholder-section:hover {
+  border-color: rgba(139, 92, 246, 0.28);
+}
+
+/* =========================================================
+   Page Entry Animation
+========================================================= */
+
+.admin-experience-header,
+.admin-experience-feedback,
+.admin-experience-empty-state,
+.experience-form-section,
+.experience-publish-panel,
+.experience-form-actions,
+.admin-experience-placeholder-section {
+  animation: admin-experience-fade-up 0.42s ease both;
+}
+
+.experience-form-section:nth-of-type(1) {
+  animation-delay: 0.04s;
+}
+
+.experience-form-section:nth-of-type(2) {
+  animation-delay: 0.08s;
+}
+
+.experience-form-section:nth-of-type(3) {
+  animation-delay: 0.12s;
+}
+
+.experience-publish-panel {
+  animation-delay: 0.16s;
+}
+
+.experience-form-actions {
+  animation-delay: 0.2s;
+}
+
+@keyframes admin-experience-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   Large Screens
+========================================================= */
+
+@media (min-width: 1500px) {
+  .admin-experience-page {
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+
+  .experience-form-section,
+  .experience-publish-panel {
+    padding: 32px;
+  }
+
+  .experience-form-grid {
+    gap: 24px;
+  }
+}
+
+/* =========================================================
+   Tablet
+========================================================= */
+
+@media (max-width: 1024px) {
+  .admin-experience-page {
+    padding: 24px;
+  }
+
+  .admin-experience-header {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .admin-experience-header__status {
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  .admin-experience-header__updated {
+    text-align: left;
+  }
+
+  .experience-publish-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .experience-publish-toggle {
+    min-width: 0;
+    justify-content: flex-start;
+  }
+}
+
+/* =========================================================
+   Small Tablets and Mobile
+========================================================= */
+
+@media (max-width: 768px) {
+  .admin-experience-page {
+    padding: 18px;
+  }
+
+  .admin-experience-header,
+  .experience-form-section,
+  .experience-publish-panel {
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .admin-experience-header h1 {
+    font-size: 2rem;
+  }
+
+  .experience-form-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .experience-form-field--full {
+    grid-column: auto;
+  }
+
+  .experience-form-section__header {
+    margin-bottom: 22px;
+  }
+
+  .experience-form-section__number {
+    font-size: 2rem;
+  }
+
+  .experience-form-actions {
+    bottom: 10px;
+    flex-wrap: wrap;
+    padding: 13px;
+  }
+
+  .experience-form-button {
+    flex: 1 1 180px;
+  }
+
+  .admin-experience-placeholder-section {
+    padding: 22px;
+  }
+}
+
+/* =========================================================
+   Mobile
+========================================================= */
+
+@media (max-width: 520px) {
+  .admin-experience-page {
+    padding: 12px;
+  }
+
+  .admin-experience-header,
+  .experience-form-section,
+  .experience-publish-panel,
+  .admin-experience-placeholder-section {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .admin-experience-header {
+    margin-bottom: 18px;
+  }
+
+  .admin-experience-header h1 {
+    font-size: 1.72rem;
+  }
+
+  .admin-experience-header p {
+    font-size: 0.88rem;
+  }
+
+  .admin-experience-status {
+    padding: 8px 12px;
+  }
+
+  .experience-form-section__header {
+    gap: 14px;
+  }
+
+  .experience-form-section__header h2 {
+    font-size: 1.15rem;
+  }
+
+  .experience-form-section__number {
+    font-size: 1.65rem;
+  }
+
+  .experience-form-field input {
+    min-height: 46px;
+  }
+
+  .experience-form-field textarea {
+    min-height: 120px;
+  }
+
+  .experience-form-field textarea#storyDescription {
+    min-height: 180px;
+  }
+
+  .experience-publish-panel h2 {
+    font-size: 1.12rem;
+  }
+
+  .experience-publish-toggle {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .experience-form-actions {
+    position: static;
+    flex-direction: column-reverse;
+  }
+
+  .experience-form-button {
+    width: 100%;
+    flex: none;
+  }
+
+  .admin-experience-feedback {
+    padding: 16px;
+  }
+
+  .admin-experience-error-state {
+    min-height: 320px;
+    padding: 28px 18px;
+  }
+}
+
+/* =========================================================
+   Reduced Motion
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-experience-header,
+  .admin-experience-feedback,
+  .admin-experience-empty-state,
+  .experience-form-section,
+  .experience-publish-panel,
+  .experience-form-actions,
+  .admin-experience-placeholder-section {
+    animation: none;
+  }
+
+  .admin-experience-page__spinner {
+    animation-duration: 1.8s;
+  }
+
+  .experience-form-button,
+  .experience-form-section,
+  .experience-publish-panel,
+  .admin-experience-placeholder-section,
+  .experience-publish-toggle__track,
+  .experience-publish-toggle__thumb {
+    transition: none;
+  }
+}
