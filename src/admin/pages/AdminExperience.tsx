@@ -1,20 +1,36 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ExternalLink,
+  FileImage,
+  Image,
+  LoaderCircle,
+  Save,
+  Sparkles,
+  X,
+} from "lucide-react";
 
 import ExperiencePageForm from "../components/experience/ExperiencePageForm";
 
 import {
   createExperiencePage,
   getAdminExperiencePage,
+  getExperienceHighlights,
+  getExperienceImages,
   updateExperiencePage,
 } from "../../services/experience.service";
 
 import type {
   CreateExperiencePageDto,
+  ExperienceHighlight,
+  ExperienceImage,
   ExperiencePage,
 } from "../../types/experience";
 
@@ -36,6 +52,8 @@ type LoadState =
       status: "error";
       message: string;
     };
+
+type ActiveTab = "content" | "highlights" | "images";
 
 type FormattedTimestamp = {
   label: string;
@@ -149,13 +167,47 @@ function formatLastUpdated(
   };
 }
 
+function getStringValue(
+  value: unknown,
+  keys: string[],
+  fallback: string,
+): string {
+  if (!isRecord(value)) {
+    return fallback;
+  }
+
+  for (const key of keys) {
+    const candidate = value[key];
+
+    if (
+      typeof candidate === "string" &&
+      candidate.trim()
+    ) {
+      return candidate.trim();
+    }
+  }
+
+  return fallback;
+}
+
 function AdminExperience() {
   const [page, setPage] =
     useState<ExperiencePage | null>(null);
+  const [highlights, setHighlights] = useState<
+    ExperienceHighlight[]
+  >([]);
+  const [images, setImages] = useState<
+    ExperienceImage[]
+  >([]);
+
+  const [activeTab, setActiveTab] =
+    useState<ActiveTab>("content");
+
   const [loadState, setLoadState] =
     useState<LoadState>({
       status: "loading",
     });
+
   const [isSaving, setIsSaving] =
     useState(false);
   const [feedback, setFeedback] =
@@ -175,8 +227,15 @@ function AdminExperience() {
       });
 
       try {
-        const experiencePage =
-          await getAdminExperiencePage();
+        const [
+          experiencePageResult,
+          highlightsResult,
+          imagesResult,
+        ] = await Promise.allSettled([
+          getAdminExperiencePage(),
+          getExperienceHighlights(),
+          getExperienceImages(),
+        ]);
 
         if (
           loadRequestIdRef.current !== requestId
@@ -184,7 +243,33 @@ function AdminExperience() {
           return;
         }
 
-        setPage(experiencePage);
+        if (
+          experiencePageResult.status ===
+          "fulfilled"
+        ) {
+          setPage(experiencePageResult.value);
+        } else if (
+          getErrorStatus(
+            experiencePageResult.reason,
+          ) === 404
+        ) {
+          setPage(null);
+        } else {
+          throw experiencePageResult.reason;
+        }
+
+        setHighlights(
+          highlightsResult.status === "fulfilled"
+            ? highlightsResult.value
+            : [],
+        );
+
+        setImages(
+          imagesResult.status === "fulfilled"
+            ? imagesResult.value
+            : [],
+        );
+
         setLoadState({
           status: "ready",
         });
@@ -192,15 +277,6 @@ function AdminExperience() {
         if (
           loadRequestIdRef.current !== requestId
         ) {
-          return;
-        }
-
-        if (getErrorStatus(error) === 404) {
-          setPage(null);
-          setLoadState({
-            status: "ready",
-          });
-
           return;
         }
 
@@ -262,21 +338,81 @@ function AdminExperience() {
     [isSaving, page],
   );
 
+  const submitExperienceForm = useCallback(() => {
+    const form =
+      document.querySelector<HTMLFormElement>(
+        ".experience-page-form",
+      );
+
+    form?.requestSubmit();
+  }, []);
+
+  const previewData = useMemo(
+    () => ({
+      title: getStringValue(
+        page,
+        [
+          "heroTitle",
+          "title",
+          "headline",
+          "mainTitle",
+        ],
+        "The Waterfall Experience",
+      ),
+      subtitle: getStringValue(
+        page,
+        [
+          "heroSubtitle",
+          "subtitle",
+          "subheading",
+          "tagline",
+        ],
+        "Nature. Music. Freedom.",
+      ),
+      description: getStringValue(
+        page,
+        [
+          "storyDescription",
+          "description",
+          "story",
+          "introText",
+        ],
+        "Create and save the Experience page to see its public content preview here.",
+      ),
+      imageUrl: getStringValue(
+        page,
+        [
+          "heroImageUrl",
+          "featuredImageUrl",
+          "imageUrl",
+          "coverImageUrl",
+        ],
+        "",
+      ),
+    }),
+    [page],
+  );
+
   if (loadState.status === "loading") {
     return (
-      <div className="admin-experience-page">
+      <div className="admin-experience">
         <div
-          className="admin-experience-page__loading"
+          className="admin-experience__state"
           role="status"
           aria-live="polite"
           aria-busy="true"
         >
-          <div
-            className="admin-experience-page__spinner"
-            aria-hidden="true"
+          <LoaderCircle
+            className="admin-experience__spinner"
+            size={28}
           />
 
-          <p>Loading the Experience page...</p>
+          <h2>Loading Experience page</h2>
+
+          <p>
+            Retrieving the page content and related
+            sections.
+          </p>
         </div>
       </div>
     );
@@ -284,17 +420,12 @@ function AdminExperience() {
 
   if (loadState.status === "error") {
     return (
-      <div className="admin-experience-page">
+      <div className="admin-experience">
         <div
-          className="admin-experience-error-state"
+          className="admin-experience__state admin-experience__state--error"
           role="alert"
         >
-          <div
-            className="admin-experience-error-state__icon"
-            aria-hidden="true"
-          >
-            !
-          </div>
+          <AlertCircle size={28} />
 
           <h2>Unable to load Experience</h2>
 
@@ -315,72 +446,101 @@ function AdminExperience() {
 
   const isPublished =
     page?.isPublished ?? false;
+
   const lastUpdated = formatLastUpdated(
     page?.updatedAt,
   );
 
   return (
-    <div className="admin-experience-page">
-      <header className="admin-experience-header">
-        <div>
-          <span className="admin-experience-header__eyebrow">
-            Website content
+    <div className="admin-experience">
+      <header className="admin-experience__header">
+        <div className="admin-experience__heading">
+          <span className="admin-experience__breadcrumb">
+            Admin / Experience
           </span>
 
           <h1>Experience Page</h1>
 
           <p>
-            Manage the main content, story, publication
-            status, and presentation of the public
+            Manage the content of the public
             Experience page.
           </p>
         </div>
 
-        <div className="admin-experience-header__status">
+        <div className="admin-experience__header-actions">
           <span
-            className={`admin-experience-status ${
+            className={`admin-experience__status ${
               isPublished
-                ? "admin-experience-status--published"
-                : "admin-experience-status--draft"
+                ? "admin-experience__status--published"
+                : "admin-experience__status--draft"
             }`}
           >
-            <span
-              className="admin-experience-status__dot"
-              aria-hidden="true"
-            />
+            <span aria-hidden="true" />
 
             {isPublished ? "Published" : "Draft"}
           </span>
 
-          <span className="admin-experience-header__updated">
-            Last updated
-            <br />
+          <div className="admin-experience__updated">
+            <span>Last updated</span>
 
             {lastUpdated.dateTime ? (
               <time dateTime={lastUpdated.dateTime}>
                 {lastUpdated.label}
               </time>
             ) : (
-              lastUpdated.label
+              <strong>{lastUpdated.label}</strong>
             )}
-          </span>
+          </div>
+
+          <a
+            className="admin-experience__preview-link"
+            href="/experience"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink size={15} />
+            Preview Public Page
+          </a>
+
+          <button
+            type="button"
+            className="admin-experience__save-button"
+            onClick={submitExperienceForm}
+            disabled={
+              isSaving || activeTab !== "content"
+            }
+          >
+            {isSaving ? (
+              <LoaderCircle
+                size={15}
+                className="admin-experience__spinner"
+              />
+            ) : (
+              <Save size={15} />
+            )}
+
+            {isSaving
+              ? "Saving..."
+              : "Save Changes"}
+          </button>
         </div>
       </header>
 
       {feedback && (
         <div
-          className={`admin-experience-feedback admin-experience-feedback--${feedback.type}`}
+          className={`admin-experience__feedback admin-experience__feedback--${feedback.type}`}
           role={
             feedback.type === "error"
               ? "alert"
               : "status"
           }
-          aria-live={
-            feedback.type === "error"
-              ? "assertive"
-              : "polite"
-          }
         >
+          {feedback.type === "success" ? (
+            <CheckCircle2 size={17} />
+          ) : (
+            <AlertCircle size={17} />
+          )}
+
           <div>
             <strong>
               {feedback.type === "success"
@@ -393,61 +553,315 @@ function AdminExperience() {
 
           <button
             type="button"
+            onClick={() => setFeedback(null)}
             aria-label="Dismiss feedback"
-            title="Dismiss"
-            onClick={() => {
-              setFeedback(null);
-            }}
           >
-            ×
+            <X size={16} />
           </button>
         </div>
       )}
 
-      {!page && (
-        <section className="admin-experience-empty-state">
-          <span className="admin-experience-empty-state__eyebrow">
-            Initial setup
-          </span>
+      <nav
+        className="admin-experience__tabs"
+        aria-label="Experience page sections"
+      >
+        <button
+          type="button"
+          className={
+            activeTab === "content"
+              ? "admin-experience__tab admin-experience__tab--active"
+              : "admin-experience__tab"
+          }
+          onClick={() => setActiveTab("content")}
+        >
+          Content
+        </button>
 
-          <h2>Create your Experience page</h2>
+        <button
+          type="button"
+          className={
+            activeTab === "highlights"
+              ? "admin-experience__tab admin-experience__tab--active"
+              : "admin-experience__tab"
+          }
+          onClick={() =>
+            setActiveTab("highlights")
+          }
+        >
+          Highlights
+          <span>{highlights.length}</span>
+        </button>
 
-          <p>
-            No Experience page exists yet. Complete the form
-            below and save it to create the first version.
-          </p>
+        <button
+          type="button"
+          className={
+            activeTab === "images"
+              ? "admin-experience__tab admin-experience__tab--active"
+              : "admin-experience__tab"
+          }
+          onClick={() => setActiveTab("images")}
+        >
+          Images
+          <span>{images.length}</span>
+        </button>
+      </nav>
+
+      {activeTab === "content" && (
+        <>
+          {!page && (
+            <section className="admin-experience__setup">
+              <Sparkles size={18} />
+
+              <div>
+                <strong>
+                  Create your Experience page
+                </strong>
+
+                <p>
+                  Complete the form and save it to
+                  create the first version.
+                </p>
+              </div>
+            </section>
+          )}
+
+          <div className="admin-experience__content-layout">
+            <main className="admin-experience__editor">
+              <div className="admin-experience__section-heading">
+                <h2>Page Content</h2>
+
+                <p>
+                  Update the information that appears
+                  on the Experience page.
+                </p>
+              </div>
+
+              <ExperiencePageForm
+                page={page}
+                isSaving={isSaving}
+                onSubmit={handleSubmit}
+              />
+            </main>
+
+            <aside className="admin-experience__preview">
+              <div className="admin-experience__section-heading">
+                <h2>Live Preview</h2>
+
+                <p>
+                  Preview of the currently saved
+                  Experience page.
+                </p>
+              </div>
+
+              <div className="admin-experience__preview-card">
+                <div
+                  className={
+                    previewData.imageUrl
+                      ? "admin-experience__preview-media"
+                      : "admin-experience__preview-media admin-experience__preview-media--empty"
+                  }
+                  style={
+                    previewData.imageUrl
+                      ? {
+                          backgroundImage: `url("${previewData.imageUrl}")`,
+                        }
+                      : undefined
+                  }
+                >
+                  <span
+                    className={`admin-experience__preview-status ${
+                      isPublished
+                        ? "admin-experience__preview-status--published"
+                        : "admin-experience__preview-status--draft"
+                    }`}
+                  >
+                    <span aria-hidden="true" />
+
+                    {isPublished
+                      ? "Published"
+                      : "Draft"}
+                  </span>
+
+                  {!previewData.imageUrl && (
+                    <div className="admin-experience__preview-placeholder">
+                      <FileImage size={30} />
+                      <span>
+                        Featured image preview
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="admin-experience__preview-copy">
+                    <h3>{previewData.title}</h3>
+
+                    <strong>
+                      {previewData.subtitle}
+                    </strong>
+
+                    <p>{previewData.description}</p>
+                  </div>
+                </div>
+
+                <div className="admin-experience__preview-meta">
+                  <div>
+                    <Sparkles size={17} />
+
+                    <span>
+                      Highlights
+                      <strong>
+                        {highlights.length}
+                      </strong>
+                    </span>
+                  </div>
+
+                  <div>
+                    <Image size={17} />
+
+                    <span>
+                      Images
+                      <strong>{images.length}</strong>
+                    </span>
+                  </div>
+
+                  <div>
+                    <span>
+                      Last updated
+                      <strong>
+                        {lastUpdated.label}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div className="admin-experience__tip">
+            <AlertCircle size={16} />
+
+            <p>
+              Changes are shown in the preview after
+              they are saved.
+            </p>
+          </div>
+        </>
+      )}
+
+      {activeTab === "highlights" && (
+        <section className="admin-experience__tab-panel">
+          <div className="admin-experience__section-heading">
+            <h2>Experience Highlights</h2>
+
+            <p>
+              Manage the key features shown on the
+              public Experience page.
+            </p>
+          </div>
+
+          {highlights.length === 0 ? (
+            <div className="admin-experience__empty">
+              <Sparkles size={24} />
+
+              <h3>No highlights yet</h3>
+
+              <p>
+                Highlight creation and editing can be
+                added here without crowding the main
+                page editor.
+              </p>
+            </div>
+          ) : (
+            <div className="admin-experience__simple-list">
+              {highlights.map((highlight, index) => (
+                <article key={highlight.id}>
+                  <span>{index + 1}</span>
+
+                  <div>
+                    <strong>
+                      {getStringValue(
+                        highlight,
+                        ["title", "name"],
+                        `Highlight ${index + 1}`,
+                      )}
+                    </strong>
+
+                    <p>
+                      {getStringValue(
+                        highlight,
+                        [
+                          "description",
+                          "text",
+                          "content",
+                        ],
+                        "No description",
+                      )}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
-      <ExperiencePageForm
-        page={page}
-        isSaving={isSaving}
-        onSubmit={handleSubmit}
-      />
+      {activeTab === "images" && (
+        <section className="admin-experience__tab-panel">
+          <div className="admin-experience__section-heading">
+            <h2>Experience Images</h2>
 
-      <section className="admin-experience-placeholder-section">
-        <div>
-          <span className="admin-experience-placeholder-section__eyebrow">
-            Coming next
-          </span>
+            <p>
+              Review the images used across the
+              Experience page.
+            </p>
+          </div>
 
-          <h2>Experience Highlights</h2>
+          {images.length === 0 ? (
+            <div className="admin-experience__empty">
+              <Image size={24} />
 
-          <p>Coming next</p>
-        </div>
-      </section>
+              <h3>No images yet</h3>
 
-      <section className="admin-experience-placeholder-section">
-        <div>
-          <span className="admin-experience-placeholder-section__eyebrow">
-            Coming next
-          </span>
+              <p>
+                Image upload and management can live
+                in this dedicated tab.
+              </p>
+            </div>
+          ) : (
+            <div className="admin-experience__image-grid">
+              {images.map((image, index) => {
+                const imageUrl = getStringValue(
+                  image,
+                  ["imageUrl", "url", "src"],
+                  "",
+                );
 
-          <h2>Experience Images</h2>
+                const imageAlt = getStringValue(
+                  image,
+                  ["altText", "title", "name"],
+                  `Experience image ${index + 1}`,
+                );
 
-          <p>Coming next</p>
-        </div>
-      </section>
+                return (
+                  <article key={image.id}>
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={imageAlt}
+                      />
+                    ) : (
+                      <div>
+                        <FileImage size={24} />
+                      </div>
+                    )}
+
+                    <span>{imageAlt}</span>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
