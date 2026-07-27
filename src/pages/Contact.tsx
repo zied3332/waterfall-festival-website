@@ -7,15 +7,15 @@ import {
 import {
   ArrowRight,
   Clock3,
-  Facebook,
-  Instagram,
+  
+  
   LockKeyhole,
   Mail,
   MapPin,
   MessageSquareText,
   Phone,
   Send,
-  Youtube,
+  
 } from "lucide-react";
 
 import {
@@ -474,28 +474,7 @@ function Contact() {
                 </div>
               </div>
 
-              <div className="contact-socials">
-                <a
-                  href="#"
-                  aria-label="Waterfall Festival on Instagram"
-                >
-                  <Instagram size={20} />
-                </a>
-
-                <a
-                  href="#"
-                  aria-label="Waterfall Festival on Facebook"
-                >
-                  <Facebook size={20} />
-                </a>
-
-                <a
-                  href="#"
-                  aria-label="Waterfall Festival on YouTube"
-                >
-                  <Youtube size={20} />
-                </a>
-              </div>
+            
             </aside>
           </div>
 
