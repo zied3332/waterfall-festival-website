@@ -131,7 +131,7 @@ function Home() {
       <ExperiencePreviewSection />
       <GalleryPreviewSection />
       <FAQPreviewSection />
-      <AIChatPreviewSection />
+      
     </>
   );
 }
