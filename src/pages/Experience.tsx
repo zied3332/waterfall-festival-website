@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
+
 import {
   ArrowRight,
   Crown,
   Flame,
   GlassWater,
   Headphones,
+  MapPin,
   Music2,
   Sparkles,
+  Star,
   Trees,
-  Users,
+  Waves,
 } from "lucide-react";
 
 import "./style/experience.css";
@@ -25,60 +28,77 @@ const experiences = [
     title: "Live Music",
     category: "World-Class Sound",
     description:
-      "Dance beneath the stars with international DJs, powerful sound systems, and performances that keep the jungle alive all night.",
+      "Dance beneath the stars with international DJs, artists, and powerful sound systems.",
     image: gallery1,
     icon: Headphones,
-    className: "experience-card--large",
   },
   {
     number: "02",
     title: "Waterfall Stage",
     category: "Iconic Location",
     description:
-      "Experience music beside the legendary waterfall, surrounded by tropical nature, lights, and the energy of Koh Phangan.",
+      "Experience music beside the legendary waterfall surrounded by tropical nature.",
     image: gallery4,
     icon: Music2,
-    className: "experience-card--standard",
   },
   {
     number: "03",
     title: "Fire Shows",
     category: "Live Performance",
     description:
-      "Watch talented performers create unforgettable moments with spectacular fire shows throughout the festival night.",
+      "Watch talented performers create spectacular moments and light up the festival night.",
     image: gallery2,
     icon: Flame,
-    className: "experience-card--tall",
   },
   {
     number: "04",
     title: "VIP Experience",
     category: "Premium Festival",
     description:
-      "Enjoy exclusive viewing areas, premium service, comfortable spaces, and a private atmosphere above the crowd.",
+      "Enjoy exclusive areas, premium service, and a comfortable view above the crowd.",
     image: gallery3,
     icon: Crown,
-    className: "experience-card--standard",
   },
   {
     number: "05",
     title: "Food & Drinks",
     category: "Island Flavours",
     description:
-      "Discover Thai street food, fresh fruit, cocktails, cold drinks, and festival favourites throughout the venue.",
+      "Discover Thai food, fresh fruit, cocktails, cold drinks, and festival favourites.",
     image: gallery5,
     icon: GlassWater,
-    className: "experience-card--wide",
   },
   {
     number: "06",
     title: "Jungle Atmosphere",
     category: "Into The Wild",
     description:
-      "Step into a world of tropical trees, glowing decorations, immersive lighting, music, and unforgettable island energy.",
+      "Explore tropical trees, immersive lights, decorations, music, and island energy.",
     image: gallery4,
     icon: Trees,
-    className: "experience-card--standard",
+  },
+];
+
+const experienceFeatures = [
+  {
+    title: "Live music",
+    description: "International DJs and artists",
+    icon: Music2,
+  },
+  {
+    title: "Tropical nature",
+    description: "Waterfalls, jungle, and island views",
+    icon: Trees,
+  },
+  {
+    title: "Live shows",
+    description: "Fire shows and special performances",
+    icon: Flame,
+  },
+  {
+    title: "Food & drinks",
+    description: "Thai food, drinks, and cocktails",
+    icon: GlassWater,
   },
 ];
 
@@ -86,232 +106,290 @@ const highlights = [
   {
     value: "6+",
     label: "Festival experiences",
+    icon: Star,
   },
   {
     value: "1",
     label: "Iconic waterfall",
+    icon: Waves,
   },
   {
-    value: "100%",
-    label: "Island energy",
+    value: "Koh Phangan",
+    label: "Thailand",
+    icon: MapPin,
   },
 ];
 
 function Experience() {
   return (
     <main className="experience-page">
-      <div className="experience-background" aria-hidden="true">
-        <div className="experience-background__grid" />
-        <div className="experience-background__glow experience-background__glow--purple" />
-        <div className="experience-background__glow experience-background__glow--cyan" />
-      </div>
-
       <section className="experience-hero">
-        <div className="experience-container experience-hero__container">
-          <div className="experience-hero__content">
-            <div className="experience-eyebrow">
-              <Sparkles size={16} />
-              <span>The Waterfall Experience</span>
-            </div>
+        <div className="experience-hero__content">
+          <p className="experience-hero__label">
+            Experience
+          </p>
 
-            <h1 className="experience-title">
-              More than music.
-              <span> A world of its own.</span>
-            </h1>
+          <h1 className="experience-hero__title">
+            The Waterfall Experience
+          </h1>
 
-            <p className="experience-description">
-              Waterfall Festival brings together music, nature, fire, lights,
-              international artists, and people from around the world in one
-              unforgettable jungle experience.
-            </p>
-
-            <div className="experience-hero__actions">
-              <Link to="/tickets" className="experience-button experience-button--primary">
-                Get Your Tickets
-                <ArrowRight size={18} />
-              </Link>
-
-              <Link to="/gallery" className="experience-button experience-button--secondary">
-                Explore Gallery
-              </Link>
-            </div>
-
-            <div className="experience-highlights">
-              {highlights.map((highlight) => (
-                <div className="experience-highlight" key={highlight.label}>
-                  <strong>{highlight.value}</strong>
-                  <span>{highlight.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="experience-hero__visual">
-            <div className="experience-hero__image-wrapper">
-              <img
-                src={gallery1}
-                alt="Waterfall Festival stage and crowd"
-                className="experience-hero__image"
-              />
-
-              <div className="experience-hero__image-overlay" />
-
-              <div className="experience-hero__floating-card">
-                <div className="experience-hero__floating-icon">
-                  <Users size={22} />
-                </div>
-
-                <div>
-                  <span>Festival Community</span>
-                  <strong>One night. Endless memories.</strong>
-                </div>
-              </div>
-
-              <div className="experience-hero__badge">
-                <Music2 size={20} />
-                <span>Koh Phangan</span>
-              </div>
-            </div>
-
-            <div className="experience-hero__decoration experience-hero__decoration--one" />
-            <div className="experience-hero__decoration experience-hero__decoration--two" />
-          </div>
+          <p className="experience-hero__description">
+            Discover music, performances, nature,
+            food, and unforgettable festival nights
+            in Koh Phangan.
+          </p>
         </div>
       </section>
 
-      <section className="experience-showcase">
+      <section className="experience-content">
         <div className="experience-container">
-          <div className="experience-section-header">
-            <div>
-              <span className="experience-section-header__label">
-                Discover every moment
-              </span>
+          <section className="experience-introduction">
+            <div className="experience-introduction__content">
+              <p className="experience-section-label">
+                The festival experience
+              </p>
 
-              <h2>Everything waiting for you</h2>
+              <h2>
+                Everything waiting for you
+              </h2>
+
+              <p>
+                Waterfall Festival combines
+                world-class music, tropical
+                surroundings, exciting
+                performances, delicious food, and
+                an international community.
+              </p>
             </div>
 
-            <p>
-              From the first beat to the final sunrise, every part of Waterfall
-              Festival is designed to create an unforgettable night.
-            </p>
-          </div>
+            <div className="experience-features">
+              {experienceFeatures.map((feature) => {
+                const Icon = feature.icon;
 
-          <div className="experience-grid">
-            {experiences.map((item) => {
-              const Icon = item.icon;
+                return (
+                  <div
+                    className="experience-feature"
+                    key={feature.title}
+                  >
+                    <span
+                      className="experience-feature__icon"
+                      aria-hidden="true"
+                    >
+                      <Icon size={21} />
+                    </span>
+
+                    <h3>{feature.title}</h3>
+
+                    <p>{feature.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section
+            className="experience-showcase"
+            aria-labelledby="experience-showcase-title"
+          >
+            <div className="experience-showcase__header">
+              <div>
+                <p className="experience-section-label">
+                  Discover every moment
+                </p>
+
+                <h2 id="experience-showcase-title">
+                  What you can experience
+                </h2>
+              </div>
+
+              <p>
+                From the first beat to the final
+                moment, every part of the festival
+                is designed to create an
+                unforgettable night.
+              </p>
+            </div>
+
+            <div className="experience-grid">
+              {experiences.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <article
+                    className="experience-card"
+                    key={item.title}
+                  >
+                    <div className="experience-card__image-wrapper">
+                      <img
+                        className="experience-card__image"
+                        src={item.image}
+                        alt={item.title}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+
+                    <div className="experience-card__content">
+                      <div className="experience-card__heading">
+                        <span
+                          className="experience-card__icon"
+                          aria-hidden="true"
+                        >
+                          <Icon size={19} />
+                        </span>
+
+                        <div>
+                          <h3>{item.title}</h3>
+
+                          <p className="experience-card__category">
+                            {item.category}
+                          </p>
+                        </div>
+
+                        <span
+                          className="experience-card__number"
+                          aria-hidden="true"
+                        >
+                          {item.number}
+                        </span>
+                      </div>
+
+                      <p className="experience-card__description">
+                        {item.description}
+                      </p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+
+          <section
+            className="experience-highlights"
+            aria-label="Festival highlights"
+          >
+            {highlights.map((highlight) => {
+              const Icon = highlight.icon;
 
               return (
-                <article
-                  className={`experience-card ${item.className}`}
-                  key={item.title}
+                <div
+                  className="experience-highlight"
+                  key={highlight.label}
                 >
-                  <img
-                    className="experience-card__image"
-                    src={item.image}
-                    alt={item.title}
-                  />
+                  <span
+                    className="experience-highlight__icon"
+                    aria-hidden="true"
+                  >
+                    <Icon size={25} />
+                  </span>
 
-                  <div className="experience-card__overlay" />
+                  <div>
+                    <strong>{highlight.value}</strong>
 
-                  <div className="experience-card__top">
-                    <span className="experience-card__number">
-                      {item.number}
-                    </span>
-
-                    <span className="experience-card__icon">
-                      <Icon size={19} />
-                    </span>
+                    <span>{highlight.label}</span>
                   </div>
-
-                  <div className="experience-card__content">
-                    <span className="experience-card__category">
-                      {item.category}
-                    </span>
-
-                    <h3>{item.title}</h3>
-
-                    <p>{item.description}</p>
-
-                    <span className="experience-card__link">
-                      Discover experience
-                      <ArrowRight size={16} />
-                    </span>
-                  </div>
-                </article>
+                </div>
               );
             })}
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="experience-story">
-        <div className="experience-container experience-story__container">
-          <div className="experience-story__images">
-            <div className="experience-story__image experience-story__image--main">
-              <img src={gallery3} alt="Friends enjoying Waterfall Festival" />
+          <section className="experience-story">
+            <div className="experience-story__image-wrapper">
+              <img
+                className="experience-story__image"
+                src={gallery3}
+                alt="Festival visitors enjoying Waterfall Festival"
+                loading="lazy"
+                decoding="async"
+              />
             </div>
 
-            <div className="experience-story__image experience-story__image--small">
-              <img src={gallery2} alt="Festival fire performance" />
+            <div className="experience-story__content">
+              <p className="experience-section-label">
+                The Waterfall story
+              </p>
+
+              <h2>
+                Come for the music. Stay for the
+                memories.
+              </h2>
+
+              <div
+                className="experience-story__line"
+                aria-hidden="true"
+              />
+
+              <p>
+                Waterfall Festival is about
+                connection, freedom, and living in
+                the moment. Meet people from around
+                the world, dance beneath tropical
+                trees, and create memories that
+                stay with you long after the music
+                ends.
+              </p>
+
+              <p>
+                Whether you arrive with friends or
+                travel alone, you become part of a
+                community brought together by
+                music, nature, and adventure.
+              </p>
+
+              <Link
+                className="experience-story__link"
+                to="/gallery"
+              >
+                Explore the gallery
+
+                <ArrowRight
+                  size={18}
+                  aria-hidden="true"
+                />
+              </Link>
+            </div>
+          </section>
+
+          <section className="experience-cta">
+            <div className="experience-cta__heading">
+              <p className="experience-cta__label">
+                Join the experience
+              </p>
+
+              <h2>
+                Ready for the Waterfall experience?
+              </h2>
             </div>
 
-            <div className="experience-story__image-label">
-              <Sparkles size={17} />
-              <span>Made for unforgettable nights</span>
-            </div>
-          </div>
-
-          <div className="experience-story__content">
-            <span className="experience-story__label">
-              The heart of the festival
-            </span>
-
-            <h2>Come for the music. Stay for the memories.</h2>
-
-            <p>
-              Waterfall Festival is about more than standing in front of a
-              stage. It is about meeting new people, discovering the island,
-              dancing beneath tropical trees, and sharing moments that stay
-              with you long after the music ends.
+            <p className="experience-cta__description">
+              Be part of the magic. Get your
+              tickets and join us for an
+              unforgettable night in Koh Phangan.
             </p>
 
-            <p>
-              Whether you arrive with friends or travel alone, you become part
-              of a community brought together by music, nature, and adventure.
-            </p>
-
-            <Link to="/gallery" className="experience-story__link">
-              See festival moments
-              <ArrowRight size={18} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="experience-cta-section">
-        <div className="experience-container">
-          <div className="experience-cta">
-            <div className="experience-cta__glow" aria-hidden="true" />
-
-            <div className="experience-cta__icon">
-              <Music2 size={28} />
-            </div>
-
-            <span className="experience-cta__label">
-              Your island adventure starts here
-            </span>
-
-            <h2>Create memories that last forever.</h2>
-
-            <p>
-              Join us beneath the waterfall for music, lights, nature, and a
-              night you will never forget.
-            </p>
-
-            <Link to="/tickets" className="experience-cta__button">
+            <Link
+              className="experience-cta__button"
+              to="/tickets"
+            >
               Get Your Tickets
-              <ArrowRight size={19} />
+
+              <ArrowRight
+                size={18}
+                aria-hidden="true"
+              />
             </Link>
+          </section>
+
+          <div className="experience-mobile-note">
+            <Sparkles
+              size={18}
+              aria-hidden="true"
+            />
+
+            <span>
+              Music, nature, and unforgettable
+              island memories.
+            </span>
           </div>
         </div>
       </section>
