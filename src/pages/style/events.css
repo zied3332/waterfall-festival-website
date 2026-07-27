@@ -28,7 +28,7 @@
 }
 
 .events-hero-content {
-  width: min(100%, 1180px);
+  width: min(100%, 960px);
   margin: 0 auto;
   padding: 38px 18px 52px;
 }
@@ -177,7 +177,8 @@
 
   background-size: 200% 100%;
 
-  animation: events-skeleton-loading
+  animation:
+    events-skeleton-loading
     1.35s infinite linear;
 }
 
@@ -205,7 +206,8 @@
 
   background-size: 200% 100%;
 
-  animation: events-skeleton-loading
+  animation:
+    events-skeleton-loading
     1.35s infinite linear;
 }
 
@@ -338,7 +340,8 @@
 }
 
 .events-retry-button:focus-visible {
-  outline: 3px solid
+  outline:
+    3px solid
     rgba(185, 28, 28, 0.18);
   outline-offset: 3px;
 }
@@ -365,8 +368,7 @@
   }
 
   .events-content {
-    padding:
-      38px 22px 72px;
+    padding: 38px 22px 72px;
   }
 
   .events-section-header {
@@ -401,8 +403,7 @@
   }
 
   .events-content {
-    padding:
-      44px 30px 84px;
+    padding: 44px 30px 84px;
   }
 
   .events-section-title {
