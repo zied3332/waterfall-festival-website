@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
+
 import {
-  Calendar,
+  ArrowRight,
+  CalendarDays,
   Clock3,
-  Heart,
   MapPin,
 } from "lucide-react";
 
@@ -14,67 +15,85 @@ type EventCardProps = {
   event: Event;
 };
 
-function formatEventDate(date: string) {
+function formatEventDate(date: string): string {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Date to be announced";
+  }
+
   return new Intl.DateTimeFormat("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(parsedDate);
 }
 
-function formatEventTime(date: string) {
+function formatEventTime(date: string): string {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Time to be announced";
+  }
+
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(date));
+  }).format(parsedDate);
 }
 
-function EventCard({ event }: EventCardProps) {
+function EventCard({
+  event,
+}: EventCardProps) {
+  const imageStyle = event.heroImageUrl
+    ? {
+        backgroundImage: `url("${event.heroImageUrl}")`,
+      }
+    : undefined;
+
   return (
     <article className="event-card">
-      <div
-        className="event-card__image"
-        data-event={event.slug}
-        style={
-          event.heroImageUrl
-            ? {
-                backgroundImage: `url("${event.heroImageUrl}")`,
-              }
-            : undefined
-        }
+      <Link
+        className="event-card__image-link"
+        to={`/events/${event.slug}`}
+        aria-label={`View details for ${event.title}`}
       >
-        <div className="event-card__overlay" />
-
-        <div className="event-card__badge">
-          <span />
-          Upcoming
-        </div>
-
-        <button
-          className="event-card__heart"
-          type="button"
-          aria-label={`Add ${event.title} to favorites`}
+        <div
+          className="event-card__image"
+          style={imageStyle}
         >
-          <Heart size={26} strokeWidth={1.8} />
-        </button>
-      </div>
+          <div
+            className="event-card__image-overlay"
+            aria-hidden="true"
+          />
+
+          <span className="event-card__badge">
+            Upcoming
+          </span>
+        </div>
+      </Link>
 
       <div className="event-card__content">
-        <p className="event-card__label">
-          Waterfall Festival
-        </p>
+        <div className="event-card__heading">
+          <p className="event-card__label">
+            Waterfall Festival
+          </p>
 
-        <h2 className="event-card__title">
-          {event.title}
-        </h2>
-
-        <p className="event-card__place">
-          Koh Phangan
-        </p>
+          <h2 className="event-card__title">
+            <Link
+              to={`/events/${event.slug}`}
+            >
+              {event.title}
+            </Link>
+          </h2>
+        </div>
 
         <div className="event-card__details">
           <div className="event-card__detail">
-            <Calendar size={17} />
+            <CalendarDays
+              size={17}
+              aria-hidden="true"
+            />
 
             <span>
               {formatEventDate(event.date)}
@@ -82,7 +101,10 @@ function EventCard({ event }: EventCardProps) {
           </div>
 
           <div className="event-card__detail">
-            <Clock3 size={17} />
+            <Clock3
+              size={17}
+              aria-hidden="true"
+            />
 
             <span>
               {formatEventTime(event.date)}
@@ -90,22 +112,34 @@ function EventCard({ event }: EventCardProps) {
           </div>
 
           <div className="event-card__detail">
-            <MapPin size={17} />
+            <MapPin
+              size={17}
+              aria-hidden="true"
+            />
 
-            <span>{event.location}</span>
+            <span>
+              {event.location ||
+                "Koh Phangan, Thailand"}
+            </span>
           </div>
         </div>
 
-        <p className="event-card__description">
-          {event.description}
-        </p>
+        {event.description && (
+          <p className="event-card__description">
+            {event.description}
+          </p>
+        )}
 
         <Link
           to={`/events/${event.slug}`}
           className="event-card__button"
         >
-          <span>View Event</span>
-          <span aria-hidden="true">→</span>
+          View Event
+
+          <ArrowRight
+            size={18}
+            aria-hidden="true"
+          />
         </Link>
       </div>
     </article>
