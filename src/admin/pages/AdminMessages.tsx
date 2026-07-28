@@ -2,21 +2,22 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
   AlertCircle,
+  Archive,
   CalendarDays,
   Eye,
   Inbox,
   LoaderCircle,
-  Mail,
   MailCheck,
   Phone,
   RefreshCw,
+  Search,
   Tag,
   Trash2,
-  User,
   X,
 } from "lucide-react";
 import {
@@ -34,38 +35,54 @@ import {
 
 import "../style/admin-messages.css";
 
-function formatMessageDate(date: string) {
-  const parsedDate = new Date(date);
+type MessageStatus =
+  | "ALL"
+  | "NEW"
+  | "READ"
+  | "REPLIED"
+  | "ARCHIVED";
 
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Invalid date";
-  }
+type Feedback = {
+  type: "success" | "error";
+  message: string;
+};
 
-  return new Intl.DateTimeFormat("en-GB", {
+const dateFormatter = new Intl.DateTimeFormat(
+  "en-GB",
+  {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(parsedDate);
-}
+  },
+);
 
-function formatMessageDateTime(date: string) {
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Invalid date";
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
+const dateTimeFormatter =
+  new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(parsedDate);
+  });
+
+function formatMessageDate(date: string) {
+  const parsedDate = new Date(date);
+
+  return Number.isNaN(parsedDate.getTime())
+    ? "Invalid date"
+    : dateFormatter.format(parsedDate);
 }
 
-function formatLabel(value: string | undefined) {
-  if (!value) {
+function formatMessageDateTime(date: string) {
+  const parsedDate = new Date(date);
+
+  return Number.isNaN(parsedDate.getTime())
+    ? "Invalid date"
+    : dateTimeFormatter.format(parsedDate);
+}
+
+function formatLabel(value?: string) {
+  if (!value?.trim()) {
     return "Not specified";
   }
 
@@ -83,12 +100,51 @@ function getStatusClass(status: string) {
     .replace(/_/g, "-");
 }
 
-function getErrorMessage(error: unknown) {
+function isRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null
+  );
+}
+
+function getErrorMessage(
+  error: unknown,
+  fallback = "An unexpected error occurred.",
+) {
+  if (isRecord(error)) {
+    const response = error.response;
+
+    if (isRecord(response)) {
+      const data = response.data;
+
+      if (isRecord(data)) {
+        const message = data.message;
+
+        if (typeof message === "string") {
+          return message;
+        }
+
+        if (Array.isArray(message)) {
+          const messages = message.filter(
+            (item): item is string =>
+              typeof item === "string",
+          );
+
+          if (messages.length > 0) {
+            return messages.join(" ");
+          }
+        }
+      }
+    }
+  }
+
   if (error instanceof Error) {
     return error.message;
   }
 
-  return "An unexpected error occurred.";
+  return fallback;
 }
 
 function AdminMessages() {
@@ -100,36 +156,38 @@ function AdminMessages() {
   const [messages, setMessages] = useState<
     AdminContactMessage[]
   >([]);
-
   const [totalMessages, setTotalMessages] =
     useState(0);
 
   const [selectedMessage, setSelectedMessage] =
     useState<AdminContactMessage | null>(null);
-
   const [messageToDelete, setMessageToDelete] =
     useState<AdminContactMessage | null>(null);
 
+  const [searchQuery, setSearchQuery] =
+    useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<MessageStatus>("ALL");
+
   const [isLoading, setIsLoading] =
     useState(true);
-
   const [isRefreshing, setIsRefreshing] =
     useState(false);
-
   const [isPreviewLoading, setIsPreviewLoading] =
     useState(false);
-
-  const [isUpdatingMessage, setIsUpdatingMessage] =
-    useState(false);
-
+  const [updatingMessageId, setUpdatingMessageId] =
+    useState<number | null>(null);
   const [isDeletingMessage, setIsDeletingMessage] =
     useState(false);
 
-  const [error, setError] =
+  const [pageError, setPageError] =
     useState<string | null>(null);
-
   const [previewError, setPreviewError] =
     useState<string | null>(null);
+  const [feedback, setFeedback] =
+    useState<Feedback | null>(null);
+
+  const previewRequestIdRef = useRef(0);
 
   const updateMessageInState = useCallback(
     (updatedMessage: AdminContactMessage) => {
@@ -146,6 +204,39 @@ function AdminMessages() {
           ? updatedMessage
           : currentMessage,
       );
+    },
+    [],
+  );
+
+  const loadMessages = useCallback(
+    async (showRefreshState = false) => {
+      try {
+        if (showRefreshState) {
+          setIsRefreshing(true);
+        } else {
+          setIsLoading(true);
+        }
+
+        setPageError(null);
+
+        const response =
+          await getAdminMessages();
+
+        setMessages(response.data);
+        setTotalMessages(
+          response.pagination.total,
+        );
+      } catch (error: unknown) {
+        setPageError(
+          getErrorMessage(
+            error,
+            "Messages could not be loaded.",
+          ),
+        );
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     },
     [],
   );
@@ -172,6 +263,11 @@ function AdminMessages() {
 
   const openMessage = useCallback(
     async (id: number) => {
+      const requestId =
+        previewRequestIdRef.current + 1;
+
+      previewRequestIdRef.current = requestId;
+
       try {
         setIsPreviewLoading(true);
         setPreviewError(null);
@@ -182,45 +278,36 @@ function AdminMessages() {
         const messageToDisplay =
           await markMessageAsRead(contactMessage);
 
+        if (
+          previewRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
+
         setSelectedMessage(messageToDisplay);
-      } catch (openError: unknown) {
+      } catch (error: unknown) {
+        if (
+          previewRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
+
         setSelectedMessage(null);
         setPreviewError(
-          getErrorMessage(openError),
+          getErrorMessage(
+            error,
+            "The message could not be opened.",
+          ),
         );
       } finally {
-        setIsPreviewLoading(false);
+        if (
+          previewRequestIdRef.current === requestId
+        ) {
+          setIsPreviewLoading(false);
+        }
       }
     },
     [markMessageAsRead],
-  );
-
-  const loadMessages = useCallback(
-    async (showRefreshState = false) => {
-      try {
-        if (showRefreshState) {
-          setIsRefreshing(true);
-        } else {
-          setIsLoading(true);
-        }
-
-        setError(null);
-
-        const response =
-          await getAdminMessages();
-
-        setMessages(response.data);
-        setTotalMessages(
-          response.pagination.total,
-        );
-      } catch (loadError: unknown) {
-        setError(getErrorMessage(loadError));
-      } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    },
-    [],
   );
 
   useEffect(() => {
@@ -229,18 +316,20 @@ function AdminMessages() {
 
   useEffect(() => {
     if (!messageId) {
+      previewRequestIdRef.current += 1;
       setSelectedMessage(null);
       setPreviewError(null);
+      setIsPreviewLoading(false);
       return;
     }
 
-    const parsedMessageId =
-      Number(messageId);
+    const parsedMessageId = Number(messageId);
 
     if (
       !Number.isInteger(parsedMessageId) ||
       parsedMessageId <= 0
     ) {
+      setSelectedMessage(null);
       setPreviewError(
         "The message ID in the URL is invalid.",
       );
@@ -251,28 +340,19 @@ function AdminMessages() {
   }, [messageId, openMessage]);
 
   useEffect(() => {
-    if (
-      !selectedMessage &&
-      !messageToDelete &&
-      !isPreviewLoading &&
-      !previewError
-    ) {
+    if (!messageToDelete) {
       return;
     }
 
     function handleEscapeKey(
       event: KeyboardEvent,
     ) {
-      if (event.key !== "Escape") {
-        return;
-      }
-
-      if (messageToDelete) {
+      if (
+        event.key === "Escape" &&
+        !isDeletingMessage
+      ) {
         setMessageToDelete(null);
-        return;
       }
-
-      navigate("/admin/messages");
     }
 
     document.addEventListener(
@@ -287,15 +367,12 @@ function AdminMessages() {
       );
     };
   }, [
-    isPreviewLoading,
+    isDeletingMessage,
     messageToDelete,
-    navigate,
-    previewError,
-    selectedMessage,
   ]);
 
-  const statistics = useMemo(() => {
-    return {
+  const statistics = useMemo(
+    () => ({
       total: totalMessages,
       new: messages.filter(
         (message) =>
@@ -305,8 +382,47 @@ function AdminMessages() {
         (message) =>
           message.status === "READ",
       ).length,
-    };
-  }, [messages, totalMessages]);
+      replied: messages.filter(
+        (message) =>
+          message.status === "REPLIED",
+      ).length,
+    }),
+    [messages, totalMessages],
+  );
+
+  const filteredMessages = useMemo(() => {
+    const normalizedSearch =
+      searchQuery.trim().toLowerCase();
+
+    return messages.filter((message) => {
+      const matchesStatus =
+        statusFilter === "ALL" ||
+        message.status === statusFilter;
+
+      if (!matchesStatus) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      return [
+        message.name,
+        message.email,
+        message.subject ?? "",
+        message.message,
+      ].some((value) =>
+        value
+          .toLowerCase()
+          .includes(normalizedSearch),
+      );
+    });
+  }, [
+    messages,
+    searchQuery,
+    statusFilter,
+  ]);
 
   function handleViewMessage(
     message: AdminContactMessage,
@@ -317,21 +433,22 @@ function AdminMessages() {
   }
 
   function handleClosePreview() {
-    setSelectedMessage(null);
-    setPreviewError(null);
     navigate("/admin/messages");
   }
 
   async function handleMarkAsRead(
     message: AdminContactMessage,
   ) {
-    if (message.status === "READ") {
+    if (
+      message.status !== "NEW" ||
+      updatingMessageId !== null
+    ) {
       return;
     }
 
     try {
-      setIsUpdatingMessage(true);
-      setError(null);
+      setUpdatingMessageId(message.id);
+      setFeedback(null);
 
       const updatedMessage =
         await updateAdminMessage(message.id, {
@@ -339,12 +456,57 @@ function AdminMessages() {
         });
 
       updateMessageInState(updatedMessage);
-    } catch (updateError: unknown) {
-      setError(
-        getErrorMessage(updateError),
-      );
+      setFeedback({
+        type: "success",
+        message: "Message marked as read.",
+      });
+    } catch (error: unknown) {
+      setFeedback({
+        type: "error",
+        message: getErrorMessage(
+          error,
+          "The message status could not be updated.",
+        ),
+      });
     } finally {
-      setIsUpdatingMessage(false);
+      setUpdatingMessageId(null);
+    }
+  }
+
+  async function handleArchiveMessage(
+    message: AdminContactMessage,
+  ) {
+    if (
+      message.status === "ARCHIVED" ||
+      updatingMessageId !== null
+    ) {
+      return;
+    }
+
+    try {
+      setUpdatingMessageId(message.id);
+      setFeedback(null);
+
+      const updatedMessage =
+        await updateAdminMessage(message.id, {
+          status: "ARCHIVED",
+        });
+
+      updateMessageInState(updatedMessage);
+      setFeedback({
+        type: "success",
+        message: "Message archived.",
+      });
+    } catch (error: unknown) {
+      setFeedback({
+        type: "error",
+        message: getErrorMessage(
+          error,
+          "The message could not be archived.",
+        ),
+      });
+    } finally {
+      setUpdatingMessageId(null);
     }
   }
 
@@ -355,7 +517,7 @@ function AdminMessages() {
 
     try {
       setIsDeletingMessage(true);
-      setError(null);
+      setFeedback(null);
 
       await deleteAdminMessage(
         messageToDelete.id,
@@ -380,13 +542,22 @@ function AdminMessages() {
       setMessageToDelete(null);
 
       if (deletedSelectedMessage) {
-        setSelectedMessage(null);
         navigate("/admin/messages");
       }
-    } catch (deleteError: unknown) {
-      setError(
-        getErrorMessage(deleteError),
-      );
+
+      setFeedback({
+        type: "success",
+        message:
+          "Message deleted successfully.",
+      });
+    } catch (error: unknown) {
+      setFeedback({
+        type: "error",
+        message: getErrorMessage(
+          error,
+          "The message could not be deleted.",
+        ),
+      });
     } finally {
       setIsDeletingMessage(false);
     }
@@ -400,17 +571,17 @@ function AdminMessages() {
 
   return (
     <section className="admin-messages">
-      <div className="admin-messages__header">
+      <header className="admin-messages__header">
         <div>
-          <span className="admin-messages__eyebrow">
-            Contact Inbox
+          <span className="admin-messages__breadcrumb">
+            Admin / Messages
           </span>
 
           <h1>Messages</h1>
 
           <p>
-            Review contact form messages, mark
-            them as read, or remove old requests.
+            Review and manage enquiries submitted
+            through the public contact form.
           </p>
         </div>
 
@@ -425,7 +596,7 @@ function AdminMessages() {
           }
         >
           <RefreshCw
-            size={17}
+            size={15}
             className={
               isRefreshing
                 ? "admin-messages__spinning-icon"
@@ -433,308 +604,391 @@ function AdminMessages() {
             }
           />
 
-          <span>
-            {isRefreshing
-              ? "Refreshing..."
-              : "Refresh"}
-          </span>
+          {isRefreshing
+            ? "Refreshing..."
+            : "Refresh"}
         </button>
-      </div>
+      </header>
 
-      {error && !isLoading ? (
-        <div className="admin-messages__alert">
-          <AlertCircle size={18} />
+      {feedback && (
+        <div
+          className={`admin-messages__feedback admin-messages__feedback--${feedback.type}`}
+          role={
+            feedback.type === "error"
+              ? "alert"
+              : "status"
+          }
+        >
+          {feedback.type === "error" ? (
+            <AlertCircle size={17} />
+          ) : (
+            <MailCheck size={17} />
+          )}
 
-          <span>{error}</span>
+          <span>{feedback.message}</span>
 
           <button
             type="button"
-            onClick={() => setError(null)}
-            aria-label="Dismiss error"
+            onClick={() => setFeedback(null)}
+            aria-label="Dismiss notification"
           >
             <X size={16} />
           </button>
         </div>
-      ) : null}
+      )}
 
       <div className="admin-messages__stats">
-        <div className="admin-messages__stat-card">
-          <span>Total Messages</span>
-          <strong>
-            {statistics.total}
-          </strong>
-        </div>
+        <article className="admin-messages__stat-card">
+          <span>Total</span>
+          <strong>{statistics.total}</strong>
+          <small>All contact messages</small>
+        </article>
 
-        <div className="admin-messages__stat-card">
-          <span>New Messages</span>
-          <strong>
-            {statistics.new}
-          </strong>
-        </div>
+        <article className="admin-messages__stat-card">
+          <span>New</span>
+          <strong>{statistics.new}</strong>
+          <small>Waiting for review</small>
+        </article>
 
-        <div className="admin-messages__stat-card">
-          <span>Read Messages</span>
-          <strong>
-            {statistics.read}
-          </strong>
-        </div>
+        <article className="admin-messages__stat-card">
+          <span>Read</span>
+          <strong>{statistics.read}</strong>
+          <small>Already opened</small>
+        </article>
+
+        <article className="admin-messages__stat-card">
+          <span>Replied</span>
+          <strong>{statistics.replied}</strong>
+          <small>Completed conversations</small>
+        </article>
       </div>
 
-      <div className="admin-messages__table-card">
-        <div className="admin-messages__table-header">
-          <h2>Contact Messages</h2>
+      <div className="admin-messages__workspace">
+        <div className="admin-messages__list-panel">
+          <div className="admin-messages__toolbar">
+            <div className="admin-messages__toolbar-copy">
+              <h2>Contact Inbox</h2>
+              <p>
+                {filteredMessages.length} of{" "}
+                {messages.length} loaded messages
+              </p>
+            </div>
 
-          <p>
-            Messages submitted through the
-            public contact form.
-          </p>
-        </div>
+            <div className="admin-messages__filters">
+              <label className="admin-messages__search">
+                <Search size={15} />
 
-        {isLoading ? (
-          <div className="admin-messages__state">
-            <LoaderCircle
-              size={34}
-              className="admin-messages__spinning-icon"
-            />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) =>
+                    setSearchQuery(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Search messages..."
+                  aria-label="Search messages"
+                />
+              </label>
 
-            <h3>Loading messages</h3>
+              <label className="admin-messages__status-filter">
+                <span className="sr-only">
+                  Filter by status
+                </span>
 
-            <p>
-              Contacting the server and
-              retrieving your inbox.
-            </p>
+                <select
+                  value={statusFilter}
+                  onChange={(event) =>
+                    setStatusFilter(
+                      event.target
+                        .value as MessageStatus,
+                    )
+                  }
+                >
+                  <option value="ALL">
+                    All statuses
+                  </option>
+                  <option value="NEW">New</option>
+                  <option value="READ">
+                    Read
+                  </option>
+                  <option value="REPLIED">
+                    Replied
+                  </option>
+                  <option value="ARCHIVED">
+                    Archived
+                  </option>
+                </select>
+              </label>
+            </div>
           </div>
-        ) : error && messages.length === 0 ? (
-          <div className="admin-messages__state admin-messages__state--error">
-            <AlertCircle size={34} />
 
-            <h3>
-              Messages could not be loaded
-            </h3>
-
-            <p>{error}</p>
-
-            <button
-              type="button"
-              onClick={() =>
-                void loadMessages()
-              }
+          {isLoading ? (
+            <div
+              className="admin-messages__state"
+              role="status"
+              aria-live="polite"
             >
-              Try again
-            </button>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="admin-messages__state">
-            <Inbox size={34} />
+              <LoaderCircle
+                size={27}
+                className="admin-messages__spinning-icon"
+              />
 
-            <h3>No contact messages yet</h3>
+              <h3>Loading messages</h3>
 
-            <p>
-              New messages submitted through
-              the contact form will appear here.
-            </p>
-          </div>
-        ) : (
-          <div className="admin-messages__table-wrap">
-            <table className="admin-messages__table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Subject</th>
-                  <th>Date</th>
-                  <th>Status</th>
+              <p>
+                Retrieving the latest contact
+                enquiries.
+              </p>
+            </div>
+          ) : pageError &&
+            messages.length === 0 ? (
+            <div
+              className="admin-messages__state admin-messages__state--error"
+              role="alert"
+            >
+              <AlertCircle size={27} />
 
-                  <th className="admin-messages__actions-title">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+              <h3>Messages could not be loaded</h3>
 
-              <tbody>
-                {messages.map((message) => {
-                  const statusClass =
-                    getStatusClass(
-                      message.status,
-                    );
+              <p>{pageError}</p>
 
-                  return (
-                    <tr
-                      key={message.id}
-                      className={
-                        message.status === "NEW"
-                          ? "admin-messages__row--new"
-                          : undefined
-                      }
-                    >
-                      <td>
-                        <strong>
-                          {message.name}
-                        </strong>
-                      </td>
+              <button
+                type="button"
+                onClick={() =>
+                  void loadMessages()
+                }
+              >
+                Try again
+              </button>
+            </div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="admin-messages__state">
+              <Inbox size={27} />
 
-                      <td>
-                        <a
-                          className="admin-messages__email"
-                          href={`mailto:${message.email}`}
+              <h3>
+                {messages.length === 0
+                  ? "No contact messages yet"
+                  : "No matching messages"}
+              </h3>
+
+              <p>
+                {messages.length === 0
+                  ? "New contact submissions will appear here."
+                  : "Try changing your search or status filter."}
+              </p>
+            </div>
+          ) : (
+            <div className="admin-messages__table-wrap">
+              <table className="admin-messages__table">
+                <thead>
+                  <tr>
+                    <th>Sender</th>
+                    <th>Subject</th>
+                    <th>Received</th>
+                    <th>Status</th>
+                    <th>
+                      <span className="sr-only">
+                        Actions
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredMessages.map(
+                    (message) => {
+                      const isUpdating =
+                        updatingMessageId ===
+                        message.id;
+
+                      return (
+                        <tr
+                          key={message.id}
+                          className={
+                            message.status ===
+                            "NEW"
+                              ? "admin-messages__row--new"
+                              : undefined
+                          }
                         >
-                          {message.email}
-                        </a>
-                      </td>
+                          <td>
+                            <div className="admin-messages__sender">
+                              <span className="admin-messages__avatar">
+                                {message.name
+                                  .trim()
+                                  .charAt(0)
+                                  .toUpperCase() ||
+                                  "?"}
+                              </span>
 
-                      <td>
-                        {message.subject?.trim() ||
-                          "No subject"}
-                      </td>
+                              <div>
+                                <strong>
+                                  {message.name}
+                                </strong>
 
-                      <td>
-                        {formatMessageDate(
-                          message.createdAt,
-                        )}
-                      </td>
+                                <a
+                                  href={`mailto:${message.email}`}
+                                >
+                                  {message.email}
+                                </a>
+                              </div>
+                            </div>
+                          </td>
 
-                      <td>
-                        <span
-                          className={`admin-messages__status admin-messages__status--${statusClass}`}
-                        >
-                          {formatLabel(
-                            message.status,
-                          )}
-                        </span>
-                      </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="admin-messages__subject-button"
+                              onClick={() =>
+                                handleViewMessage(
+                                  message,
+                                )
+                              }
+                            >
+                              <strong>
+                                {message.subject?.trim() ||
+                                  "No subject"}
+                              </strong>
 
-                      <td>
-                        <div className="admin-messages__actions">
-                          <button
-                            type="button"
-                            title="View message"
-                            aria-label={`View message from ${message.name}`}
-                            onClick={() =>
-                              handleViewMessage(
-                                message,
-                              )
-                            }
-                          >
-                            <Eye size={16} />
-                          </button>
+                              <span>
+                                {message.message}
+                              </span>
+                            </button>
+                          </td>
 
-                          <button
-                            type="button"
-                            title={
-                              message.status ===
-                              "READ"
-                                ? "Already read"
-                                : "Mark as read"
-                            }
-                            aria-label={`Mark message from ${message.name} as read`}
-                            disabled={
-                              message.status ===
-                                "READ" ||
-                              isUpdatingMessage
-                            }
-                            onClick={() =>
-                              void handleMarkAsRead(
-                                message,
-                              )
-                            }
-                          >
-                            {isUpdatingMessage ? (
-                              <LoaderCircle
-                                size={16}
-                                className="admin-messages__spinning-icon"
-                              />
-                            ) : (
-                              <MailCheck
-                                size={16}
-                              />
-                            )}
-                          </button>
+                          <td>
+                            <time
+                              dateTime={
+                                message.createdAt
+                              }
+                            >
+                              {formatMessageDate(
+                                message.createdAt,
+                              )}
+                            </time>
+                          </td>
 
-                          <button
-                            type="button"
-                            className="danger"
-                            title="Delete message"
-                            aria-label={`Delete message from ${message.name}`}
-                            onClick={() =>
-                              setMessageToDelete(
-                                message,
-                              )
-                            }
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                          <td>
+                            <span
+                              className={`admin-messages__status admin-messages__status--${getStatusClass(
+                                message.status,
+                              )}`}
+                            >
+                              {formatLabel(
+                                message.status,
+                              )}
+                            </span>
+                          </td>
 
-      {showPreview ? (
-        <div
-          className="admin-messages__modal-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              handleClosePreview();
-            }
-          }}
-        >
-          <div
-            className="admin-messages__preview-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="message-preview-title"
+                          <td>
+                            <div className="admin-messages__actions">
+                              <button
+                                type="button"
+                                title="Open message"
+                                aria-label={`Open message from ${message.name}`}
+                                onClick={() =>
+                                  handleViewMessage(
+                                    message,
+                                  )
+                                }
+                              >
+                                <Eye size={15} />
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Mark as read"
+                                aria-label={`Mark message from ${message.name} as read`}
+                                disabled={
+                                  message.status !==
+                                    "NEW" ||
+                                  updatingMessageId !==
+                                    null
+                                }
+                                onClick={() =>
+                                  void handleMarkAsRead(
+                                    message,
+                                  )
+                                }
+                              >
+                                {isUpdating ? (
+                                  <LoaderCircle
+                                    size={15}
+                                    className="admin-messages__spinning-icon"
+                                  />
+                                ) : (
+                                  <MailCheck
+                                    size={15}
+                                  />
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Delete message"
+                                aria-label={`Delete message from ${message.name}`}
+                                className="admin-messages__action--danger"
+                                onClick={() =>
+                                  setMessageToDelete(
+                                    message,
+                                  )
+                                }
+                              >
+                                <Trash2
+                                  size={15}
+                                />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    },
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {showPreview && (
+          <aside
+            className="admin-messages__drawer"
+            aria-label="Message details"
           >
-            <div className="admin-messages__preview-header">
+            <div className="admin-messages__drawer-header">
               <div>
-                <span>Contact Message</span>
-
-                <h2 id="message-preview-title">
+                <span>Message Details</span>
+                <h2>
                   {selectedMessage?.subject?.trim() ||
-                    "Message details"}
+                    "Contact message"}
                 </h2>
               </div>
 
               <button
                 type="button"
-                className="admin-messages__modal-close"
                 onClick={handleClosePreview}
-                aria-label="Close message preview"
+                aria-label="Close message details"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
             {isPreviewLoading ? (
-              <div className="admin-messages__preview-state">
+              <div className="admin-messages__drawer-state">
                 <LoaderCircle
-                  size={36}
+                  size={27}
                   className="admin-messages__spinning-icon"
                 />
-
                 <h3>Opening message</h3>
-
                 <p>
-                  Retrieving the full message
-                  details.
+                  Retrieving the full message.
                 </p>
               </div>
             ) : previewError ? (
-              <div className="admin-messages__preview-state admin-messages__preview-state--error">
-                <AlertCircle size={36} />
-
-                <h3>
-                  Message could not be opened
-                </h3>
-
+              <div className="admin-messages__drawer-state admin-messages__drawer-state--error">
+                <AlertCircle size={27} />
+                <h3>Unable to open message</h3>
                 <p>{previewError}</p>
 
                 <button
@@ -752,197 +1006,169 @@ function AdminMessages() {
               </div>
             ) : selectedMessage ? (
               <>
-                <div className="admin-messages__preview-content">
-                  <div className="admin-messages__preview-details">
-                    <div className="admin-messages__detail">
-                      <div className="admin-messages__detail-icon">
-                        <User size={17} />
-                      </div>
+                <div className="admin-messages__drawer-content">
+                  <div className="admin-messages__contact-card">
+                    <span className="admin-messages__contact-avatar">
+                      {selectedMessage.name
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase() || "?"}
+                    </span>
 
-                      <div>
-                        <span>Name</span>
-                        <strong>
-                          {selectedMessage.name}
-                        </strong>
-                      </div>
+                    <div>
+                      <strong>
+                        {selectedMessage.name}
+                      </strong>
+                      <a
+                        href={`mailto:${selectedMessage.email}`}
+                      >
+                        {selectedMessage.email}
+                      </a>
                     </div>
+                  </div>
 
-                    <div className="admin-messages__detail">
-                      <div className="admin-messages__detail-icon">
-                        <Mail size={17} />
-                      </div>
-
-                      <div>
-                        <span>Email</span>
-
-                        <a
-                          href={`mailto:${selectedMessage.email}`}
-                        >
-                          {selectedMessage.email}
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="admin-messages__detail">
-                      <div className="admin-messages__detail-icon">
-                        <Phone size={17} />
-                      </div>
-
-                      <div>
-                        <span>Phone</span>
-
+                  <dl className="admin-messages__details">
+                    <div>
+                      <dt>
+                        <Phone size={14} />
+                        Phone
+                      </dt>
+                      <dd>
                         {selectedMessage.phone ? (
                           <a
                             href={`tel:${selectedMessage.phone}`}
                           >
-                            {
-                              selectedMessage.phone
-                            }
+                            {selectedMessage.phone}
                           </a>
                         ) : (
-                          <strong>
-                            Not provided
-                          </strong>
+                          "Not provided"
                         )}
-                      </div>
-                    </div>
-
-                    <div className="admin-messages__detail">
-                      <div className="admin-messages__detail-icon">
-                        <CalendarDays
-                          size={17}
-                        />
-                      </div>
-
-                      <div>
-                        <span>Received</span>
-                        <strong>
-                          {formatMessageDateTime(
-                            selectedMessage.createdAt,
-                          )}
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="admin-messages__preview-labels">
-                    <div>
-                      <span>Status</span>
-
-                      <strong
-                        className={`admin-messages__status admin-messages__status--${getStatusClass(
-                          selectedMessage.status,
-                        )}`}
-                      >
-                        {formatLabel(
-                          selectedMessage.status,
-                        )}
-                      </strong>
+                      </dd>
                     </div>
 
                     <div>
-                      <span>Category</span>
+                      <dt>
+                        <CalendarDays size={14} />
+                        Received
+                      </dt>
+                      <dd>
+                        {formatMessageDateTime(
+                          selectedMessage.createdAt,
+                        )}
+                      </dd>
+                    </div>
 
-                      <strong>
+                    <div>
+                      <dt>
                         <Tag size={14} />
-
+                        Category
+                      </dt>
+                      <dd>
                         {formatLabel(
                           selectedMessage.category,
                         )}
-                      </strong>
+                      </dd>
                     </div>
 
                     <div>
-                      <span>Priority</span>
-
-                      <strong>
+                      <dt>
+                        <AlertCircle size={14} />
+                        Priority
+                      </dt>
+                      <dd>
                         {formatLabel(
                           selectedMessage.priority,
                         )}
-                      </strong>
+                      </dd>
                     </div>
+                  </dl>
+
+                  <div className="admin-messages__drawer-status">
+                    <span>Status</span>
+
+                    <strong
+                      className={`admin-messages__status admin-messages__status--${getStatusClass(
+                        selectedMessage.status,
+                      )}`}
+                    >
+                      {formatLabel(
+                        selectedMessage.status,
+                      )}
+                    </strong>
                   </div>
 
                   <div className="admin-messages__message-body">
                     <span>Message</span>
-
                     <p>
                       {selectedMessage.message}
                     </p>
                   </div>
                 </div>
 
-                <div className="admin-messages__preview-footer">
+                <div className="admin-messages__drawer-footer">
                   <button
                     type="button"
-                    className="admin-messages__secondary-button"
-                    onClick={
-                      handleClosePreview
+                    className="admin-messages__drawer-button"
+                    disabled={
+                      selectedMessage.status !==
+                        "NEW" ||
+                      updatingMessageId !== null
+                    }
+                    onClick={() =>
+                      void handleMarkAsRead(
+                        selectedMessage,
+                      )
                     }
                   >
-                    Close
+                    <MailCheck size={15} />
+                    Mark as Read
                   </button>
 
-                  <div>
-                    <button
-                      type="button"
-                      className="admin-messages__read-button"
-                      disabled={
-                        selectedMessage.status ===
-                          "READ" ||
-                        isUpdatingMessage
-                      }
-                      onClick={() =>
-                        void handleMarkAsRead(
-                          selectedMessage,
-                        )
-                      }
-                    >
-                      {isUpdatingMessage ? (
-                        <LoaderCircle
-                          size={17}
-                          className="admin-messages__spinning-icon"
-                        />
-                      ) : (
-                        <MailCheck size={17} />
-                      )}
+                  <button
+                    type="button"
+                    className="admin-messages__drawer-button"
+                    disabled={
+                      selectedMessage.status ===
+                        "ARCHIVED" ||
+                      updatingMessageId !== null
+                    }
+                    onClick={() =>
+                      void handleArchiveMessage(
+                        selectedMessage,
+                      )
+                    }
+                  >
+                    <Archive size={15} />
+                    Archive
+                  </button>
 
-                      <span>
-                        {selectedMessage.status ===
-                        "READ"
-                          ? "Message Read"
-                          : "Mark as Read"}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="admin-messages__delete-button"
-                      onClick={() =>
-                        setMessageToDelete(
-                          selectedMessage,
-                        )
-                      }
-                    >
-                      <Trash2 size={17} />
-                      <span>Delete</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="admin-messages__drawer-button admin-messages__drawer-button--danger"
+                    onClick={() =>
+                      setMessageToDelete(
+                        selectedMessage,
+                      )
+                    }
+                  >
+                    <Trash2 size={15} />
+                    Delete
+                  </button>
                 </div>
               </>
             ) : null}
-          </div>
-        </div>
-      ) : null}
+          </aside>
+        )}
+      </div>
 
-      {messageToDelete ? (
+      {messageToDelete && (
         <div
-          className="admin-messages__modal-backdrop admin-messages__modal-backdrop--confirmation"
+          className="admin-messages__modal-backdrop"
           role="presentation"
           onMouseDown={(event) => {
             if (
               event.target ===
-              event.currentTarget &&
+                event.currentTarget &&
               !isDeletingMessage
             ) {
               setMessageToDelete(null);
@@ -956,7 +1182,7 @@ function AdminMessages() {
             aria-labelledby="delete-message-title"
           >
             <div className="admin-messages__confirm-icon">
-              <Trash2 size={24} />
+              <Trash2 size={22} />
             </div>
 
             <h2 id="delete-message-title">
@@ -968,14 +1194,13 @@ function AdminMessages() {
               <strong>
                 {messageToDelete.name}
               </strong>{" "}
-              will be permanently removed. This
-              action cannot be undone.
+              will be permanently removed.
             </p>
 
             <div className="admin-messages__confirm-actions">
               <button
                 type="button"
-                className="admin-messages__secondary-button"
+                className="admin-messages__cancel-button"
                 disabled={isDeletingMessage}
                 onClick={() =>
                   setMessageToDelete(null)
@@ -994,23 +1219,21 @@ function AdminMessages() {
               >
                 {isDeletingMessage ? (
                   <LoaderCircle
-                    size={17}
+                    size={15}
                     className="admin-messages__spinning-icon"
                   />
                 ) : (
-                  <Trash2 size={17} />
+                  <Trash2 size={15} />
                 )}
 
-                <span>
-                  {isDeletingMessage
-                    ? "Deleting..."
-                    : "Delete Message"}
-                </span>
+                {isDeletingMessage
+                  ? "Deleting..."
+                  : "Delete Message"}
               </button>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </section>
   );
 }
