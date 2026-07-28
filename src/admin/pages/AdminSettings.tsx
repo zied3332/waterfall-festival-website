@@ -220,18 +220,12 @@ function AdminSettings() {
       onSubmit={handleSubmit}
     >
       <header className="admin-settings__header">
-        <div>
-          <span className="admin-settings__breadcrumb">
-            Admin / Settings
-          </span>
-          <h1>Settings</h1>
-          <p>
-            Manage the global configuration of the
-            Waterfall Festival website.
-          </p>
-        </div>
+        <div aria-hidden="true" />
 
-        <div className="admin-settings__header-actions">
+        <div
+          className="admin-settings__header-actions"
+          aria-label="Settings actions"
+        >
           <div className="admin-settings__save-status">
             <CheckCircle2 size={16} />
             <div>

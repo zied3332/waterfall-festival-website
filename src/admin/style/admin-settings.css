@@ -1,61 +1,11 @@
 .admin-settings {
-  --admin-settings-text: #f8fafc;
-  --admin-settings-heading: #ffffff;
-  --admin-settings-muted: rgba(226, 232, 240, 0.62);
-  --admin-settings-muted-soft: rgba(226, 232, 240, 0.48);
-  --admin-settings-label: rgba(241, 245, 249, 0.78);
-  --admin-settings-surface: #0b121d;
-  --admin-settings-surface-secondary: #0d1420;
-  --admin-settings-surface-tertiary: #0d1623;
-  --admin-settings-surface-hover: #121b29;
-  --admin-settings-surface-focus: #101a28;
-  --admin-settings-tabs-background: #0a111c;
-  --admin-settings-tab-text: rgba(226, 232, 240, 0.58);
-  --admin-settings-tab-hover-text: #f8fafc;
-  --admin-settings-accent-text: #c4b5fd;
-  --admin-settings-switch-background: #182230;
-  --admin-settings-switch-thumb: #94a3b8;
-
   display: flex;
   flex-direction: column;
   gap: 20px;
-  color: var(--admin-settings-text);
+  color: var(--admin-text);
 }
 
 
-[data-theme="light"] .admin-settings,
-html.light .admin-settings,
-body.light .admin-settings,
-body.light-mode .admin-settings,
-.light-theme .admin-settings,
-.admin-layout--light .admin-settings {
-  --admin-settings-text: #1e293b;
-  --admin-settings-heading: #0f172a;
-  --admin-settings-muted: #64748b;
-  --admin-settings-muted-soft: #7c8798;
-  --admin-settings-label: #334155;
-  --admin-settings-surface: #ffffff;
-  --admin-settings-surface-secondary: #ffffff;
-  --admin-settings-surface-tertiary: #f8fafc;
-  --admin-settings-surface-hover: #f1f5f9;
-  --admin-settings-surface-focus: #ffffff;
-  --admin-settings-tabs-background: #ffffff;
-  --admin-settings-tab-text: #64748b;
-  --admin-settings-tab-hover-text: #0f172a;
-  --admin-settings-accent-text: #6d28d9;
-  --admin-settings-switch-background: #cbd5e1;
-  --admin-settings-switch-thumb: #ffffff;
-  color-scheme: light;
-}
-
-[data-theme="dark"] .admin-settings,
-html.dark .admin-settings,
-body.dark .admin-settings,
-body.dark-mode .admin-settings,
-.dark-theme .admin-settings,
-.admin-layout--dark .admin-settings {
-  color-scheme: dark;
-}
 
 .admin-settings__header {
   display: flex;
@@ -67,7 +17,7 @@ body.dark-mode .admin-settings,
 .admin-settings__breadcrumb {
   display: inline-block;
   margin-bottom: 8px;
-  color: var(--admin-settings-accent, #8b5cf6);
+  color: var(--admin-accent);
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -76,7 +26,7 @@ body.dark-mode .admin-settings,
 
 .admin-settings__header h1 {
   margin: 0;
-  color: var(--admin-settings-heading);
+  color: var(--admin-text);
   font-size: clamp(1.8rem, 3vw, 2.5rem);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -85,7 +35,7 @@ body.dark-mode .admin-settings,
 .admin-settings__header p {
   max-width: 620px;
   margin: 8px 0 0;
-  color: var(--admin-settings-muted);
+  color: var(--admin-text-secondary);
   font-size: 0.94rem;
   line-height: 1.6;
 }
@@ -103,10 +53,15 @@ body.dark-mode .admin-settings,
   gap: 10px;
   min-height: 42px;
   padding: 8px 12px;
-  border: 1px solid var(--admin-settings-border-medium, rgba(148, 163, 184, 0.16));
+  border: 1px solid var(--admin-border);
   border-radius: 8px;
-  background: var(--admin-settings-surface-secondary);
-  color: var(--admin-settings-success-strong, #22c55e);
+  background: var(--admin-surface);
+  color: #22c55e;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+[data-admin-theme="dark"] .admin-settings__save-status {
+  color: #86efac;
 }
 
 .admin-settings__save-status div {
@@ -116,13 +71,13 @@ body.dark-mode .admin-settings,
 }
 
 .admin-settings__save-status strong {
-  color: var(--admin-settings-text);
+  color: var(--admin-text);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
 .admin-settings__save-status span {
-  color: var(--admin-settings-muted-soft);
+  color: var(--admin-text-muted);
   font-size: 0.7rem;
 }
 
@@ -146,24 +101,26 @@ body.dark-mode .admin-settings,
 }
 
 .admin-settings__secondary-button {
-  border: 1px solid var(--admin-settings-border-medium, rgba(148, 163, 184, 0.2));
-  background: var(--admin-settings-surface-secondary);
-  color: var(--admin-settings-text);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .admin-settings__secondary-button:hover:not(:disabled) {
-  border-color: var(--admin-settings-border-strong, rgba(148, 163, 184, 0.34));
-  background: var(--admin-settings-surface-hover);
+  border-color: var(--admin-border-strong);
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
 }
 
 .admin-settings__save-button {
-  border: 1px solid #7c3aed;
-  background: #7c3aed;
-  color: var(--admin-settings-heading);
+  border: 1px solid var(--admin-accent);
+  background: var(--admin-accent);
+  color: var(--admin-text);
 }
 
 .admin-settings__save-button:hover:not(:disabled) {
-  background: #6d28d9;
+  background: var(--admin-accent-hover);
 }
 
 .admin-settings__secondary-button:disabled,
@@ -180,9 +137,13 @@ body.dark-mode .admin-settings,
   border: 1px solid rgba(34, 197, 94, 0.22);
   border-radius: 8px;
   background: rgba(34, 197, 94, 0.08);
-  color: var(--admin-settings-success, #86efac);
+  color: #15803d;
   font-size: 0.84rem;
   font-weight: 650;
+}
+
+[data-admin-theme="dark"] .admin-settings__feedback {
+  color: #86efac;
 }
 
 .admin-settings__tabs {
@@ -190,9 +151,10 @@ body.dark-mode .admin-settings,
   align-items: stretch;
   gap: 4px;
   overflow-x: auto;
-  border: 1px solid var(--admin-settings-border, rgba(148, 163, 184, 0.14));
+  border: 1px solid var(--admin-border);
   border-radius: 8px;
-  background: var(--admin-settings-tabs-background);
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-sm);
   scrollbar-width: none;
 }
 
@@ -212,7 +174,7 @@ body.dark-mode .admin-settings,
   padding: 0 16px;
   border: 0;
   background: transparent;
-  color: var(--admin-settings-tab-text);
+  color: var(--admin-text-muted);
   font: inherit;
   font-size: 0.83rem;
   font-weight: 680;
@@ -234,16 +196,22 @@ body.dark-mode .admin-settings,
 }
 
 .admin-settings__tabs button:hover {
-  background: var(--admin-settings-surface-hover);
-  color: var(--admin-settings-tab-hover-text);
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
 }
 
 .admin-settings__tabs button.active {
-  color: var(--admin-settings-accent-text);
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
 }
 
 .admin-settings__tabs button.active::after {
-  background: var(--admin-settings-accent, #8b5cf6);
+  background: var(--admin-accent);
+}
+
+.admin-settings__tabs button:focus-visible {
+  outline: 3px solid var(--admin-focus);
+  outline-offset: -3px;
 }
 
 .admin-settings__panel {
@@ -255,9 +223,10 @@ body.dark-mode .admin-settings,
 
 .admin-settings__section {
   overflow: hidden;
-  border: 1px solid var(--admin-settings-border, rgba(148, 163, 184, 0.14));
+  border: 1px solid var(--admin-border);
   border-radius: 8px;
-  background: var(--admin-settings-surface);
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .admin-settings__section-header {
@@ -265,7 +234,8 @@ body.dark-mode .admin-settings,
   align-items: flex-start;
   gap: 12px;
   padding: 18px 20px;
-  border-bottom: 1px solid var(--admin-settings-border-soft, rgba(148, 163, 184, 0.12));
+  border-bottom: 1px solid var(--admin-border);
+  background: var(--admin-surface-secondary);
 }
 
 .admin-settings__section-icon {
@@ -275,22 +245,22 @@ body.dark-mode .admin-settings,
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(139, 92, 246, 0.22);
+  border: 1px solid var(--admin-accent-border);
   border-radius: 7px;
-  background: rgba(139, 92, 246, 0.08);
-  color: var(--admin-settings-accent, #a78bfa);
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
 }
 
 .admin-settings__section-header h2 {
   margin: 0;
-  color: var(--admin-settings-text);
+  color: var(--admin-text);
   font-size: 1rem;
   font-weight: 750;
 }
 
 .admin-settings__section-header p {
   margin: 5px 0 0;
-  color: var(--admin-settings-muted-soft);
+  color: var(--admin-text-muted);
   font-size: 0.82rem;
   line-height: 1.5;
 }
@@ -322,13 +292,13 @@ body.dark-mode .admin-settings,
 }
 
 .admin-settings__field > span {
-  color: var(--admin-settings-label);
+  color: var(--admin-text-secondary);
   font-size: 0.79rem;
   font-weight: 680;
 }
 
 .admin-settings__field small {
-  color: var(--admin-settings-muted-soft);
+  color: var(--admin-text-muted);
   font-size: 0.72rem;
   line-height: 1.45;
 }
@@ -338,11 +308,11 @@ body.dark-mode .admin-settings,
 .admin-settings select {
   width: 100%;
   min-height: 41px;
-  border: 1px solid var(--admin-settings-border-medium, rgba(148, 163, 184, 0.18));
+  border: 1px solid var(--admin-border);
   border-radius: 7px;
   outline: none;
-  background: var(--admin-settings-surface-tertiary);
-  color: var(--admin-settings-text);
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text);
   font: inherit;
   font-size: 0.84rem;
   transition:
@@ -366,15 +336,15 @@ body.dark-mode .admin-settings,
 .admin-settings input:hover,
 .admin-settings textarea:hover,
 .admin-settings select:hover {
-  border-color: var(--admin-settings-border-strong, rgba(148, 163, 184, 0.3));
+  border-color: var(--admin-border-strong);
 }
 
 .admin-settings input:focus,
 .admin-settings textarea:focus,
 .admin-settings select:focus {
-  border-color: rgba(139, 92, 246, 0.72);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-  background: var(--admin-settings-surface-focus);
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px var(--admin-focus);
+  background: var(--admin-surface);
 }
 
 .admin-settings select {
@@ -389,10 +359,18 @@ body.dark-mode .admin-settings,
   gap: 20px;
   min-height: 66px;
   padding: 13px 14px;
-  border: 1px solid var(--admin-settings-border, rgba(148, 163, 184, 0.13));
+  border: 1px solid var(--admin-border);
   border-radius: 7px;
-  background: var(--admin-settings-surface-tertiary);
+  background: var(--admin-surface-secondary);
   cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.admin-settings__switch-row:hover {
+  border-color: var(--admin-border-strong);
+  background: var(--admin-surface-hover);
 }
 
 .admin-settings__switch-row > span:first-child {
@@ -403,13 +381,13 @@ body.dark-mode .admin-settings,
 }
 
 .admin-settings__switch-row strong {
-  color: var(--admin-settings-heading);
+  color: var(--admin-text);
   font-size: 0.83rem;
   font-weight: 700;
 }
 
 .admin-settings__switch-row small {
-  color: var(--admin-settings-muted-soft);
+  color: var(--admin-text-muted);
   font-size: 0.74rem;
   line-height: 1.45;
 }
@@ -427,9 +405,9 @@ body.dark-mode .admin-settings,
   flex: 0 0 auto;
   width: 38px;
   height: 21px;
-  border: 1px solid var(--admin-settings-border-strong, rgba(148, 163, 184, 0.25));
+  border: 1px solid var(--admin-border-strong);
   border-radius: 999px;
-  background: var(--admin-settings-switch-background);
+  background: var(--admin-border-strong);
   transition:
     border-color 0.18s ease,
     background 0.18s ease;
@@ -442,7 +420,7 @@ body.dark-mode .admin-settings,
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: var(--admin-settings-switch-thumb);
+  background: var(--admin-surface);
   transition:
     transform 0.18s ease,
     background 0.18s ease;
@@ -450,8 +428,8 @@ body.dark-mode .admin-settings,
 
 .admin-settings__switch-row input:checked
   + .admin-settings__switch {
-  border-color: #7c3aed;
-  background: #7c3aed;
+  border-color: var(--admin-accent);
+  background: var(--admin-accent);
 }
 
 .admin-settings__switch-row input:checked
@@ -463,7 +441,7 @@ body.dark-mode .admin-settings,
 
 .admin-settings__switch-row input:focus-visible
   + .admin-settings__switch {
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+  box-shadow: 0 0 0 3px var(--admin-focus);
 }
 
 .admin-settings__feature-list {
@@ -477,16 +455,17 @@ body.dark-mode .admin-settings,
   justify-content: space-between;
   gap: 18px;
   padding: 16px 18px;
-  border: 1px solid var(--admin-settings-border, rgba(148, 163, 184, 0.14));
+  border: 1px solid var(--admin-border);
   border-radius: 8px;
-  background: var(--admin-settings-surface);
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .admin-settings__connection-card > div {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--admin-settings-accent, #a78bfa);
+  color: var(--admin-accent);
 }
 
 .admin-settings__connection-card > div div {
@@ -496,12 +475,12 @@ body.dark-mode .admin-settings,
 }
 
 .admin-settings__connection-card strong {
-  color: var(--admin-settings-text);
+  color: var(--admin-text);
   font-size: 0.84rem;
 }
 
 .admin-settings__connection-card span {
-  color: var(--admin-settings-muted-soft);
+  color: var(--admin-text-muted);
   font-size: 0.74rem;
 }
 
@@ -516,6 +495,11 @@ body.dark-mode .admin-settings,
   color: #86efac !important;
   font-size: 0.7rem !important;
   font-weight: 700;
+}
+
+[data-admin-theme="dark"]
+  .admin-settings__connection-status {
+  color: #86efac !important;
 }
 
 .admin-settings__color-field {
