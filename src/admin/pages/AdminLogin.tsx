@@ -3,7 +3,9 @@ import {
   LoaderCircle,
   LockKeyhole,
   Mail,
+  Moon,
   ShieldCheck,
+  Sun,
 } from "lucide-react";
 import {
   type FormEvent,
@@ -27,6 +29,65 @@ type LoginLocationState = {
   from?: string;
 };
 
+type AdminTheme = "light" | "dark";
+
+const ADMIN_THEME_STORAGE_KEY =
+  "waterfall-admin-theme";
+
+function getInitialTheme(): AdminTheme {
+  const storedTheme = localStorage.getItem(
+    ADMIN_THEME_STORAGE_KEY,
+  );
+
+  if (
+    storedTheme === "light" ||
+    storedTheme === "dark"
+  ) {
+    return storedTheme;
+  }
+
+  return window.matchMedia(
+    "(prefers-color-scheme: dark)",
+  ).matches
+    ? "dark"
+    : "light";
+}
+
+function getLoginErrorMessage(
+  error: unknown,
+): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error
+  ) {
+    const apiError = error as {
+      response?: {
+        data?: {
+          message?: string | string[];
+        };
+      };
+    };
+
+    const responseMessage =
+      apiError.response?.data?.message;
+
+    if (Array.isArray(responseMessage)) {
+      return responseMessage.join(" ");
+    }
+
+    if (typeof responseMessage === "string") {
+      return responseMessage;
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unable to log in. Please try again.";
+}
+
 function AdminLogin() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,24 +102,48 @@ function AdminLogin() {
       ? locationState.from
       : "/admin";
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [theme, setTheme] =
+    useState<AdminTheme>(getInitialTheme);
 
-  const [errorMessage, setErrorMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] =
+    useState("");
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
   useEffect(() => {
+    document.documentElement.dataset.adminTheme =
+      theme;
+
+    localStorage.setItem(
+      ADMIN_THEME_STORAGE_KEY,
+      theme,
+    );
+  }, [theme]);
+
+  useEffect(() => {
     if (isAuthenticated()) {
-      navigate("/admin", {
+      navigate(destination, {
         replace: true,
       });
     }
-  }, [navigate]);
+  }, [destination, navigate]);
+
+  function handleThemeToggle(): void {
+    setTheme((currentTheme) =>
+      currentTheme === "light"
+        ? "dark"
+        : "light",
+    );
+  }
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
-  ) {
+  ): Promise<void> {
     event.preventDefault();
 
     setErrorMessage("");
@@ -71,6 +156,7 @@ function AdminLogin() {
       setErrorMessage(
         "Please enter your email address and password.",
       );
+
       return;
     }
 
@@ -87,11 +173,9 @@ function AdminLogin() {
       navigate(destination, {
         replace: true,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to log in. Please try again.",
+        getLoginErrorMessage(error),
       );
     } finally {
       setIsSubmitting(false);
@@ -99,44 +183,68 @@ function AdminLogin() {
   }
 
   return (
-    <section className="admin-login-page">
-      <div
-        className="admin-login-page__glow admin-login-page__glow--left"
-        aria-hidden="true"
-      />
+    <main className="admin-login-page">
+      <button
+        type="button"
+        className="admin-login-theme-toggle"
+        onClick={handleThemeToggle}
+        aria-label={
+          theme === "light"
+            ? "Switch to dark mode"
+            : "Switch to light mode"
+        }
+        title={
+          theme === "light"
+            ? "Dark mode"
+            : "Light mode"
+        }
+      >
+        {theme === "light" ? (
+          <Moon size={18} aria-hidden="true" />
+        ) : (
+          <Sun size={18} aria-hidden="true" />
+        )}
+      </button>
 
-      <div
-        className="admin-login-page__glow admin-login-page__glow--right"
-        aria-hidden="true"
-      />
-
-      <div className="admin-login-shell">
-        <div className="admin-login-brand">
-          <div className="admin-login-brand__icon">
-            <ShieldCheck size={28} />
-          </div>
+      <section className="admin-login-shell">
+        <header className="admin-login-brand">
+          <span
+            className="admin-login-brand__icon"
+            aria-hidden="true"
+          >
+            <ShieldCheck size={23} />
+          </span>
 
           <div>
-            <p className="admin-login-brand__eyebrow">
+            <span className="admin-login-brand__eyebrow">
               Waterfall Festival
-            </p>
+            </span>
 
-            <h1>Admin Portal</h1>
+            <h1>Admin portal</h1>
           </div>
-        </div>
+        </header>
 
-        <div className="admin-login-card">
+        <section
+          className="admin-login-card"
+          aria-labelledby="admin-login-title"
+        >
           <div className="admin-login-card__header">
-            <div className="admin-login-card__lock">
-              <LockKeyhole size={25} />
-            </div>
+            <span
+              className="admin-login-card__lock"
+              aria-hidden="true"
+            >
+              <LockKeyhole size={20} />
+            </span>
 
             <div>
-              <h2>Welcome back</h2>
+              <h2 id="admin-login-title">
+                Welcome back
+              </h2>
 
               <p>
-                Sign in to manage events, tickets,
-                gallery content and messages.
+                Sign in to manage events,
+                tickets, gallery content and
+                visitor messages.
               </p>
             </div>
           </div>
@@ -152,17 +260,25 @@ function AdminLogin() {
               </label>
 
               <div className="admin-login-input-wrapper">
-                <Mail size={18} aria-hidden="true" />
+                <Mail
+                  size={17}
+                  aria-hidden="true"
+                />
 
                 <input
                   id="admin-email"
                   type="email"
                   value={email}
-                  onChange={(event) =>
-                    setEmail(event.target.value)
-                  }
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+
+                    if (errorMessage) {
+                      setErrorMessage("");
+                    }
+                  }}
                   placeholder="admin@waterfallfestival.com"
                   autoComplete="email"
+                  autoFocus
                   disabled={isSubmitting}
                   required
                 />
@@ -176,7 +292,7 @@ function AdminLogin() {
 
               <div className="admin-login-input-wrapper">
                 <LockKeyhole
-                  size={18}
+                  size={17}
                   aria-hidden="true"
                 />
 
@@ -184,9 +300,15 @@ function AdminLogin() {
                   id="admin-password"
                   type="password"
                   value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
+                  onChange={(event) => {
+                    setPassword(
+                      event.target.value,
+                    );
+
+                    if (errorMessage) {
+                      setErrorMessage("");
+                    }
+                  }}
                   placeholder="Enter your password"
                   autoComplete="current-password"
                   disabled={isSubmitting}
@@ -213,32 +335,40 @@ function AdminLogin() {
                 <>
                   <LoaderCircle
                     className="admin-login-spinner"
-                    size={19}
+                    size={18}
+                    aria-hidden="true"
                   />
 
-                  Signing in...
+                  Signing in
                 </>
               ) : (
                 <>
                   Sign in
-                  <ArrowRight size={19} />
+
+                  <ArrowRight
+                    size={18}
+                    aria-hidden="true"
+                  />
                 </>
               )}
             </button>
           </form>
 
-          <div className="admin-login-card__footer">
-            <span className="admin-login-status-dot" />
+          <footer className="admin-login-card__footer">
+            <span
+              className="admin-login-status-dot"
+              aria-hidden="true"
+            />
 
             Authorized administrators only
-          </div>
-        </div>
+          </footer>
+        </section>
 
         <p className="admin-login-copyright">
           Waterfall Festival Management System
         </p>
-      </div>
-    </section>
+      </section>
+    </main>
   );
 }
 
