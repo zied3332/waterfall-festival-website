@@ -1,10 +1,16 @@
 .admin-tickets {
   width: 100%;
+
   display: flex;
   flex-direction: column;
   gap: 22px;
-  color: #f8fafc;
+
+  color: var(--admin-text);
 }
+
+/* =========================
+   Header
+========================= */
 
 .admin-tickets__header {
   display: flex;
@@ -15,8 +21,11 @@
 
 .admin-tickets__eyebrow {
   display: inline-block;
+
   margin-bottom: 8px;
-  color: #a78bfa;
+
+  color: var(--admin-accent);
+
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -25,6 +34,9 @@
 
 .admin-tickets__header h1 {
   margin: 0;
+
+  color: var(--admin-text);
+
   font-size: clamp(1.8rem, 3vw, 2.5rem);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -33,9 +45,15 @@
 .admin-tickets__header p {
   max-width: 640px;
   margin: 8px 0 0;
-  color: #94a3b8;
+
+  color: var(--admin-text-secondary);
+
   line-height: 1.6;
 }
+
+/* =========================
+   Shared Buttons
+========================= */
 
 .admin-tickets__add,
 .admin-tickets__refresh,
@@ -46,88 +64,140 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+
   border: 1px solid transparent;
   border-radius: 8px;
+
   font: inherit;
   font-weight: 700;
+
   cursor: pointer;
+
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
     color 160ms ease,
-    opacity 160ms ease;
+    opacity 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .admin-tickets__add {
   flex-shrink: 0;
+
   min-height: 42px;
   padding: 0 16px;
-  background: #7c3aed;
+
+  background: var(--admin-accent);
   color: #ffffff;
 }
 
 .admin-tickets__add:hover {
-  background: #6d28d9;
+  background: var(--admin-accent-hover);
 }
+
+.admin-tickets__add:focus-visible,
+.admin-tickets__refresh:focus-visible,
+.admin-tickets__state button:focus-visible,
+.admin-tickets__submit:focus-visible,
+.admin-tickets__cancel:focus-visible,
+.admin-tickets__icon-btn:focus-visible,
+.admin-tickets__pagination button:focus-visible,
+.admin-tickets__modal-header > button:focus-visible {
+  outline: 3px solid var(--admin-focus);
+  outline-offset: 2px;
+}
+
+/* =========================
+   Feedback
+========================= */
 
 .admin-tickets__feedback {
   display: flex;
   align-items: flex-start;
   gap: 10px;
+
   border: 1px solid;
   border-radius: 8px;
   padding: 12px 14px;
+
   font-size: 0.9rem;
   line-height: 1.5;
 }
 
 .admin-tickets__feedback--success {
-  border-color: rgba(52, 211, 153, 0.28);
-  background: rgba(52, 211, 153, 0.08);
-  color: #a7f3d0;
+  border-color: #a7e5c8;
+  background: #edf9f3;
+  color: #18794e;
 }
 
 .admin-tickets__feedback--error {
-  border-color: rgba(248, 113, 113, 0.3);
-  background: rgba(248, 113, 113, 0.08);
-  color: #fecaca;
+  border-color: var(--admin-danger-border);
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
 }
+
+[data-admin-theme="dark"]
+  .admin-tickets__feedback--success {
+  border-color: #285943;
+  background: #172b22;
+  color: #6ee7b7;
+}
+
+/* =========================
+   Statistics
+========================= */
 
 .admin-tickets__stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
 .admin-tickets__stat-card {
   min-width: 0;
   padding: 18px;
-  border: 1px solid #24283a;
+
+  border: 1px solid var(--admin-border);
   border-radius: 10px;
-  background: #11131e;
+
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .admin-tickets__stat-card span {
   display: block;
-  color: #94a3b8;
+
+  color: var(--admin-text-secondary);
+
   font-size: 0.82rem;
   font-weight: 600;
 }
 
 .admin-tickets__stat-card strong {
   display: block;
+
   margin-top: 8px;
-  color: #ffffff;
+
+  color: var(--admin-text);
+
   font-size: 1.8rem;
   line-height: 1;
 }
 
 .admin-tickets__stat-card small {
   display: block;
+
   margin-top: 9px;
-  color: #64748b;
+
+  color: var(--admin-text-muted);
+
   font-size: 0.75rem;
 }
+
+/* =========================
+   Toolbar
+========================= */
 
 .admin-tickets__toolbar {
   display: flex;
@@ -139,31 +209,45 @@
 .admin-tickets__search {
   width: min(420px, 100%);
   min-height: 42px;
+
   display: flex;
   align-items: center;
   gap: 10px;
+
   padding: 0 13px;
-  border: 1px solid #2a2e40;
+
+  border: 1px solid var(--admin-border);
   border-radius: 8px;
-  background: #11131e;
-  color: #64748b;
+
+  background: var(--admin-surface);
+  color: var(--admin-text-muted);
+
+  box-shadow: var(--admin-shadow-sm);
+
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .admin-tickets__search:focus-within {
-  border-color: #7c3aed;
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px var(--admin-focus);
 }
 
 .admin-tickets__search input {
   width: 100%;
+
   border: 0;
   outline: 0;
+
   background: transparent;
-  color: #f8fafc;
+  color: var(--admin-text);
+
   font: inherit;
 }
 
 .admin-tickets__search input::placeholder {
-  color: #64748b;
+  color: var(--admin-text-muted);
 }
 
 .admin-tickets__filters {
@@ -174,26 +258,48 @@
 
 .admin-tickets__filters select {
   min-height: 42px;
-  border: 1px solid #2a2e40;
+
+  border: 1px solid var(--admin-border);
   border-radius: 8px;
   padding: 0 34px 0 12px;
-  background: #11131e;
-  color: #cbd5e1;
+
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
+
+  box-shadow: var(--admin-shadow-sm);
+
   font: inherit;
+
   cursor: pointer;
+}
+
+.admin-tickets__filters select:hover {
+  border-color: var(--admin-border-strong);
+}
+
+.admin-tickets__filters select:focus-visible {
+  border-color: var(--admin-accent);
+  outline: 3px solid var(--admin-focus);
+  outline-offset: 1px;
 }
 
 .admin-tickets__refresh {
   min-height: 42px;
   padding: 0 13px;
-  border-color: #2a2e40;
-  background: #11131e;
-  color: #cbd5e1;
+
+  border-color: var(--admin-border);
+
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
+
+  box-shadow: var(--admin-shadow-sm);
 }
 
-.admin-tickets__refresh:hover {
-  border-color: #3f455d;
-  background: #171a27;
+.admin-tickets__refresh:hover:not(:disabled) {
+  border-color: var(--admin-border-strong);
+
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
 }
 
 .admin-tickets__refresh:disabled {
@@ -201,43 +307,66 @@
   opacity: 0.55;
 }
 
+/* =========================
+   Table Card
+========================= */
+
 .admin-tickets__table-card {
   overflow: hidden;
-  border: 1px solid #24283a;
+
+  border: 1px solid var(--admin-border);
   border-radius: 10px;
-  background: #11131e;
+
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .admin-tickets__table-header {
   min-height: 76px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+
   padding: 16px 20px;
-  border-bottom: 1px solid #24283a;
+
+  border-bottom: 1px solid var(--admin-border);
 }
 
 .admin-tickets__table-header h2 {
   margin: 0;
+
+  color: var(--admin-text);
+
   font-size: 1rem;
 }
 
 .admin-tickets__table-header p {
   margin: 5px 0 0;
-  color: #64748b;
+
+  color: var(--admin-text-muted);
+
   font-size: 0.84rem;
 }
 
 .admin-tickets__table-header > span {
   flex-shrink: 0;
-  border: 1px solid #2a2e40;
+
+  border: 1px solid var(--admin-border);
   border-radius: 999px;
   padding: 5px 9px;
-  color: #94a3b8;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-secondary);
+
   font-size: 0.75rem;
   font-weight: 700;
 }
+
+/* =========================
+   Table
+========================= */
 
 .admin-tickets__table-wrap {
   width: 100%;
@@ -247,18 +376,21 @@
 .admin-tickets__table {
   width: 100%;
   min-width: 980px;
+
   border-collapse: collapse;
 }
 
 .admin-tickets__table th,
 .admin-tickets__table td {
   padding: 15px 20px;
+
   text-align: left;
 }
 
 .admin-tickets__table th {
-  background: #0e1019;
-  color: #64748b;
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-muted);
+
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -266,17 +398,28 @@
 }
 
 .admin-tickets__table td {
-  border-top: 1px solid #202333;
-  color: #cbd5e1;
+  border-top: 1px solid var(--admin-border);
+
+  color: var(--admin-text-secondary);
+
   font-size: 0.86rem;
 }
 
-.admin-tickets__table tbody tr:hover {
-  background: #151824;
+.admin-tickets__table tbody tr {
+  transition: background-color 150ms ease;
 }
+
+.admin-tickets__table tbody tr:hover {
+  background: var(--admin-surface-hover);
+}
+
+/* =========================
+   Ticket Information
+========================= */
 
 .admin-tickets__ticket-name {
   min-width: 220px;
+
   display: flex;
   align-items: center;
   gap: 11px;
@@ -286,12 +429,15 @@
   width: 34px;
   height: 34px;
   flex: 0 0 34px;
+
   display: grid;
   place-items: center;
-  border: 1px solid rgba(139, 92, 246, 0.28);
+
+  border: 1px solid var(--admin-accent-border);
   border-radius: 7px;
-  background: rgba(139, 92, 246, 0.1);
-  color: #a78bfa;
+
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
 }
 
 .admin-tickets__ticket-name > div:nth-child(2),
@@ -305,40 +451,55 @@
 .admin-tickets__ticket-name strong,
 .admin-tickets__event strong,
 .admin-tickets__price strong {
-  color: #f8fafc;
+  color: var(--admin-text);
+
   font-weight: 700;
 }
 
 .admin-tickets__ticket-name span,
 .admin-tickets__event span {
-  color: #64748b;
+  color: var(--admin-text-muted);
+
   font-size: 0.75rem;
 }
 
 .admin-tickets__featured {
-  color: #fbbf24;
+  color: #d99a00;
   fill: currentColor;
 }
 
+[data-admin-theme="dark"]
+  .admin-tickets__featured {
+  color: #fbbf24;
+}
+
 .admin-tickets__price span {
-  color: #64748b;
+  color: var(--admin-text-muted);
+
   font-size: 0.75rem;
   text-decoration: line-through;
 }
 
 .admin-tickets__stock {
-  white-space: nowrap;
-  color: #cbd5e1;
+  color: var(--admin-text-secondary);
+
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
+
+/* =========================
+   Statuses
+========================= */
 
 .admin-tickets__status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   border: 1px solid;
   border-radius: 999px;
   padding: 5px 9px;
+
   font-size: 0.7rem;
   font-weight: 800;
   white-space: nowrap;
@@ -346,30 +507,56 @@
 
 .admin-tickets__status--available,
 .admin-tickets__status--active {
-  border-color: rgba(52, 211, 153, 0.25);
-  background: rgba(52, 211, 153, 0.08);
-  color: #6ee7b7;
+  border-color: #a7e5c8;
+
+  background: #edf9f3;
+  color: #18794e;
 }
 
 .admin-tickets__status--limited {
-  border-color: rgba(251, 191, 36, 0.25);
-  background: rgba(251, 191, 36, 0.08);
-  color: #fcd34d;
+  border-color: #ead69b;
+
+  background: #fff9e6;
+  color: #8a6100;
 }
 
 .admin-tickets__status--sold-out {
-  border-color: rgba(248, 113, 113, 0.25);
-  background: rgba(248, 113, 113, 0.08);
-  color: #fca5a5;
+  border-color: var(--admin-danger-border);
+
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
 }
 
 .admin-tickets__status--hidden,
 .admin-tickets__status--draft,
 .admin-tickets__status--unavailable {
-  border-color: rgba(148, 163, 184, 0.24);
-  background: rgba(148, 163, 184, 0.08);
-  color: #cbd5e1;
+  border-color: var(--admin-border-strong);
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-secondary);
 }
+
+[data-admin-theme="dark"]
+  .admin-tickets__status--available,
+[data-admin-theme="dark"]
+  .admin-tickets__status--active {
+  border-color: #285943;
+
+  background: #172b22;
+  color: #6ee7b7;
+}
+
+[data-admin-theme="dark"]
+  .admin-tickets__status--limited {
+  border-color: #5e5024;
+
+  background: #2d2817;
+  color: #fcd34d;
+}
+
+/* =========================
+   Row Actions
+========================= */
 
 .admin-tickets__actions-title {
   text-align: right !important;
@@ -384,24 +571,39 @@
 .admin-tickets__icon-btn {
   width: 32px;
   height: 32px;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #2a2e40;
+
+  border: 1px solid var(--admin-border);
   border-radius: 7px;
-  background: #151824;
-  color: #94a3b8;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-muted);
+
   cursor: pointer;
+
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
 .admin-tickets__icon-btn:hover:not(:disabled) {
-  border-color: #4c1d95;
-  color: #c4b5fd;
+  border-color: var(--admin-accent-border);
+
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
 }
 
-.admin-tickets__icon-btn--danger:hover:not(:disabled) {
-  border-color: rgba(248, 113, 113, 0.35);
-  color: #f87171;
+.admin-tickets__icon-btn--danger:hover:not(
+    :disabled
+  ) {
+  border-color: var(--admin-danger-border);
+
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
 }
 
 .admin-tickets__icon-btn:disabled {
@@ -409,15 +611,24 @@
   opacity: 0.35;
 }
 
+/* =========================
+   Pagination
+========================= */
+
 .admin-tickets__pagination {
   min-height: 58px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+
   padding: 10px 20px;
-  border-top: 1px solid #24283a;
-  color: #64748b;
+
+  border-top: 1px solid var(--admin-border);
+
+  color: var(--admin-text-muted);
+
   font-size: 0.8rem;
 }
 
@@ -429,17 +640,31 @@
 .admin-tickets__pagination button {
   width: 34px;
   height: 34px;
+
   display: grid;
   place-items: center;
-  border: 1px solid #2a2e40;
+
+  border: 1px solid var(--admin-border);
   border-radius: 7px;
-  background: #151824;
-  color: #cbd5e1;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-secondary);
+
   cursor: pointer;
+
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
-.admin-tickets__pagination button:hover:not(:disabled) {
-  border-color: #7c3aed;
+.admin-tickets__pagination button:hover:not(
+    :disabled
+  ) {
+  border-color: var(--admin-accent-border);
+
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
 }
 
 .admin-tickets__pagination button:disabled {
@@ -447,72 +672,109 @@
   opacity: 0.35;
 }
 
+/* =========================
+   Loading / Empty State
+========================= */
+
 .admin-tickets__state {
   min-height: 280px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 9px;
+
   padding: 28px;
-  color: #64748b;
+
+  color: var(--admin-text-muted);
+
   text-align: center;
 }
 
 .admin-tickets__state strong {
-  color: #e2e8f0;
+  color: var(--admin-text);
 }
 
 .admin-tickets__state p {
   max-width: 400px;
   margin: 0;
-  color: #64748b;
+
+  color: var(--admin-text-muted);
 }
 
 .admin-tickets__state button {
   min-height: 38px;
+
   margin-top: 6px;
   padding: 0 13px;
-  background: #7c3aed;
+
+  background: var(--admin-accent);
   color: #ffffff;
 }
 
+.admin-tickets__state button:hover {
+  background: var(--admin-accent-hover);
+}
+
+/* =========================
+   Modal
+========================= */
+
 .admin-tickets__modal-backdrop {
   position: fixed;
-  z-index: 1000;
   inset: 0;
+  z-index: 1600;
+
   display: grid;
   place-items: center;
+
   padding: 24px;
   overflow-y: auto;
-  background: rgba(3, 5, 12, 0.78);
+
+  background: rgba(16, 18, 24, 0.54);
+}
+
+[data-admin-theme="dark"]
+  .admin-tickets__modal-backdrop {
+  background: rgba(0, 0, 0, 0.72);
 }
 
 .admin-tickets__modal {
   width: min(820px, 100%);
   max-height: calc(100vh - 48px);
+
   overflow-y: auto;
-  border: 1px solid #2a2e40;
+
+  border: 1px solid var(--admin-border-strong);
   border-radius: 12px;
-  background: #11131e;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+
+  background: var(--admin-surface);
+  color: var(--admin-text);
+
+  box-shadow: var(--admin-shadow-lg);
 }
 
 .admin-tickets__modal-header {
   position: sticky;
-  z-index: 2;
   top: 0;
+  z-index: 2;
+
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
+
   padding: 20px 22px;
-  border-bottom: 1px solid #24283a;
-  background: #11131e;
+
+  border-bottom: 1px solid var(--admin-border);
+
+  background: var(--admin-surface);
 }
 
 .admin-tickets__modal-header span {
-  color: #a78bfa;
+  color: var(--admin-accent);
+
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -521,13 +783,17 @@
 
 .admin-tickets__modal-header h2 {
   margin: 5px 0 0;
-  color: #ffffff;
+
+  color: var(--admin-text);
+
   font-size: 1.25rem;
 }
 
 .admin-tickets__modal-header p {
   margin: 6px 0 0;
-  color: #64748b;
+
+  color: var(--admin-text-muted);
+
   font-size: 0.84rem;
 }
 
@@ -535,14 +801,35 @@
   width: 34px;
   height: 34px;
   flex: 0 0 34px;
+
   display: grid;
   place-items: center;
-  border: 1px solid #2a2e40;
+
+  border: 1px solid var(--admin-border);
   border-radius: 7px;
-  background: #151824;
-  color: #94a3b8;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-secondary);
+
   cursor: pointer;
+
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
+
+.admin-tickets__modal-header
+  > button:hover:not(:disabled) {
+  border-color: var(--admin-border-strong);
+
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
+}
+
+/* =========================
+   Modal Form
+========================= */
 
 .admin-tickets__form {
   padding: 22px;
@@ -550,19 +837,22 @@
 
 .admin-tickets__form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
 .admin-tickets__form-grid label {
   min-width: 0;
+
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
 
 .admin-tickets__form-grid label > span {
-  color: #cbd5e1;
+  color: var(--admin-text-secondary);
+
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -570,13 +860,21 @@
 .admin-tickets__form-grid input,
 .admin-tickets__form-grid textarea {
   width: 100%;
-  border: 1px solid #2a2e40;
+
+  border: 1px solid var(--admin-border);
   border-radius: 7px;
   outline: none;
   padding: 10px 11px;
-  background: #0d0f18;
-  color: #f8fafc;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text);
+
   font: inherit;
+
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .admin-tickets__form-grid input {
@@ -585,17 +883,26 @@
 
 .admin-tickets__form-grid textarea {
   resize: vertical;
+
   line-height: 1.5;
+}
+
+.admin-tickets__form-grid input:hover,
+.admin-tickets__form-grid textarea:hover {
+  border-color: var(--admin-border-strong);
 }
 
 .admin-tickets__form-grid input:focus,
 .admin-tickets__form-grid textarea:focus {
-  border-color: #7c3aed;
+  border-color: var(--admin-accent);
+
+  background: var(--admin-surface);
+  box-shadow: 0 0 0 3px var(--admin-focus);
 }
 
 .admin-tickets__form-grid input::placeholder,
 .admin-tickets__form-grid textarea::placeholder {
-  color: #4b5563;
+  color: var(--admin-text-muted);
 }
 
 .admin-tickets__field--wide {
@@ -606,23 +913,31 @@
   flex-direction: row !important;
   align-items: center;
   gap: 10px !important;
+
   cursor: pointer;
 }
 
 .admin-tickets__checkbox input {
   width: 17px;
-  min-height: auto;
   height: 17px;
-  accent-color: #7c3aed;
+  min-height: auto;
+
+  accent-color: var(--admin-accent);
 }
+
+/* =========================
+   Modal Actions
+========================= */
 
 .admin-tickets__modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+
   margin-top: 22px;
   padding-top: 18px;
-  border-top: 1px solid #24283a;
+
+  border-top: 1px solid var(--admin-border);
 }
 
 .admin-tickets__cancel,
@@ -632,38 +947,57 @@
 }
 
 .admin-tickets__cancel {
-  border-color: #2a2e40;
-  background: #151824;
-  color: #cbd5e1;
+  border-color: var(--admin-border);
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-secondary);
+}
+
+.admin-tickets__cancel:hover:not(:disabled) {
+  border-color: var(--admin-border-strong);
+
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
 }
 
 .admin-tickets__submit {
-  background: #7c3aed;
+  background: var(--admin-accent);
   color: #ffffff;
 }
 
 .admin-tickets__submit:hover:not(:disabled) {
-  background: #6d28d9;
+  background: var(--admin-accent-hover);
 }
 
 .admin-tickets__cancel:disabled,
-.admin-tickets__submit:disabled {
+.admin-tickets__submit:disabled,
+.admin-tickets__modal-header
+  > button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
+/* =========================
+   Utilities
+========================= */
+
 .admin-tickets__spin {
-  animation: admin-tickets-spin 0.75s linear infinite;
+  animation:
+    admin-tickets-spin 0.75s linear infinite;
 }
 
 .sr-only {
   position: absolute;
+
   width: 1px;
   height: 1px;
   padding: 0;
   overflow: hidden;
+
   clip: rect(0, 0, 0, 0);
+
   white-space: nowrap;
+
   border: 0;
 }
 
@@ -673,9 +1007,14 @@
   }
 }
 
+/* =========================
+   Responsive
+========================= */
+
 @media (max-width: 1050px) {
   .admin-tickets__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 
   .admin-tickets__toolbar {
@@ -731,6 +1070,7 @@
 
   .admin-tickets__modal-backdrop {
     align-items: start;
+
     padding: 12px;
   }
 
@@ -753,5 +1093,16 @@
   .admin-tickets__cancel,
   .admin-tickets__submit {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-tickets *,
+  .admin-tickets *::before,
+  .admin-tickets *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -1,329 +1,1228 @@
 import {
+  AlertCircle,
   ArrowRight,
+  Bell,
   CalendarDays,
-  CircleDollarSign,
-  Eye,
+  CheckCircle2,
+  CircleHelp,
+  Clock3,
+  ExternalLink,
   Image as ImageIcon,
+  LoaderCircle,
   MessageSquare,
   Plus,
+  RefreshCw,
   Sparkles,
   Ticket,
-  TrendingUp,
   Upload,
-  Users,
 } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
+
+import {
+  getAdminEvents,
+} from "../../services/events.service";
+import {
+  getTickets,
+} from "../../services/ticket.service";
+import {
+  getAdminMessages,
+} from "../../services/contact.service";
+import {
+  getAdminGallery,
+} from "../../services/gallery.service";
+import {
+  getRecentNotifications,
+  getUnreadNotificationCount,
+} from "../../services/notifications.service";
+
+import type {
+  AdminContactMessage,
+} from "../../services/contact.service";
+import type {
+  AdminNotification,
+} from "../../services/notifications.service";
+import type {
+  TicketPreview,
+} from "../../services/ticket.service";
+import type {
+  Event,
+} from "../../types/event";
+import type {
+  GalleryImage,
+} from "../../types/gallery";
+
 import "./../style/dashboard.css";
 
-const dashboardStats = [
-  {
-    title: "Active Events",
-    value: "3",
-    description: "Festival events currently published",
-    change: "+1 this month",
-    icon: CalendarDays,
-    className: "dashboard-stat--purple",
-  },
-  {
-    title: "Tickets Sold",
-    value: "2,458",
-    description: "Tickets sold across all events",
-    change: "+18.4%",
-    icon: Ticket,
-    className: "dashboard-stat--cyan",
-  },
-  {
-    title: "Total Revenue",
-    value: "฿3.2M",
-    description: "Estimated ticket revenue",
-    change: "+12.8%",
-    icon: CircleDollarSign,
-    className: "dashboard-stat--green",
-  },
-  {
-    title: "Unread Messages",
-    value: "18",
-    description: "Visitor inquiries awaiting reply",
-    change: "6 new today",
-    icon: MessageSquare,
-    className: "dashboard-stat--orange",
-  },
-];
+type DashboardData = {
+  events: Event[];
+  tickets: TicketPreview[];
+  totalTickets: number;
+  messages: AdminContactMessage[];
+  totalMessages: number;
+  gallery: GalleryImage[];
+  notifications: AdminNotification[];
+  unreadNotifications: number;
+};
 
-const recentActivities = [
-  {
-    title: "New VIP ticket purchased",
-    description: "Waterfall Festival Full Moon Edition",
-    time: "5 minutes ago",
-    icon: Ticket,
-    type: "Sale",
-    typeClassName: "activity-badge--sale",
-  },
-  {
-    title: "Gallery content uploaded",
-    description: "12 new festival photos were added",
-    time: "32 minutes ago",
-    icon: ImageIcon,
-    type: "Gallery",
-    typeClassName: "activity-badge--gallery",
-  },
-  {
-    title: "New contact message received",
-    description: "Question about ticket transfers",
-    time: "1 hour ago",
-    icon: MessageSquare,
-    type: "Message",
-    typeClassName: "activity-badge--message",
-  },
-  {
-    title: "Event information updated",
-    description: "Waterfall Festival event schedule",
-    time: "3 hours ago",
-    icon: CalendarDays,
-    type: "Event",
-    typeClassName: "activity-badge--event",
-  },
-];
+type DashboardLoadError = {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string | string[];
+    };
+  };
+};
 
-const quickActions = [
-  {
-    title: "Create Event",
-    description: "Add a new festival event",
-    icon: Plus,
-    path: "/admin/events",
-  },
-  {
-    title: "Manage Tickets",
-    description: "Review ticket types and sales",
-    icon: Ticket,
-    path: "/admin/tickets",
-  },
-  {
-    title: "Upload Gallery",
-    description: "Add photos and videos",
-    icon: Upload,
-    path: "/admin/gallery",
-  },
-  {
-    title: "View Messages",
-    description: "Reply to visitor inquiries",
-    icon: MessageSquare,
-    path: "/admin/messages",
-  },
-];
+const EMPTY_DASHBOARD_DATA: DashboardData = {
+  events: [],
+  tickets: [],
+  totalTickets: 0,
+  messages: [],
+  totalMessages: 0,
+  gallery: [],
+  notifications: [],
+  unreadNotifications: 0,
+};
+
+function getErrorMessage(
+  error: unknown,
+  fallbackMessage: string,
+): string {
+  if (
+    typeof error !== "object" ||
+    error === null
+  ) {
+    return fallbackMessage;
+  }
+
+  const apiError = error as DashboardLoadError;
+  const responseMessage =
+    apiError.response?.data?.message;
+
+  if (Array.isArray(responseMessage)) {
+    return responseMessage.join(" ");
+  }
+
+  if (typeof responseMessage === "string") {
+    return responseMessage;
+  }
+
+  if (typeof apiError.message === "string") {
+    return apiError.message;
+  }
+
+  return fallbackMessage;
+}
+
+function normalizeStatus(status?: string): string {
+  return status?.trim().toUpperCase() ?? "";
+}
+
+function formatStatus(status?: string): string {
+  if (!status) {
+    return "Unknown";
+  }
+
+  return status
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (character) =>
+      character.toUpperCase(),
+    );
+}
+
+function formatDate(
+  value?: string | null,
+): string {
+  if (!value) {
+    return "Date unavailable";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatDateParts(
+  value?: string | null,
+): {
+  month: string;
+  day: string;
+} {
+  if (!value) {
+    return {
+      month: "---",
+      day: "--",
+    };
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return {
+      month: "---",
+      day: "--",
+    };
+  }
+
+  return {
+    month: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+    })
+      .format(date)
+      .toUpperCase(),
+    day: new Intl.DateTimeFormat("en-US", {
+      day: "2-digit",
+    }).format(date),
+  };
+}
+
+function formatRelativeTime(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Recently";
+  }
+
+  const differenceInSeconds = Math.round(
+    (date.getTime() - Date.now()) / 1000,
+  );
+
+  const formatter = new Intl.RelativeTimeFormat(
+    "en",
+    {
+      numeric: "auto",
+    },
+  );
+
+  const absoluteDifference = Math.abs(
+    differenceInSeconds,
+  );
+
+  if (absoluteDifference < 60) {
+    return formatter.format(
+      differenceInSeconds,
+      "second",
+    );
+  }
+
+  const minutes = Math.round(
+    differenceInSeconds / 60,
+  );
+
+  if (Math.abs(minutes) < 60) {
+    return formatter.format(minutes, "minute");
+  }
+
+  const hours = Math.round(minutes / 60);
+
+  if (Math.abs(hours) < 24) {
+    return formatter.format(hours, "hour");
+  }
+
+  const days = Math.round(hours / 24);
+
+  if (Math.abs(days) < 30) {
+    return formatter.format(days, "day");
+  }
+
+  return formatDate(value);
+}
+
+function getNotificationIcon(
+  type: string,
+) {
+  switch (normalizeStatus(type)) {
+    case "CONTACT_MESSAGE":
+      return MessageSquare;
+
+    case "EVENT":
+      return CalendarDays;
+
+    case "GALLERY":
+      return ImageIcon;
+
+    case "FAQ":
+      return CircleHelp;
+
+    default:
+      return Bell;
+  }
+}
+
+function getNotificationClassName(
+  type: string,
+): string {
+  switch (normalizeStatus(type)) {
+    case "CONTACT_MESSAGE":
+      return "dashboard-activity--message";
+
+    case "EVENT":
+      return "dashboard-activity--event";
+
+    case "GALLERY":
+      return "dashboard-activity--gallery";
+
+    case "FAQ":
+      return "dashboard-activity--faq";
+
+    default:
+      return "dashboard-activity--default";
+  }
+}
+
+function getNotificationLabel(
+  type: string,
+): string {
+  switch (normalizeStatus(type)) {
+    case "CONTACT_MESSAGE":
+      return "Message";
+
+    case "EVENT":
+      return "Event";
+
+    case "GALLERY":
+      return "Gallery";
+
+    case "FAQ":
+      return "FAQ";
+
+    default:
+      return "Update";
+  }
+}
 
 function Dashboard() {
+  const [data, setData] =
+    useState<DashboardData>(
+      EMPTY_DASHBOARD_DATA,
+    );
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+  const [isRefreshing, setIsRefreshing] =
+    useState(false);
+  const [error, setError] =
+    useState<string | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] =
+    useState<Date | null>(null);
+
+  const loadDashboard = useCallback(
+    async (showRefreshState = false) => {
+      if (showRefreshState) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      setError(null);
+
+      const results = await Promise.allSettled([
+        getAdminEvents(),
+        getTickets({
+          page: 1,
+          limit: 100,
+          sortBy: "sortOrder",
+          sortDirection: "asc",
+        }),
+        getAdminMessages(),
+        getAdminGallery(),
+        getRecentNotifications(6),
+        getUnreadNotificationCount(),
+      ]);
+
+      const [
+        eventsResult,
+        ticketsResult,
+        messagesResult,
+        galleryResult,
+        notificationsResult,
+        unreadResult,
+      ] = results;
+
+      const hasSuccessfulRequest = results.some(
+        (result) => result.status === "fulfilled",
+      );
+
+      if (!hasSuccessfulRequest) {
+        const firstRejectedResult = results.find(
+          (
+            result,
+          ): result is PromiseRejectedResult =>
+            result.status === "rejected",
+        );
+
+        setError(
+          getErrorMessage(
+            firstRejectedResult?.reason,
+            "Unable to load dashboard information.",
+          ),
+        );
+
+        setIsLoading(false);
+        setIsRefreshing(false);
+        return;
+      }
+
+      setData({
+        events:
+          eventsResult.status === "fulfilled"
+            ? eventsResult.value
+            : [],
+        tickets:
+          ticketsResult.status === "fulfilled"
+            ? ticketsResult.value.data
+            : [],
+        totalTickets:
+          ticketsResult.status === "fulfilled"
+            ? ticketsResult.value.meta.totalItems
+            : 0,
+        messages:
+          messagesResult.status === "fulfilled"
+            ? messagesResult.value.data
+            : [],
+        totalMessages:
+          messagesResult.status === "fulfilled"
+            ? messagesResult.value.pagination.total
+            : 0,
+        gallery:
+          galleryResult.status === "fulfilled"
+            ? galleryResult.value
+            : [],
+        notifications:
+          notificationsResult.status ===
+          "fulfilled"
+            ? notificationsResult.value.data
+            : [],
+        unreadNotifications:
+          unreadResult.status === "fulfilled"
+            ? unreadResult.value.unreadCount
+            : notificationsResult.status ===
+                "fulfilled"
+              ? notificationsResult.value
+                  .unreadCount
+              : 0,
+      });
+
+      const failedRequestCount = results.filter(
+        (result) => result.status === "rejected",
+      ).length;
+
+      if (failedRequestCount > 0) {
+        setError(
+          `${failedRequestCount} dashboard ${
+            failedRequestCount === 1
+              ? "section could"
+              : "sections could"
+          } not be loaded.`,
+        );
+      }
+
+      setLastUpdatedAt(new Date());
+      setIsLoading(false);
+      setIsRefreshing(false);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  const dashboardSummary = useMemo(() => {
+    const now = Date.now();
+
+    const publishedEvents = data.events.filter(
+      (event) =>
+        normalizeStatus(event.status) ===
+        "PUBLISHED",
+    );
+
+    const upcomingEvents = publishedEvents
+      .filter((event) => {
+        const eventTime = new Date(
+          event.date,
+        ).getTime();
+
+        return (
+          !Number.isNaN(eventTime) &&
+          eventTime >= now
+        );
+      })
+      .sort(
+        (firstEvent, secondEvent) =>
+          new Date(firstEvent.date).getTime() -
+          new Date(secondEvent.date).getTime(),
+      );
+
+    const nextEvent =
+      upcomingEvents[0] ?? null;
+
+    const newMessages = data.messages.filter(
+      (message) =>
+        normalizeStatus(message.status) === "NEW",
+    );
+
+    const publishedGalleryItems =
+      data.gallery.filter(
+        (image) =>
+          normalizeStatus(image.status) ===
+          "PUBLISHED",
+      );
+
+    const availableTickets = data.tickets.filter(
+      (ticket) =>
+        ![
+          "SOLD_OUT",
+          "UNAVAILABLE",
+          "HIDDEN",
+          "DRAFT",
+        ].includes(
+          normalizeStatus(ticket.status),
+        ),
+    );
+
+    const soldOutTickets = data.tickets.filter(
+      (ticket) =>
+        normalizeStatus(ticket.status) ===
+          "SOLD_OUT" ||
+        ticket.remainingQuantity === 0,
+    );
+
+    const ticketsWithoutPurchaseUrl =
+      data.tickets.filter(
+        (ticket) =>
+          !ticket.externalPurchaseUrl,
+      );
+
+    const eventsWithoutPurchaseUrl =
+      publishedEvents.filter(
+        (event) => !event.ticketPurchaseUrl,
+      );
+
+    const draftGalleryItems =
+      data.gallery.filter(
+        (image) =>
+          normalizeStatus(image.status) ===
+          "DRAFT",
+      );
+
+    return {
+      publishedEvents,
+      nextEvent,
+      newMessages,
+      publishedGalleryItems,
+      availableTickets,
+      soldOutTickets,
+      ticketsWithoutPurchaseUrl,
+      eventsWithoutPurchaseUrl,
+      draftGalleryItems,
+    };
+  }, [data]);
+
+  const nextEventDate = formatDateParts(
+    dashboardSummary.nextEvent?.date,
+  );
+
+  const statistics = [
+    {
+      title: "Published Events",
+      value:
+        dashboardSummary.publishedEvents.length,
+      description: `${data.events.length} total events`,
+      icon: CalendarDays,
+      className: "dashboard-stat--purple",
+      path: "/admin/events",
+    },
+    {
+      title: "Ticket Types",
+      value: data.totalTickets,
+      description: `${dashboardSummary.availableTickets.length} available in loaded results`,
+      icon: Ticket,
+      className: "dashboard-stat--blue",
+      path: "/admin/tickets",
+    },
+    {
+      title: "Contact Messages",
+      value: data.totalMessages,
+      description: `${dashboardSummary.newMessages.length} new in loaded results`,
+      icon: MessageSquare,
+      className: "dashboard-stat--orange",
+      path: "/admin/messages",
+    },
+    {
+      title: "Gallery Content",
+      value:
+        dashboardSummary
+          .publishedGalleryItems.length,
+      description: `${data.gallery.length} total gallery items`,
+      icon: ImageIcon,
+      className: "dashboard-stat--green",
+      path: "/admin/gallery",
+    },
+  ];
+
+  const contentHealthItems = [
+    {
+      label: "Tickets missing purchase URL",
+      value:
+        dashboardSummary
+          .ticketsWithoutPurchaseUrl.length,
+      path: "/admin/tickets",
+      isHealthy:
+        dashboardSummary
+          .ticketsWithoutPurchaseUrl.length === 0,
+    },
+    {
+      label: "Events missing ticket URL",
+      value:
+        dashboardSummary
+          .eventsWithoutPurchaseUrl.length,
+      path: "/admin/events",
+      isHealthy:
+        dashboardSummary
+          .eventsWithoutPurchaseUrl.length === 0,
+    },
+    {
+      label: "Draft gallery items",
+      value:
+        dashboardSummary.draftGalleryItems
+          .length,
+      path: "/admin/gallery",
+      isHealthy:
+        dashboardSummary.draftGalleryItems
+          .length === 0,
+    },
+    {
+      label: "New messages to review",
+      value:
+        dashboardSummary.newMessages.length,
+      path: "/admin/messages",
+      isHealthy:
+        dashboardSummary.newMessages.length ===
+        0,
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <section className="admin-dashboard">
+        <div className="dashboard-loading">
+          <LoaderCircle
+            size={30}
+            className="dashboard-spin"
+            aria-hidden="true"
+          />
+
+          <strong>Loading dashboard</strong>
+
+          <p>
+            Retrieving the latest festival
+            information.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="admin-dashboard">
       <div className="dashboard-header">
         <div className="dashboard-header__content">
           <div className="dashboard-header__eyebrow">
-            <Sparkles size={16} />
-            <span>Festival Control Center</span>
+            <Sparkles
+              size={15}
+              aria-hidden="true"
+            />
+            <span>Festival control center</span>
           </div>
 
-          <h1>Dashboard Overview</h1>
+          <h1>Dashboard overview</h1>
 
           <p>
-            Monitor festival activity, ticket performance, visitor engagement,
-            and website content from one place.
+            Review website content, upcoming
+            events, visitor messages and ticket
+            availability.
           </p>
         </div>
 
-        <div className="dashboard-header__status">
-          <span className="dashboard-status__indicator" />
+        <div className="dashboard-header__actions">
+          <div className="dashboard-system-status">
+            <span
+              className="dashboard-system-status__indicator"
+              aria-hidden="true"
+            />
 
-          <div>
-            <strong>Website Online</strong>
-            <span>All systems are operational</span>
+            <div>
+              <strong>Admin API connected</strong>
+              <span>
+                {lastUpdatedAt
+                  ? `Updated ${lastUpdatedAt.toLocaleTimeString(
+                      [],
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )}`
+                  : "Dashboard ready"}
+              </span>
+            </div>
           </div>
+
+          <button
+            type="button"
+            className="dashboard-refresh-button"
+            onClick={() =>
+              void loadDashboard(true)
+            }
+            disabled={isRefreshing}
+          >
+            <RefreshCw
+              size={16}
+              className={
+                isRefreshing
+                  ? "dashboard-spin"
+                  : undefined
+              }
+              aria-hidden="true"
+            />
+
+            {isRefreshing
+              ? "Refreshing"
+              : "Refresh"}
+          </button>
         </div>
       </div>
 
+      {error && (
+        <div
+          className="dashboard-feedback"
+          role="alert"
+        >
+          <AlertCircle
+            size={18}
+            aria-hidden="true"
+          />
+
+          <span>{error}</span>
+
+          <button
+            type="button"
+            onClick={() =>
+              void loadDashboard(true)
+            }
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       <div className="dashboard-stats">
-        {dashboardStats.map((stat) => {
-          const Icon = stat.icon;
+        {statistics.map((statistic) => {
+          const Icon = statistic.icon;
 
           return (
-            <article
-              className={`dashboard-stat-card ${stat.className}`}
-              key={stat.title}
+            <Link
+              to={statistic.path}
+              className={`dashboard-stat-card ${statistic.className}`}
+              key={statistic.title}
             >
               <div className="dashboard-stat-card__top">
                 <div className="dashboard-stat-card__icon">
-                  <Icon size={25} />
+                  <Icon
+                    size={21}
+                    aria-hidden="true"
+                  />
                 </div>
 
-                <span className="dashboard-stat-card__change">
-                  <TrendingUp size={14} />
-                  {stat.change}
-                </span>
+                <ArrowRight
+                  size={17}
+                  className="dashboard-stat-card__arrow"
+                  aria-hidden="true"
+                />
               </div>
 
               <div className="dashboard-stat-card__content">
-                <p className="dashboard-stat-card__title">{stat.title}</p>
-                <h2>{stat.value}</h2>
-                <p className="dashboard-stat-card__description">
-                  {stat.description}
-                </p>
+                <span>{statistic.title}</span>
+                <strong>{statistic.value}</strong>
+                <small>
+                  {statistic.description}
+                </small>
               </div>
-            </article>
+            </Link>
           );
         })}
       </div>
 
-      <div className="dashboard-main-grid">
-        <article className="dashboard-panel dashboard-performance">
+      <div className="dashboard-primary-grid">
+        <article className="dashboard-panel dashboard-event-panel">
           <div className="dashboard-panel__header">
             <div>
               <span className="dashboard-panel__label">
-                Festival Performance
+                Next published event
               </span>
-              <h2>Event Overview</h2>
+              <h2>Upcoming event</h2>
             </div>
 
-            <Link to="/admin/events" className="dashboard-panel__link">
+            <Link
+              to="/admin/events"
+              className="dashboard-panel__link"
+            >
               View events
-              <ArrowRight size={17} />
+              <ArrowRight
+                size={16}
+                aria-hidden="true"
+              />
             </Link>
           </div>
 
-          <div className="dashboard-event-card">
-            <div className="dashboard-event-card__main">
-              <div className="dashboard-event-card__date">
-                <span>JUL</span>
-                <strong>20</strong>
+          {dashboardSummary.nextEvent ? (
+            <div className="dashboard-event-card">
+              <div className="dashboard-event-card__main">
+                <div className="dashboard-event-card__date">
+                  <span>
+                    {nextEventDate.month}
+                  </span>
+                  <strong>
+                    {nextEventDate.day}
+                  </strong>
+                </div>
+
+                <div className="dashboard-event-card__info">
+                  <span className="dashboard-event-card__status">
+                    {formatStatus(
+                      dashboardSummary.nextEvent
+                        .status,
+                    )}
+                  </span>
+
+                  <h3>
+                    {
+                      dashboardSummary.nextEvent
+                        .title
+                    }
+                  </h3>
+
+                  <p>
+                    {dashboardSummary.nextEvent
+                      .location ||
+                      "Location unavailable"}
+                    {" · "}
+                    {formatDate(
+                      dashboardSummary.nextEvent
+                        .date,
+                    )}
+                  </p>
+                </div>
               </div>
 
-              <div className="dashboard-event-card__info">
-                <span className="dashboard-event-card__status">
-                  Upcoming Event
-                </span>
+              <div className="dashboard-event-card__details">
+                <div>
+                  <span>
+                    <Ticket
+                      size={16}
+                      aria-hidden="true"
+                    />
+                    Ticket types
+                  </span>
 
-                <h3>Waterfall Festival Full Moon Edition</h3>
+                  <strong>
+                    {
+                      data.tickets.filter(
+                        (ticket) =>
+                          ticket.eventId ===
+                          dashboardSummary
+                            .nextEvent?.id,
+                      ).length
+                    }
+                  </strong>
+                </div>
 
-                <p>
-                  Koh Phangan, Thailand · Doors open at 8:00 PM
-                </p>
+                <div>
+                  <span>
+                    <Clock3
+                      size={16}
+                      aria-hidden="true"
+                    />
+                    Event date
+                  </span>
+
+                  <strong>
+                    {formatDate(
+                      dashboardSummary.nextEvent
+                        .date,
+                    )}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    <ExternalLink
+                      size={16}
+                      aria-hidden="true"
+                    />
+                    Purchase page
+                  </span>
+
+                  <strong>
+                    {dashboardSummary.nextEvent
+                      .ticketPurchaseUrl
+                      ? "Connected"
+                      : "Missing"}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="dashboard-event-card__footer">
+                <Link
+                  to={`/admin/events/${dashboardSummary.nextEvent.id}/edit`}
+                >
+                  Manage event
+                  <ArrowRight
+                    size={16}
+                    aria-hidden="true"
+                  />
+                </Link>
+
+                {dashboardSummary.nextEvent
+                  .ticketPurchaseUrl && (
+                  <a
+                    href={
+                      dashboardSummary.nextEvent
+                        .ticketPurchaseUrl
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open ticket page
+                    <ExternalLink
+                      size={15}
+                      aria-hidden="true"
+                    />
+                  </a>
+                )}
               </div>
             </div>
+          ) : (
+            <div className="dashboard-empty-state">
+              <CalendarDays
+                size={28}
+                aria-hidden="true"
+              />
 
-            <div className="dashboard-event-card__metrics">
-              <div>
-                <span>
-                  <Ticket size={16} />
-                  Tickets Sold
-                </span>
-                <strong>1,840</strong>
-              </div>
+              <strong>
+                No upcoming published event
+              </strong>
 
-              <div>
-                <span>
-                  <Users size={16} />
-                  Capacity
-                </span>
-                <strong>2,500</strong>
-              </div>
+              <p>
+                Publish an upcoming event to
+                display it here.
+              </p>
 
-              <div>
-                <span>
-                  <Eye size={16} />
-                  Page Views
-                </span>
-                <strong>18.6K</strong>
-              </div>
+              <Link to="/admin/events">
+                Manage events
+              </Link>
             </div>
-
-            <div className="dashboard-progress">
-              <div className="dashboard-progress__header">
-                <span>Ticket capacity</span>
-                <strong>74%</strong>
-              </div>
-
-              <div className="dashboard-progress__track">
-                <span className="dashboard-progress__bar" />
-              </div>
-            </div>
-          </div>
+          )}
         </article>
 
-        <article className="dashboard-panel dashboard-quick-panel">
+        <article className="dashboard-panel dashboard-actions-panel">
           <div className="dashboard-panel__header">
             <div>
-              <span className="dashboard-panel__label">Shortcuts</span>
-              <h2>Quick Actions</h2>
+              <span className="dashboard-panel__label">
+                Common tasks
+              </span>
+              <h2>Quick actions</h2>
             </div>
           </div>
 
           <div className="dashboard-quick-actions">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
+            <Link
+              to="/admin/events/create"
+              className="dashboard-quick-action"
+            >
+              <span className="dashboard-quick-action__icon">
+                <Plus
+                  size={19}
+                  aria-hidden="true"
+                />
+              </span>
 
-              return (
-                <Link
-                  to={action.path}
-                  className="dashboard-quick-action"
-                  key={action.title}
-                >
-                  <div className="dashboard-quick-action__icon">
-                    <Icon size={20} />
-                  </div>
+              <span className="dashboard-quick-action__copy">
+                <strong>Create event</strong>
+                <small>
+                  Add a new festival event
+                </small>
+              </span>
 
-                  <div className="dashboard-quick-action__content">
-                    <strong>{action.title}</strong>
-                    <span>{action.description}</span>
-                  </div>
+              <ArrowRight
+                size={16}
+                aria-hidden="true"
+              />
+            </Link>
 
-                  <ArrowRight
-                    size={17}
-                    className="dashboard-quick-action__arrow"
-                  />
-                </Link>
-              );
-            })}
+            <Link
+              to="/admin/tickets"
+              className="dashboard-quick-action"
+            >
+              <span className="dashboard-quick-action__icon">
+                <Ticket
+                  size={19}
+                  aria-hidden="true"
+                />
+              </span>
+
+              <span className="dashboard-quick-action__copy">
+                <strong>Manage tickets</strong>
+                <small>
+                  Add ticket previews and URLs
+                </small>
+              </span>
+
+              <ArrowRight
+                size={16}
+                aria-hidden="true"
+              />
+            </Link>
+
+            <Link
+              to="/admin/gallery"
+              className="dashboard-quick-action"
+            >
+              <span className="dashboard-quick-action__icon">
+                <Upload
+                  size={19}
+                  aria-hidden="true"
+                />
+              </span>
+
+              <span className="dashboard-quick-action__copy">
+                <strong>Upload gallery</strong>
+                <small>
+                  Add festival photos
+                </small>
+              </span>
+
+              <ArrowRight
+                size={16}
+                aria-hidden="true"
+              />
+            </Link>
+
+            <Link
+              to="/admin/messages"
+              className="dashboard-quick-action"
+            >
+              <span className="dashboard-quick-action__icon">
+                <MessageSquare
+                  size={19}
+                  aria-hidden="true"
+                />
+              </span>
+
+              <span className="dashboard-quick-action__copy">
+                <strong>Review messages</strong>
+                <small>
+                  Respond to visitor inquiries
+                </small>
+              </span>
+
+              <ArrowRight
+                size={16}
+                aria-hidden="true"
+              />
+            </Link>
           </div>
         </article>
       </div>
 
-      <article className="dashboard-panel dashboard-activity-panel">
-        <div className="dashboard-panel__header">
-          <div>
-            <span className="dashboard-panel__label">Latest Updates</span>
-            <h2>Recent Activity</h2>
+      <div className="dashboard-secondary-grid">
+        <article className="dashboard-panel dashboard-activity-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <span className="dashboard-panel__label">
+                Latest updates
+              </span>
+              <h2>Recent activity</h2>
+            </div>
+
+            <span className="dashboard-unread-badge">
+              {data.unreadNotifications} unread
+            </span>
           </div>
 
-          <button type="button" className="dashboard-secondary-button">
-            View all activity
-          </button>
-        </div>
+          {data.notifications.length > 0 ? (
+            <div className="dashboard-activity-list">
+              {data.notifications.map(
+                (notification) => {
+                  const Icon =
+                    getNotificationIcon(
+                      notification.type,
+                    );
 
-        <div className="dashboard-activity-list">
-          {recentActivities.map((activity) => {
-            const Icon = activity.icon;
+                  return (
+                    <Link
+                      key={notification.id}
+                      to={
+                        notification.link ??
+                        "/admin"
+                      }
+                      className={`dashboard-activity-item ${getNotificationClassName(
+                        notification.type,
+                      )} ${
+                        !notification.isRead
+                          ? "dashboard-activity-item--unread"
+                          : ""
+                      }`}
+                    >
+                      <span className="dashboard-activity-item__icon">
+                        <Icon
+                          size={18}
+                          aria-hidden="true"
+                        />
+                      </span>
 
-            return (
-              <div className="dashboard-activity-item" key={activity.title}>
-                <div className="dashboard-activity-item__icon">
-                  <Icon size={19} />
-                </div>
+                      <span className="dashboard-activity-item__content">
+                        <strong>
+                          {notification.title}
+                        </strong>
+                        <small>
+                          {notification.message}
+                        </small>
+                      </span>
 
-                <div className="dashboard-activity-item__content">
-                  <strong>{activity.title}</strong>
-                  <span>{activity.description}</span>
-                </div>
+                      <span className="dashboard-activity-item__type">
+                        {getNotificationLabel(
+                          notification.type,
+                        )}
+                      </span>
 
+                      <time
+                        dateTime={
+                          notification.createdAt
+                        }
+                      >
+                        {formatRelativeTime(
+                          notification.createdAt,
+                        )}
+                      </time>
+                    </Link>
+                  );
+                },
+              )}
+            </div>
+          ) : (
+            <div className="dashboard-empty-state dashboard-empty-state--compact">
+              <Bell
+                size={25}
+                aria-hidden="true"
+              />
+              <strong>No recent activity</strong>
+              <p>
+                New notifications will appear
+                here.
+              </p>
+            </div>
+          )}
+        </article>
+
+        <article className="dashboard-panel dashboard-health-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <span className="dashboard-panel__label">
+                Content checks
+              </span>
+              <h2>Content health</h2>
+            </div>
+          </div>
+
+          <div className="dashboard-health-list">
+            {contentHealthItems.map((item) => (
+              <Link
+                to={item.path}
+                className="dashboard-health-item"
+                key={item.label}
+              >
                 <span
-                  className={`dashboard-activity-badge ${activity.typeClassName}`}
+                  className={`dashboard-health-item__icon ${
+                    item.isHealthy
+                      ? "dashboard-health-item__icon--healthy"
+                      : "dashboard-health-item__icon--warning"
+                  }`}
                 >
-                  {activity.type}
+                  {item.isHealthy ? (
+                    <CheckCircle2
+                      size={18}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <AlertCircle
+                      size={18}
+                      aria-hidden="true"
+                    />
+                  )}
                 </span>
 
-                <time>{activity.time}</time>
-              </div>
-            );
-          })}
-        </div>
-      </article>
+                <span className="dashboard-health-item__copy">
+                  <strong>{item.label}</strong>
+                  <small>
+                    {item.isHealthy
+                      ? "No action required"
+                      : "Review recommended"}
+                  </small>
+                </span>
+
+                <span className="dashboard-health-item__value">
+                  {item.value}
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="dashboard-ticket-summary">
+            <div>
+              <span>Available tickets</span>
+              <strong>
+                {
+                  dashboardSummary
+                    .availableTickets.length
+                }
+              </strong>
+            </div>
+
+            <div>
+              <span>Sold out</span>
+              <strong>
+                {
+                  dashboardSummary
+                    .soldOutTickets.length
+                }
+              </strong>
+            </div>
+
+            <div>
+              <span>Unread alerts</span>
+              <strong>
+                {data.unreadNotifications}
+              </strong>
+            </div>
+          </div>
+        </article>
+      </div>
     </section>
   );
 }
