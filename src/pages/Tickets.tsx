@@ -31,7 +31,7 @@ import {
   getTickets,
   type TicketEventSummary,
   type TicketPreview,
-} from "../services/tickets.service";
+} from "../services/ticket.service";
 
 import "./style/tickets.css";
 
@@ -221,13 +221,7 @@ function Tickets() {
 
         setError(null);
 
-        const response = await getTickets({
-          status: "PUBLISHED",
-          page: 1,
-          limit: 100,
-          sortBy: "sortOrder",
-          sortDirection: "asc",
-        });
+        const response = await getPublicTickets();
 
         setTickets(response.data);
       } catch (loadError) {

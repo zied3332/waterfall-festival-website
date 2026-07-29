@@ -1,6 +1,20 @@
 import { api } from "./api.service";
 
-export type TicketStatus = string;
+export type TicketStatus =
+  | "DRAFT"
+  | "SCHEDULED"
+  | "AVAILABLE"
+  | "LIMITED"
+  | "SOLD_OUT"
+  | "EXPIRED"
+  | "HIDDEN";
+
+export type PublicTicketStatus =
+  | "SCHEDULED"
+  | "AVAILABLE"
+  | "LIMITED"
+  | "SOLD_OUT";
+
 export type TicketCategory = string;
 export type TicketAvailabilityMode = string;
 
@@ -69,8 +83,8 @@ export type TicketListResponse = {
 };
 
 export type TicketQueryParams = {
-  status?: string;
-  category?: string;
+  status?: TicketStatus;
+  category?: TicketCategory;
   eventId?: number;
   isFeatured?: boolean;
   search?: string;
@@ -87,6 +101,13 @@ export type TicketQueryParams = {
   sortDirection?: "asc" | "desc";
 };
 
+export type PublicTicketQueryParams = Omit<
+  TicketQueryParams,
+  "status"
+> & {
+  status?: PublicTicketStatus;
+};
+
 export type CreateTicketBenefitDto = {
   text: string;
   sortOrder?: number;
@@ -98,12 +119,12 @@ export type CreateTicketPreviewDto = {
   slug: string;
   shortDescription?: string;
   description?: string;
-  category: string;
-  status: string;
+  category: TicketCategory;
+  status: TicketStatus;
   price: number;
   originalPrice?: number;
   currency: string;
-  availabilityMode: string;
+  availabilityMode: TicketAvailabilityMode;
   totalQuantity?: number;
   remainingQuantity?: number;
   availabilityLabel?: string;
@@ -154,6 +175,19 @@ export function getTickets(
     : "/tickets";
 
   return api.get<TicketListResponse>(url);
+}
+
+export function getPublicTickets(
+  params: PublicTicketQueryParams = {},
+) {
+  return getTickets({
+    status: "AVAILABLE",
+    page: 1,
+    limit: 100,
+    sortBy: "sortOrder",
+    sortDirection: "asc",
+    ...params,
+  });
 }
 
 export function getTicketById(id: number) {
