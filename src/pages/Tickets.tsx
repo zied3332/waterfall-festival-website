@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 import {
-  getTickets,
+  getPublicTickets,
   type TicketEventSummary,
   type TicketPreview,
 } from "../services/ticket.service";
@@ -160,9 +160,7 @@ function getTicketAvailabilityLabel(
   );
 }
 
-function getTicketIcon(
-  category: string,
-) {
+function getTicketIcon(category: string) {
   const normalizedCategory =
     category.toLowerCase();
 
@@ -359,6 +357,20 @@ function Tickets() {
       ) ?? null
     );
   }, [events, selectedEventId]);
+
+  const selectedEventImageUrl = useMemo(() => {
+    if (!selectedEvent) {
+      return null;
+    }
+
+    return (
+      tickets.find(
+        (ticket) =>
+          ticket.eventId === selectedEvent.id &&
+          Boolean(ticket.imageUrl),
+      )?.imageUrl ?? null
+    );
+  }, [selectedEvent, tickets]);
 
   const ticketStatistics = useMemo(() => {
     return filteredTickets.reduce(
@@ -582,22 +594,10 @@ function Tickets() {
 
           {selectedEvent && (
             <section className="tickets-event-summary">
-              {tickets.find(
-                (ticket) =>
-                  ticket.eventId ===
-                    selectedEvent.id &&
-                  ticket.imageUrl,
-              )?.imageUrl ? (
+              {selectedEventImageUrl ? (
                 <img
                   className="tickets-event-summary__image"
-                  src={
-                    tickets.find(
-                      (ticket) =>
-                        ticket.eventId ===
-                          selectedEvent.id &&
-                        ticket.imageUrl,
-                    )?.imageUrl ?? ""
-                  }
+                  src={selectedEventImageUrl}
                   alt=""
                 />
               ) : (
@@ -704,7 +704,10 @@ function Tickets() {
           )}
 
           {!isLoading && error && (
-            <div className="tickets-message tickets-message--error">
+            <div
+              className="tickets-message tickets-message--error"
+              role="alert"
+            >
               <div>
                 <h2>
                   We couldn’t load the tickets
@@ -721,8 +724,10 @@ function Tickets() {
 
               <button
                 type="button"
+                disabled={isRefreshing}
+                aria-busy={isRefreshing}
                 onClick={() =>
-                  void loadTickets()
+                  void loadTickets(true)
                 }
               >
                 <RefreshCw
@@ -730,7 +735,9 @@ function Tickets() {
                   aria-hidden="true"
                 />
 
-                Try Again
+                {isRefreshing
+                  ? "Retrying..."
+                  : "Try Again"}
               </button>
             </div>
           )}
