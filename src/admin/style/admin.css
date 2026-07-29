@@ -941,4 +941,54 @@
     width: 30px;
     height: 30px;
   }
+}.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  text-decoration: none;
+}
+
+.admin-brand-mark {
+  width: 46px;
+  height: 46px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: var(--admin-surface-secondary);
+
+  border: 1px solid var(--admin-border);
+
+  overflow: hidden;
+
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.admin-brand:hover .admin-brand-mark {
+  border-color: var(--admin-accent-border);
+
+  background: var(--admin-accent-soft);
+
+  transform: translateY(-1px);
+}
+
+.admin-brand-logo {
+  width: 34px;
+  height: 34px;
+
+  object-fit: contain;
+
+  display: block;
+
+  user-select: none;
+  pointer-events: none;
 }

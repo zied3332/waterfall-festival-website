@@ -21,7 +21,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-
+import backLogo from "./back_logo.png";
 import {
   NavLink,
   Outlet,
@@ -262,9 +262,13 @@ function AdminLayout() {
             to="/admin"
             aria-label="Waterfall admin dashboard"
           >
-            <span className="admin-brand-mark">
-              W
-            </span>
+           <div className="admin-brand-mark">
+  <img
+    src={backLogo}
+    alt="Waterfall Festival"
+    className="admin-brand-logo"
+  />
+</div>
 
             <span className="admin-brand-copy">
               <strong>Waterfall</strong>
