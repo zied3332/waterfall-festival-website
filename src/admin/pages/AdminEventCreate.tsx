@@ -12,6 +12,7 @@ import EventForm from "../components/EventForm";
 
 import {
   createEvent,
+  uploadEventHeroImage,
 } from "../../services/events.service";
 
 import type {
@@ -69,6 +70,7 @@ function AdminEventCreate() {
 
   async function handleCreateEvent(
     eventData: CreateEventInput,
+    heroImageFile: File | null,
   ): Promise<void> {
     if (isSubmitting) {
       return;
@@ -78,10 +80,21 @@ function AdminEventCreate() {
     setErrorMessage("");
 
     try {
-      await createEvent(eventData);
+      const createdEvent =
+        await createEvent(eventData);
+
+      if (heroImageFile) {
+        await uploadEventHeroImage(
+          createdEvent.id,
+          heroImageFile,
+        );
+      }
 
       navigate("/admin/events", {
         replace: true,
+        state: {
+          successMessage: `"${eventData.title}" was created successfully.`,
+        },
       });
     } catch (error: unknown) {
       setErrorMessage(
