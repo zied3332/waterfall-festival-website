@@ -10,7 +10,9 @@ const PUBLIC_EVENTS_ENDPOINT = "/events";
 const ADMIN_EVENTS_ENDPOINT = "/admin/events";
 
 export function getPublicEvents(): Promise<Event[]> {
-  return api.get<Event[]>(PUBLIC_EVENTS_ENDPOINT);
+  return api.get<Event[]>(
+    PUBLIC_EVENTS_ENDPOINT,
+  );
 }
 
 export function getPublicEventBySlug(
@@ -22,7 +24,17 @@ export function getPublicEventBySlug(
 }
 
 export function getAdminEvents(): Promise<Event[]> {
-  return api.get<Event[]>(ADMIN_EVENTS_ENDPOINT);
+  return api.get<Event[]>(
+    ADMIN_EVENTS_ENDPOINT,
+  );
+}
+
+export function getAdminEvent(
+  eventId: number,
+): Promise<Event> {
+  return api.get<Event>(
+    `${ADMIN_EVENTS_ENDPOINT}/${eventId}`,
+  );
 }
 
 export function createEvent(
@@ -41,6 +53,20 @@ export function updateEvent(
   return api.patch<Event>(
     `${ADMIN_EVENTS_ENDPOINT}/${eventId}`,
     eventData,
+  );
+}
+
+export function uploadEventHeroImage(
+  eventId: number,
+  imageFile: File,
+): Promise<Event> {
+  const formData = new FormData();
+
+  formData.append("image", imageFile);
+
+  return api.patch<Event>(
+    `${ADMIN_EVENTS_ENDPOINT}/${eventId}/hero-image`,
+    formData,
   );
 }
 
