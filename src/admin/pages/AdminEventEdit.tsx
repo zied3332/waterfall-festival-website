@@ -4,7 +4,10 @@ import {
   LoaderCircle,
   Pencil,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 import {
   Link,
   useNavigate,
@@ -36,7 +39,48 @@ type EventFormInitialValues = {
   status: Event["status"];
 };
 
-function formatDateForInput(date: string): string {
+type ApiError = {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string | string[];
+    };
+  };
+};
+
+function getErrorMessage(
+  error: unknown,
+  fallbackMessage: string,
+): string {
+  if (
+    typeof error !== "object" ||
+    error === null
+  ) {
+    return fallbackMessage;
+  }
+
+  const apiError = error as ApiError;
+  const responseMessage =
+    apiError.response?.data?.message;
+
+  if (Array.isArray(responseMessage)) {
+    return responseMessage.join(" ");
+  }
+
+  if (typeof responseMessage === "string") {
+    return responseMessage;
+  }
+
+  if (typeof apiError.message === "string") {
+    return apiError.message;
+  }
+
+  return fallbackMessage;
+}
+
+function formatDateForInput(
+  date: string,
+): string {
   const parsedDate = new Date(date);
 
   if (Number.isNaN(parsedDate.getTime())) {
@@ -75,7 +119,10 @@ function createInitialValues(
 }
 
 function AdminEventEdit() {
-  const { id } = useParams();
+  const { id } = useParams<{
+    id: string;
+  }>();
+
   const navigate = useNavigate();
 
   const [event, setEvent] =
@@ -104,16 +151,20 @@ function AdminEventEdit() {
         !Number.isInteger(eventId) ||
         eventId < 1
       ) {
-        setLoadError("The event ID is invalid.");
+        setLoadError(
+          "The event ID is invalid.",
+        );
+
         setIsLoading(false);
         return;
       }
 
-      try {
-        setIsLoading(true);
-        setLoadError("");
+      setIsLoading(true);
+      setLoadError("");
 
-        const events = await getAdminEvents();
+      try {
+        const events =
+          await getAdminEvents();
 
         if (isCancelled) {
           return;
@@ -127,19 +178,21 @@ function AdminEventEdit() {
           setLoadError(
             "The requested event could not be found.",
           );
+
           return;
         }
 
         setEvent(selectedEvent);
-      } catch (error) {
+      } catch (error: unknown) {
         if (isCancelled) {
           return;
         }
 
         setLoadError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load the event.",
+          getErrorMessage(
+            error,
+            "Unable to load the event.",
+          ),
         );
       } finally {
         if (!isCancelled) {
@@ -158,15 +211,18 @@ function AdminEventEdit() {
   async function handleUpdateEvent(
     eventData: CreateEventInput,
   ): Promise<void> {
-    if (!event) {
+    if (!event || isSubmitting) {
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      setSubmitError("");
+    setIsSubmitting(true);
+    setSubmitError("");
 
-      await updateEvent(event.id, eventData);
+    try {
+      await updateEvent(
+        event.id,
+        eventData,
+      );
 
       navigate("/admin/events", {
         replace: true,
@@ -174,11 +230,12 @@ function AdminEventEdit() {
           successMessage: `"${eventData.title}" was updated successfully.`,
         },
       });
-    } catch (error) {
+    } catch (error: unknown) {
       setSubmitError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update the event.",
+        getErrorMessage(
+          error,
+          "Unable to update the event.",
+        ),
       );
     } finally {
       setIsSubmitting(false);
@@ -187,17 +244,22 @@ function AdminEventEdit() {
 
   if (isLoading) {
     return (
-      <section className="admin-event-edit">
+      <section
+        className="admin-event-edit"
+        aria-live="polite"
+      >
         <div className="admin-event-edit__state">
           <LoaderCircle
             className="admin-event-edit__spinner"
-            size={30}
+            size={28}
+            aria-hidden="true"
           />
 
           <h2>Loading event</h2>
 
           <p>
-            Retrieving the latest event information.
+            Retrieving the latest event
+            information.
           </p>
         </div>
       </section>
@@ -207,8 +269,14 @@ function AdminEventEdit() {
   if (loadError || !event) {
     return (
       <section className="admin-event-edit">
-        <div className="admin-event-edit__state admin-event-edit__state--error">
-          <AlertCircle size={32} />
+        <div
+          className="admin-event-edit__state admin-event-edit__state--error"
+          role="alert"
+        >
+          <AlertCircle
+            size={30}
+            aria-hidden="true"
+          />
 
           <h2>Unable to open event</h2>
 
@@ -221,7 +289,11 @@ function AdminEventEdit() {
             to="/admin/events"
             className="admin-event-edit__return"
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft
+              size={16}
+              aria-hidden="true"
+            />
+
             Return to events
           </Link>
         </div>
@@ -230,39 +302,54 @@ function AdminEventEdit() {
   }
 
   return (
-    <section className="admin-event-edit">
+    <section
+      className="admin-event-edit"
+      aria-labelledby="edit-event-title"
+    >
       <header className="admin-event-edit__header">
         <Link
           to="/admin/events"
           className="admin-event-edit__back"
         >
-          <ArrowLeft size={17} />
+          <ArrowLeft
+            size={16}
+            aria-hidden="true"
+          />
+
           Back to events
         </Link>
 
         <div className="admin-event-edit__heading">
-          <span className="admin-event-edit__icon">
-            <Pencil size={22} />
+          <span
+            className="admin-event-edit__icon"
+            aria-hidden="true"
+          >
+            <Pencil size={20} />
           </span>
 
-          <div>
-            <p className="admin-event-edit__eyebrow">
+          <div className="admin-event-edit__copy">
+            <span className="admin-event-edit__eyebrow">
               Event #{event.id}
-            </p>
+            </span>
 
-            <h1>Edit Event</h1>
+            <h1 id="edit-event-title">
+              Edit event
+            </h1>
 
             <p className="admin-event-edit__description">
-              Update the event information, ticket
-              availability, image, and publication status.
+              Update the event details,
+              availability, image and publishing
+              status shown on the public website.
             </p>
           </div>
         </div>
       </header>
 
       <EventForm
-        initialValues={createInitialValues(event)}
-        submitLabel="Save Changes"
+        initialValues={createInitialValues(
+          event,
+        )}
+        submitLabel="Save changes"
         isSubmitting={isSubmitting}
         errorMessage={submitError}
         onSubmit={handleUpdateEvent}
