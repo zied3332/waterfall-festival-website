@@ -6,6 +6,7 @@ import {
 
 import {
   CalendarDays,
+  CalendarRange,
   ChevronDown,
   CircleHelp,
   Images,
@@ -21,7 +22,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import backLogo from "./back_logo.png";
+
 import {
   NavLink,
   Outlet,
@@ -29,9 +30,12 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import backLogo from "./back_logo.png";
 import NotificationBell from "./components/NotificationBell";
 
-import type { AdminNotification } from "../services/notifications.service";
+import type {
+  AdminNotification,
+} from "../services/notifications.service";
 
 import {
   clearAuthSession,
@@ -68,6 +72,11 @@ const pageDetailsByPath: Record<
     title: "Create event",
     description:
       "Add a new event to the festival website.",
+  },
+  "/admin/calendar": {
+    title: "Calendar",
+    description:
+      "View and schedule festival events by date.",
   },
   "/admin/tickets": {
     title: "Tickets",
@@ -246,7 +255,9 @@ function AdminLayout() {
         }`}
         type="button"
         aria-label="Close navigation"
-        onClick={() => setIsSidebarOpen(false)}
+        onClick={() =>
+          setIsSidebarOpen(false)
+        }
       />
 
       <aside
@@ -262,13 +273,14 @@ function AdminLayout() {
             to="/admin"
             aria-label="Waterfall admin dashboard"
           >
-           <div className="admin-brand-mark">
-  <img
-    src={backLogo}
-    alt="Waterfall Festival"
-    className="admin-brand-logo"
-  />
-</div>
+            <div className="admin-brand-mark">
+              <img
+                src={backLogo}
+                alt=""
+                className="admin-brand-logo"
+                aria-hidden="true"
+              />
+            </div>
 
             <span className="admin-brand-copy">
               <strong>Waterfall</strong>
@@ -305,6 +317,11 @@ function AdminLayout() {
             <NavLink to="/admin/events">
               <CalendarDays size={18} />
               <span>Events</span>
+            </NavLink>
+
+            <NavLink to="/admin/calendar">
+              <CalendarRange size={18} />
+              <span>Calendar</span>
             </NavLink>
 
             <NavLink to="/admin/tickets">
@@ -465,6 +482,7 @@ function AdminLayout() {
                 >
                   <div className="admin-profile-dropdown-header">
                     <strong>{adminName}</strong>
+
                     <span>
                       {currentUser?.email ??
                         "Administrator"}
