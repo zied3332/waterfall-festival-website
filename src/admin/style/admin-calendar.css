@@ -39,11 +39,11 @@
 }
 
 .admin-calendar__heading {
+  min-width: 0;
+
   display: flex;
   align-items: center;
   gap: 14px;
-
-  min-width: 0;
 }
 
 .admin-calendar__heading-icon {
@@ -139,6 +139,12 @@
   gap: 16px;
 }
 
+.admin-calendar__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
 .admin-calendar__today-button,
 .admin-calendar__month-navigation button {
   min-height: 38px;
@@ -168,6 +174,13 @@
   font-weight: 650;
 }
 
+.admin-calendar__event-count {
+  color: var(--admin-text-muted);
+
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .admin-calendar__month-navigation {
   display: flex;
   align-items: center;
@@ -188,7 +201,7 @@
   button:hover {
   border-color: var(--admin-border-strong);
 
-  background: var(--admin-surface-hover);
+  background: var(--admin-surface-secondary);
   color: var(--admin-text);
 }
 
@@ -200,6 +213,87 @@
   font-size: 0.86rem;
   font-weight: 700;
   text-align: center;
+}
+
+/* =========================
+   Legend
+========================= */
+
+.admin-calendar__legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+
+  padding: 0 2px;
+}
+
+.admin-calendar__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  color: var(--admin-text-muted);
+
+  font-size: 0.67rem;
+  font-weight: 600;
+}
+
+.admin-calendar__legend-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+/* =========================
+   Feedback
+========================= */
+
+.admin-calendar__feedback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 12px 14px;
+
+  border: 1px solid var(--admin-border);
+  border-radius: 9px;
+
+  font-size: 0.74rem;
+}
+
+.admin-calendar__feedback--error {
+  border-color: var(--admin-danger-border);
+
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
+}
+
+.admin-calendar__feedback span {
+  flex: 1;
+}
+
+.admin-calendar__feedback button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 7px 10px;
+
+  border: 1px solid var(--admin-danger-border);
+  border-radius: 7px;
+
+  background: transparent;
+  color: inherit;
+
+  font: inherit;
+  font-size: 0.69rem;
+  font-weight: 700;
+
+  cursor: pointer;
 }
 
 /* =========================
@@ -224,8 +318,7 @@
   border-bottom: 1px solid
     var(--admin-border);
 
-  background:
-    var(--admin-surface-secondary);
+  background: var(--admin-surface-secondary);
 }
 
 .admin-calendar__weekdays div {
@@ -249,28 +342,20 @@
   position: relative;
 
   min-width: 0;
-  min-height: 118px;
+  min-height: 128px;
 
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
 
-  padding: 10px;
+  padding: 8px;
 
-  border: 0;
   border-right: 1px solid
     var(--admin-border);
   border-bottom: 1px solid
     var(--admin-border);
 
   background: var(--admin-surface);
-  color: var(--admin-text);
-
-  font: inherit;
-  text-align: left;
-
-  cursor: pointer;
 
   transition:
     background-color 150ms ease,
@@ -286,7 +371,7 @@
 }
 
 .admin-calendar__day:hover {
-  background: var(--admin-surface-hover);
+  background: var(--admin-surface-secondary);
 }
 
 .admin-calendar__day--outside {
@@ -294,18 +379,37 @@
   color: var(--admin-text-muted);
 }
 
-.admin-calendar__day--outside:hover {
-  background: var(--admin-surface-hover);
+.admin-calendar__day--outside
+  .admin-calendar__event {
+  opacity: 0.65;
 }
 
 .admin-calendar__day--selected {
   z-index: 1;
 
-  background: var(--admin-accent-soft);
-
   box-shadow:
     inset 0 0 0 2px
     var(--admin-accent);
+}
+
+.admin-calendar__day-select {
+  width: 100%;
+  min-height: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+  color: inherit;
+
+  font: inherit;
+
+  cursor: pointer;
 }
 
 .admin-calendar__day-number {
@@ -329,11 +433,385 @@
   color: #ffffff;
 }
 
-.admin-calendar__day-content {
+.admin-calendar__day-event-count {
+  min-width: 19px;
+  height: 19px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0 5px;
+
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+
+  background: var(--admin-surface);
+  color: var(--admin-text-muted);
+
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+
+.admin-calendar__day-events {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-calendar__event {
+  width: 100%;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 6px 7px;
+
+  border: 1px solid currentColor;
+  border-radius: 6px;
+
+  background: transparent;
   color: var(--admin-accent);
+
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    filter 150ms ease,
+    transform 150ms ease;
+}
+
+.admin-calendar__event:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.admin-calendar__event-time {
+  flex-shrink: 0;
+
+  font-size: 0.55rem;
+  font-weight: 750;
+  opacity: 0.82;
+}
+
+.admin-calendar__event-title {
+  min-width: 0;
+
+  overflow: hidden;
+
+  font-size: 0.61rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-calendar__event--published {
+  border-color: var(--admin-accent-border);
+
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
+}
+
+.admin-calendar__event--draft {
+  border-color: var(--admin-border-strong);
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-secondary);
+}
+
+.admin-calendar__event--completed {
+  border-color: rgba(22, 163, 74, 0.3);
+
+  background: rgba(22, 163, 74, 0.09);
+  color: #16a34a;
+}
+
+.admin-calendar__event--cancelled {
+  border-color: var(--admin-danger-border);
+
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
+}
+
+/* =========================
+   Loading and empty states
+========================= */
+
+.admin-calendar__loading {
+  min-height: 430px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 30px;
+
+  color: var(--admin-text-secondary);
+  text-align: center;
+}
+
+.admin-calendar__loading strong {
+  color: var(--admin-text);
+
+  font-size: 0.82rem;
+}
+
+.admin-calendar__loading span {
+  color: var(--admin-text-muted);
+
+  font-size: 0.7rem;
+}
+
+.admin-calendar__loading-icon {
+  animation:
+    admin-calendar-spin 800ms linear infinite;
+}
+
+.admin-calendar__empty {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  padding: 15px 17px;
+
+  border: 1px dashed var(--admin-border-strong);
+  border-radius: 10px;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-muted);
+}
+
+.admin-calendar__empty div {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-calendar__empty strong {
+  display: block;
+
+  color: var(--admin-text);
+
+  font-size: 0.76rem;
+}
+
+.admin-calendar__empty p {
+  margin: 3px 0 0;
+
+  font-size: 0.68rem;
+}
+
+.admin-calendar__empty button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 11px;
+
+  border: 1px solid var(--admin-border);
+  border-radius: 7px;
+
+  background: var(--admin-surface);
+  color: var(--admin-text);
+
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+/* =========================
+   Event details modal
+========================= */
+
+.admin-calendar__modal-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+
+  display: grid;
+  place-items: center;
+
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.56);
+}
+
+.admin-calendar__modal {
+  width: min(100%, 470px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+
+  background: var(--admin-surface);
+  box-shadow:
+    0 24px 65px rgba(0, 0, 0, 0.26);
+}
+
+.admin-calendar__modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+
+  padding: 20px;
+
+  border-bottom: 1px solid
+    var(--admin-border);
+}
+
+.admin-calendar__modal-header h2 {
+  margin: 8px 0 0;
+
+  color: var(--admin-text);
+
+  font-size: 1.1rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.admin-calendar__modal-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  color: var(--admin-text-muted);
+
+  font-size: 0.63rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.admin-calendar__modal-status > span {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+.admin-calendar__modal-close {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 1px solid var(--admin-border);
+  border-radius: 7px;
+
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-secondary);
+
+  cursor: pointer;
+}
+
+.admin-calendar__modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+
+  padding: 12px 20px;
+}
+
+.admin-calendar__detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+
+  padding: 12px 0;
+
+  color: var(--admin-text-muted);
+}
+
+.admin-calendar__detail div {
+  min-width: 0;
+}
+
+.admin-calendar__detail span {
+  display: block;
+
+  margin-bottom: 3px;
 
   font-size: 0.62rem;
   font-weight: 650;
+  text-transform: uppercase;
+}
+
+.admin-calendar__detail strong {
+  display: block;
+
+  color: var(--admin-text);
+
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.admin-calendar__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+
+  padding: 16px 20px;
+
+  border-top: 1px solid
+    var(--admin-border);
+
+  background: var(--admin-surface-secondary);
+}
+
+.admin-calendar__modal-actions button {
+  min-height: 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 13px;
+
+  border-radius: 7px;
+
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.admin-calendar__modal-actions
+  button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-calendar__delete-button {
+  border: 1px solid
+    var(--admin-danger-border);
+
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
+}
+
+.admin-calendar__edit-button {
+  border: 1px solid transparent;
+
+  background: var(--admin-accent);
+  color: #ffffff;
 }
 
 /* =========================
@@ -344,25 +822,41 @@
 .admin-calendar__today-button:focus-visible,
 .admin-calendar__month-navigation
   button:focus-visible,
-.admin-calendar__day:focus-visible {
-  z-index: 2;
-
+.admin-calendar__day-select:focus-visible,
+.admin-calendar__event:focus-visible,
+.admin-calendar__feedback
+  button:focus-visible,
+.admin-calendar__empty
+  button:focus-visible,
+.admin-calendar__modal-close:focus-visible,
+.admin-calendar__modal-actions
+  button:focus-visible {
   outline: 3px solid var(--admin-focus);
-  outline-offset: -3px;
+  outline-offset: 2px;
+}
+
+/* =========================
+   Animation
+========================= */
+
+@keyframes admin-calendar-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* =========================
    Responsive
 ========================= */
 
-@media (max-width: 850px) {
+@media (max-width: 950px) {
   .admin-calendar__card {
     overflow-x: auto;
   }
 
   .admin-calendar__weekdays,
   .admin-calendar__grid {
-    min-width: 760px;
+    min-width: 800px;
   }
 }
 
@@ -383,8 +877,8 @@
     flex-direction: column;
   }
 
-  .admin-calendar__today-button {
-    width: 100%;
+  .admin-calendar__toolbar-left {
+    justify-content: space-between;
   }
 
   .admin-calendar__month-navigation {
@@ -393,6 +887,24 @@
 
   .admin-calendar__month-navigation strong {
     flex: 1;
+  }
+
+  .admin-calendar__empty {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .admin-calendar__empty button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-calendar__modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .admin-calendar__modal-actions button {
+    width: 100%;
   }
 }
 
@@ -408,6 +920,22 @@
 
   .admin-calendar__heading h1 {
     font-size: 1.35rem;
+  }
+
+  .admin-calendar__modal-backdrop {
+    align-items: end;
+
+    padding: 0;
+  }
+
+  .admin-calendar__modal {
+    width: 100%;
+    max-height: 88vh;
+
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 14px 14px 0 0;
   }
 }
 
