@@ -12,6 +12,7 @@ export type Event = {
   date: string;
   location: string;
   heroImageUrl: string | null;
+  heroImagePublicId: string | null;
   capacity: number | null;
   remainingTickets: number | null;
   status: EventStatus;
@@ -24,10 +25,10 @@ export type CreateEventInput = {
   description: string;
   date: string;
   location: string;
-  heroImageUrl?: string;
   capacity?: number;
   remainingTickets?: number;
   status?: EventStatus;
 };
+
 export type UpdateEventInput =
   Partial<CreateEventInput>;
