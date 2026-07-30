@@ -1,17 +1,22 @@
 import {
   AlertCircle,
   CalendarDays,
-  Image,
+  FileImage,
+  FileText,
+  ImagePlus,
   LoaderCircle,
   MapPin,
   Save,
+  Settings2,
   Ticket,
-  Type,
+  Users,
 } from "lucide-react";
 import {
-  useEffect,
-  useState,
+  type ChangeEvent,
   type FormEvent,
+  useEffect,
+  useRef,
+  useState,
 } from "react";
 
 import type {
@@ -19,45 +24,54 @@ import type {
   EventStatus,
 } from "../../types/event";
 
-import "../style/admin-event-form.css";
+const MAX_IMAGE_SIZE =
+  5 * 1024 * 1024;
+
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+]);
 
 type EventFormValues = {
   title: string;
   description: string;
   date: string;
   location: string;
-  heroImageUrl: string;
   capacity: string;
   remainingTickets: string;
   status: EventStatus;
 };
 
+type EventFormErrors =
+  Partial<Record<keyof EventFormValues, string>> & {
+    heroImage?: string;
+  };
+
 type EventFormProps = {
   initialValues?: Partial<EventFormValues>;
-  submitLabel?: string;
-  isSubmitting?: boolean;
+  currentImageUrl?: string | null;
+  submitLabel: string;
+  isSubmitting: boolean;
   errorMessage?: string;
   onSubmit: (
     eventData: CreateEventInput,
-  ) => Promise<void> | void;
+    heroImageFile: File | null,
+  ) => Promise<void>;
 };
 
-type FormErrors = Partial<
-  Record<keyof EventFormValues, string>
->;
-
-const defaultValues: EventFormValues = {
+const DEFAULT_VALUES: EventFormValues = {
   title: "",
   description: "",
   date: "",
   location: "",
-  heroImageUrl: "",
   capacity: "",
   remainingTickets: "",
   status: "DRAFT",
 };
 
-const statusOptions: Array<{
+const STATUS_OPTIONS: Array<{
   value: EventStatus;
   label: string;
   description: string;
@@ -65,136 +79,208 @@ const statusOptions: Array<{
   {
     value: "DRAFT",
     label: "Draft",
-    description: "Hidden from the public website.",
+    description:
+      "Keep this event hidden from the public website.",
   },
   {
     value: "PUBLISHED",
     label: "Published",
-    description: "Visible on the public website.",
+    description:
+      "Display this event on the public website.",
   },
   {
     value: "CANCELLED",
     label: "Cancelled",
-    description: "The event has been cancelled.",
+    description:
+      "Mark the event as cancelled.",
   },
   {
     value: "COMPLETED",
     label: "Completed",
-    description: "The event has already finished.",
+    description:
+      "Mark the event as finished.",
   },
 ];
 
 function EventForm({
   initialValues,
-  submitLabel = "Create Event",
-  isSubmitting = false,
+  currentImageUrl,
+  submitLabel,
+  isSubmitting,
   errorMessage = "",
   onSubmit,
 }: EventFormProps) {
-  const [formValues, setFormValues] =
+  const [values, setValues] =
     useState<EventFormValues>({
-      ...defaultValues,
+      ...DEFAULT_VALUES,
       ...initialValues,
     });
 
-  const [formErrors, setFormErrors] =
-    useState<FormErrors>({});
+  const [errors, setErrors] =
+    useState<EventFormErrors>({});
+
+  const [selectedImage, setSelectedImage] =
+    useState<File | null>(null);
+
+  const [localPreviewUrl, setLocalPreviewUrl] =
+    useState<string | null>(null);
+
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    setFormValues({
-      ...defaultValues,
+    setValues({
+      ...DEFAULT_VALUES,
       ...initialValues,
     });
   }, [initialValues]);
 
-  function updateField<K extends keyof EventFormValues>(
-    field: K,
-    value: EventFormValues[K],
+  useEffect(() => {
+    if (!selectedImage) {
+      setLocalPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl =
+      URL.createObjectURL(selectedImage);
+
+    setLocalPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedImage]);
+
+  function updateValue(
+    field: keyof EventFormValues,
+    value: string,
   ): void {
-    setFormValues((currentValues) => ({
+    setValues((currentValues) => ({
       ...currentValues,
       [field]: value,
     }));
 
-    setFormErrors((currentErrors) => ({
+    setErrors((currentErrors) => ({
       ...currentErrors,
       [field]: undefined,
     }));
   }
 
-  function validateForm(): boolean {
-    const errors: FormErrors = {};
+  function handleImageChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ): void {
+    const file =
+      event.target.files?.[0] ?? null;
 
-    if (!formValues.title.trim()) {
-      errors.title = "Event title is required.";
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      heroImage: undefined,
+    }));
+
+    if (!file) {
+      setSelectedImage(null);
+      return;
     }
 
-    if (!formValues.description.trim()) {
-      errors.description =
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      setSelectedImage(null);
+
+      setErrors((currentErrors) => ({
+        ...currentErrors,
+        heroImage:
+          "Only JPG, PNG, WebP and AVIF images are allowed.",
+      }));
+
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setSelectedImage(null);
+
+      setErrors((currentErrors) => ({
+        ...currentErrors,
+        heroImage:
+          "The selected image must be 5 MB or smaller.",
+      }));
+
+      event.target.value = "";
+      return;
+    }
+
+    setSelectedImage(file);
+  }
+
+  function removeSelectedImage(): void {
+    setSelectedImage(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function validateForm(): boolean {
+    const nextErrors: EventFormErrors = {};
+
+    if (!values.title.trim()) {
+      nextErrors.title =
+        "Event title is required.";
+    }
+
+    if (!values.description.trim()) {
+      nextErrors.description =
         "Event description is required.";
     }
 
-    if (!formValues.date) {
-      errors.date = "Event date is required.";
-    } else {
-      const eventDate = new Date(formValues.date);
-
-      if (Number.isNaN(eventDate.getTime())) {
-        errors.date = "Enter a valid event date.";
-      }
+    if (!values.date) {
+      nextErrors.date =
+        "Event date is required.";
     }
 
-    if (!formValues.location.trim()) {
-      errors.location = "Event location is required.";
+    if (!values.location.trim()) {
+      nextErrors.location =
+        "Event location is required.";
     }
 
-    if (formValues.heroImageUrl.trim()) {
-      try {
-        new URL(formValues.heroImageUrl);
-      } catch {
-        errors.heroImageUrl =
-          "Enter a valid image URL.";
-      }
+    const capacity = values.capacity
+      ? Number(values.capacity)
+      : undefined;
+
+    const remainingTickets =
+      values.remainingTickets
+        ? Number(values.remainingTickets)
+        : undefined;
+
+    if (
+      capacity !== undefined &&
+      (!Number.isInteger(capacity) ||
+        capacity < 0)
+    ) {
+      nextErrors.capacity =
+        "Capacity must be a positive whole number.";
     }
 
-    if (formValues.capacity) {
-      const capacity = Number(formValues.capacity);
-
-      if (
-        !Number.isInteger(capacity) ||
-        capacity < 1
-      ) {
-        errors.capacity =
-          "Capacity must be a whole number greater than 0.";
-      }
+    if (
+      remainingTickets !== undefined &&
+      (!Number.isInteger(remainingTickets) ||
+        remainingTickets < 0)
+    ) {
+      nextErrors.remainingTickets =
+        "Remaining tickets must be a positive whole number.";
     }
 
-    if (formValues.remainingTickets) {
-      const remainingTickets = Number(
-        formValues.remainingTickets,
-      );
-
-      if (
-        !Number.isInteger(remainingTickets) ||
-        remainingTickets < 0
-      ) {
-        errors.remainingTickets =
-          "Remaining tickets must be 0 or greater.";
-      }
-
-      if (
-        formValues.capacity &&
-        remainingTickets >
-          Number(formValues.capacity)
-      ) {
-        errors.remainingTickets =
-          "Remaining tickets cannot exceed capacity.";
-      }
+    if (
+      capacity !== undefined &&
+      remainingTickets !== undefined &&
+      remainingTickets > capacity
+    ) {
+      nextErrors.remainingTickets =
+        "Remaining tickets cannot exceed capacity.";
     }
 
-    setFormErrors(errors);
+    setErrors(nextErrors);
 
-    return Object.keys(errors).length === 0;
+    return Object.keys(nextErrors).length === 0;
   }
 
   async function handleSubmit(
@@ -202,102 +288,108 @@ function EventForm({
   ): Promise<void> {
     event.preventDefault();
 
-    if (!validateForm()) {
+    if (isSubmitting || !validateForm()) {
       return;
     }
 
+    const capacity = values.capacity
+      ? Number(values.capacity)
+      : undefined;
+
+    const remainingTickets =
+      values.remainingTickets
+        ? Number(values.remainingTickets)
+        : undefined;
+
     const eventData: CreateEventInput = {
-      title: formValues.title.trim(),
-      description: formValues.description.trim(),
-      date: new Date(formValues.date).toISOString(),
-      location: formValues.location.trim(),
-      status: formValues.status,
+      title: values.title.trim(),
+      description:
+        values.description.trim(),
+      date: values.date,
+      location: values.location.trim(),
+      status: values.status,
+      ...(capacity !== undefined && {
+        capacity,
+      }),
+      ...(remainingTickets !== undefined && {
+        remainingTickets,
+      }),
     };
 
-    const heroImageUrl =
-      formValues.heroImageUrl.trim();
-
-    if (heroImageUrl) {
-      eventData.heroImageUrl = heroImageUrl;
-    }
-
-    if (formValues.capacity) {
-      eventData.capacity = Number(
-        formValues.capacity,
-      );
-    }
-
-    if (formValues.remainingTickets) {
-      eventData.remainingTickets = Number(
-        formValues.remainingTickets,
-      );
-    }
-
-    await onSubmit(eventData);
+    await onSubmit(
+      eventData,
+      selectedImage,
+    );
   }
+
+  const displayedImageUrl =
+    localPreviewUrl ?? currentImageUrl ?? null;
 
   return (
     <form
       className="admin-event-form"
-      onSubmit={handleSubmit}
+      onSubmit={(event) => {
+        void handleSubmit(event);
+      }}
       noValidate
     >
-      {errorMessage && (
-        <div
-          className="admin-event-form__error-banner"
-          role="alert"
-        >
-          <AlertCircle size={20} />
-
-          <div>
-            <strong>Unable to save event</strong>
-            <p>{errorMessage}</p>
-          </div>
-        </div>
-      )}
-
       <div className="admin-event-form__grid">
         <section className="admin-event-form__section">
-          <div className="admin-event-form__section-header">
-            <div className="admin-event-form__section-icon">
-              <Type size={20} />
-            </div>
+          <header className="admin-event-form__section-header">
+            <span className="admin-event-form__section-icon">
+              <FileText
+                size={18}
+                aria-hidden="true"
+              />
+            </span>
 
             <div>
-              <h2>Event Information</h2>
+              <h2>Event information</h2>
+
               <p>
-                Add the main details visitors will see.
+                Configure the public event name,
+                description and location.
               </p>
             </div>
-          </div>
+          </header>
 
           <div className="admin-event-form__fields">
             <div className="admin-event-form__field admin-event-form__field--full">
               <label htmlFor="event-title">
                 Event title
-                <span>*</span>
+                <span aria-hidden="true">
+                  *
+                </span>
               </label>
 
               <input
                 id="event-title"
                 type="text"
-                placeholder="Example: Waterfall Festival 2026"
-                value={formValues.title}
-                onChange={(event) =>
-                  updateField(
+                value={values.title}
+                onChange={(event) => {
+                  updateValue(
                     "title",
                     event.target.value,
-                  )
-                }
+                  );
+                }}
+                placeholder="Waterfall Festival 2026"
                 disabled={isSubmitting}
-                aria-invalid={Boolean(
-                  formErrors.title,
-                )}
+                aria-invalid={
+                  Boolean(errors.title)
+                }
+                aria-describedby={
+                  errors.title
+                    ? "event-title-error"
+                    : undefined
+                }
               />
 
-              {formErrors.title && (
-                <small className="admin-event-form__field-error">
-                  {formErrors.title}
+              {errors.title && (
+                <small
+                  id="event-title-error"
+                  className="admin-event-form__field-error"
+                >
+                  {errors.title}
                 </small>
               )}
             </div>
@@ -305,91 +397,88 @@ function EventForm({
             <div className="admin-event-form__field admin-event-form__field--full">
               <label htmlFor="event-description">
                 Description
-                <span>*</span>
+                <span aria-hidden="true">
+                  *
+                </span>
               </label>
 
               <textarea
                 id="event-description"
-                rows={7}
-                placeholder="Describe the event experience, music, atmosphere, and important details..."
-                value={formValues.description}
-                onChange={(event) =>
-                  updateField(
+                value={values.description}
+                onChange={(event) => {
+                  updateValue(
                     "description",
                     event.target.value,
-                  )
-                }
+                  );
+                }}
+                placeholder="Describe the event experience..."
                 disabled={isSubmitting}
                 aria-invalid={Boolean(
-                  formErrors.description,
+                  errors.description,
                 )}
+                aria-describedby={
+                  errors.description
+                    ? "event-description-error"
+                    : undefined
+                }
               />
 
               <div className="admin-event-form__field-footer">
-                {formErrors.description ? (
-                  <small className="admin-event-form__field-error">
-                    {formErrors.description}
-                  </small>
-                ) : (
-                  <small>
-                    Add enough information for the
-                    event details page.
-                  </small>
-                )}
+                <small>
+                  Explain what visitors can
+                  expect from this event.
+                </small>
 
                 <small>
-                  {formValues.description.length}
-                  /2000
+                  {values.description.length}
+                  {" characters"}
                 </small>
               </div>
-            </div>
-          </div>
-        </section>
 
-        <section className="admin-event-form__section">
-          <div className="admin-event-form__section-header">
-            <div className="admin-event-form__section-icon">
-              <CalendarDays size={20} />
+              {errors.description && (
+                <small
+                  id="event-description-error"
+                  className="admin-event-form__field-error"
+                >
+                  {errors.description}
+                </small>
+              )}
             </div>
 
-            <div>
-              <h2>Date and Location</h2>
-              <p>
-                Choose when and where the event happens.
-              </p>
-            </div>
-          </div>
-
-          <div className="admin-event-form__fields">
             <div className="admin-event-form__field">
               <label htmlFor="event-date">
                 Date and time
-                <span>*</span>
+                <span aria-hidden="true">
+                  *
+                </span>
               </label>
 
               <div className="admin-event-form__input-wrapper">
-                <CalendarDays size={17} />
+                <CalendarDays
+                  size={16}
+                  aria-hidden="true"
+                />
 
                 <input
                   id="event-date"
                   type="datetime-local"
-                  value={formValues.date}
-                  onChange={(event) =>
-                    updateField(
+                  value={values.date}
+                  onChange={(event) => {
+                    updateValue(
                       "date",
                       event.target.value,
-                    )
-                  }
+                    );
+                  }}
                   disabled={isSubmitting}
                   aria-invalid={Boolean(
-                    formErrors.date,
+                    errors.date,
                   )}
                 />
               </div>
 
-              {formErrors.date && (
+              {errors.date && (
                 <small className="admin-event-form__field-error">
-                  {formErrors.date}
+                  {errors.date}
                 </small>
               )}
             </div>
@@ -397,33 +486,38 @@ function EventForm({
             <div className="admin-event-form__field">
               <label htmlFor="event-location">
                 Location
-                <span>*</span>
+                <span aria-hidden="true">
+                  *
+                </span>
               </label>
 
               <div className="admin-event-form__input-wrapper">
-                <MapPin size={17} />
+                <MapPin
+                  size={16}
+                  aria-hidden="true"
+                />
 
                 <input
                   id="event-location"
                   type="text"
-                  placeholder="Koh Phangan, Thailand"
-                  value={formValues.location}
-                  onChange={(event) =>
-                    updateField(
+                  value={values.location}
+                  onChange={(event) => {
+                    updateValue(
                       "location",
                       event.target.value,
-                    )
-                  }
+                    );
+                  }}
+                  placeholder="Koh Phangan, Thailand"
                   disabled={isSubmitting}
                   aria-invalid={Boolean(
-                    formErrors.location,
+                    errors.location,
                   )}
                 />
               </div>
 
-              {formErrors.location && (
+              {errors.location && (
                 <small className="admin-event-form__field-error">
-                  {formErrors.location}
+                  {errors.location}
                 </small>
               )}
             </div>
@@ -431,142 +525,212 @@ function EventForm({
         </section>
 
         <section className="admin-event-form__section">
-          <div className="admin-event-form__section-header">
-            <div className="admin-event-form__section-icon">
-              <Image size={20} />
-            </div>
+          <header className="admin-event-form__section-header">
+            <span className="admin-event-form__section-icon">
+              <ImagePlus
+                size={18}
+                aria-hidden="true"
+              />
+            </span>
 
             <div>
-              <h2>Event Image</h2>
+              <h2>Hero image</h2>
+
               <p>
-                Add the image displayed on event pages.
+                Upload the image shown on event
+                cards and the event details page.
               </p>
             </div>
+          </header>
+
+          <div className="admin-event-form__field">
+            <label htmlFor="event-hero-image">
+              Event image
+            </label>
+
+            <input
+              ref={fileInputRef}
+              id="event-hero-image"
+              className="admin-event-form__file-input"
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif"
+              onChange={handleImageChange}
+              disabled={isSubmitting}
+              aria-invalid={Boolean(
+                errors.heroImage,
+              )}
+              aria-describedby="event-image-help"
+            />
+
+            <small id="event-image-help">
+              JPG, PNG, WebP or AVIF. Maximum
+              file size: 5 MB.
+            </small>
+
+            {errors.heroImage && (
+              <small className="admin-event-form__field-error">
+                {errors.heroImage}
+              </small>
+            )}
           </div>
 
-          <div className="admin-event-form__fields">
-            <div className="admin-event-form__field admin-event-form__field--full">
-              <label htmlFor="event-image">
-                Hero image URL
-              </label>
-
-              <div className="admin-event-form__input-wrapper">
-                <Image size={17} />
-
-                <input
-                  id="event-image"
-                  type="url"
-                  placeholder="https://example.com/event-image.jpg"
-                  value={formValues.heroImageUrl}
-                  onChange={(event) =>
-                    updateField(
-                      "heroImageUrl",
-                      event.target.value,
-                    )
+          {displayedImageUrl ? (
+            <div className="admin-event-form__image-card">
+              <div className="admin-event-form__image-preview">
+                <img
+                  src={displayedImageUrl}
+                  alt={
+                    localPreviewUrl
+                      ? "Preview of newly selected event image"
+                      : "Current saved event hero"
                   }
-                  disabled={isSubmitting}
-                  aria-invalid={Boolean(
-                    formErrors.heroImageUrl,
-                  )}
                 />
+
+                <span className="admin-event-form__image-badge">
+                  {localPreviewUrl
+                    ? "New image preview"
+                    : "Current saved image"}
+                </span>
               </div>
 
-              {formErrors.heroImageUrl && (
-                <small className="admin-event-form__field-error">
-                  {formErrors.heroImageUrl}
-                </small>
-              )}
-
-              {formValues.heroImageUrl &&
-                !formErrors.heroImageUrl && (
-                  <div className="admin-event-form__image-preview">
-                    <img
-                      src={formValues.heroImageUrl}
-                      alt="Event preview"
-                      onError={(event) => {
-                        event.currentTarget.style.display =
-                          "none";
-                      }}
+              {selectedImage && (
+                <div className="admin-event-form__selected-file">
+                  <div>
+                    <FileImage
+                      size={16}
+                      aria-hidden="true"
                     />
+
+                    <span>
+                      {selectedImage.name}
+                    </span>
                   </div>
-                )}
+
+                  <button
+                    type="button"
+                    onClick={
+                      removeSelectedImage
+                    }
+                    disabled={isSubmitting}
+                  >
+                    Remove selection
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <div className="admin-event-form__image-empty">
+              <ImagePlus
+                size={26}
+                aria-hidden="true"
+              />
+
+              <strong>
+                No event image selected
+              </strong>
+
+              <p>
+                Choose an image file to preview
+                it before saving.
+              </p>
+            </div>
+          )}
         </section>
 
         <section className="admin-event-form__section">
-          <div className="admin-event-form__section-header">
-            <div className="admin-event-form__section-icon">
-              <Ticket size={20} />
-            </div>
+          <header className="admin-event-form__section-header">
+            <span className="admin-event-form__section-icon">
+              <Ticket
+                size={18}
+                aria-hidden="true"
+              />
+            </span>
 
             <div>
-              <h2>Tickets and Capacity</h2>
+              <h2>Availability</h2>
+
               <p>
-                Configure the available ticket numbers.
+                Configure capacity and remaining
+                ticket information.
               </p>
             </div>
-          </div>
+          </header>
 
           <div className="admin-event-form__fields">
             <div className="admin-event-form__field">
               <label htmlFor="event-capacity">
-                Total capacity
+                Capacity
               </label>
 
-              <input
-                id="event-capacity"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="2500"
-                value={formValues.capacity}
-                onChange={(event) =>
-                  updateField(
-                    "capacity",
-                    event.target.value,
-                  )
-                }
-                disabled={isSubmitting}
-                aria-invalid={Boolean(
-                  formErrors.capacity,
-                )}
-              />
+              <div className="admin-event-form__input-wrapper">
+                <Users
+                  size={16}
+                  aria-hidden="true"
+                />
 
-              {formErrors.capacity && (
+                <input
+                  id="event-capacity"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={values.capacity}
+                  onChange={(event) => {
+                    updateValue(
+                      "capacity",
+                      event.target.value,
+                    );
+                  }}
+                  placeholder="1000"
+                  disabled={isSubmitting}
+                  aria-invalid={Boolean(
+                    errors.capacity,
+                  )}
+                />
+              </div>
+
+              {errors.capacity && (
                 <small className="admin-event-form__field-error">
-                  {formErrors.capacity}
+                  {errors.capacity}
                 </small>
               )}
             </div>
 
             <div className="admin-event-form__field">
-              <label htmlFor="event-remaining-tickets">
+              <label htmlFor="remaining-tickets">
                 Remaining tickets
               </label>
 
-              <input
-                id="event-remaining-tickets"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="2500"
-                value={formValues.remainingTickets}
-                onChange={(event) =>
-                  updateField(
-                    "remainingTickets",
-                    event.target.value,
-                  )
-                }
-                disabled={isSubmitting}
-                aria-invalid={Boolean(
-                  formErrors.remainingTickets,
-                )}
-              />
+              <div className="admin-event-form__input-wrapper">
+                <Ticket
+                  size={16}
+                  aria-hidden="true"
+                />
 
-              {formErrors.remainingTickets && (
+                <input
+                  id="remaining-tickets"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={
+                    values.remainingTickets
+                  }
+                  onChange={(event) => {
+                    updateValue(
+                      "remainingTickets",
+                      event.target.value,
+                    );
+                  }}
+                  placeholder="800"
+                  disabled={isSubmitting}
+                  aria-invalid={Boolean(
+                    errors.remainingTickets,
+                  )}
+                />
+              </div>
+
+              {errors.remainingTickets && (
                 <small className="admin-event-form__field-error">
-                  {formErrors.remainingTickets}
+                  {errors.remainingTickets}
                 </small>
               )}
             </div>
@@ -574,62 +738,101 @@ function EventForm({
         </section>
 
         <section className="admin-event-form__section admin-event-form__section--status">
-          <div className="admin-event-form__section-header">
-            <div className="admin-event-form__section-icon">
-              <Save size={20} />
-            </div>
+          <header className="admin-event-form__section-header">
+            <span className="admin-event-form__section-icon">
+              <Settings2
+                size={18}
+                aria-hidden="true"
+              />
+            </span>
 
             <div>
-              <h2>Publication Status</h2>
+              <h2>Publishing status</h2>
+
               <p>
-                Choose whether the event is public.
+                Control how this event appears
+                in the administration dashboard
+                and public website.
               </p>
             </div>
-          </div>
+          </header>
 
           <div className="admin-event-form__status-options">
-            {statusOptions.map((option) => (
-              <label
-                key={option.value}
-                className={
-                  formValues.status === option.value
-                    ? "admin-event-form__status-option admin-event-form__status-option--selected"
-                    : "admin-event-form__status-option"
-                }
-              >
-                <input
-                  type="radio"
-                  name="event-status"
-                  value={option.value}
-                  checked={
-                    formValues.status === option.value
-                  }
-                  onChange={() =>
-                    updateField(
-                      "status",
-                      option.value,
-                    )
-                  }
-                  disabled={isSubmitting}
-                />
+            {STATUS_OPTIONS.map((option) => {
+              const isSelected =
+                values.status === option.value;
 
-                <span className="admin-event-form__status-radio" />
+              return (
+                <label
+                  key={option.value}
+                  className={[
+                    "admin-event-form__status-option",
+                    isSelected
+                      ? "admin-event-form__status-option--selected"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <input
+                    type="radio"
+                    name="event-status"
+                    value={option.value}
+                    checked={isSelected}
+                    onChange={() => {
+                      updateValue(
+                        "status",
+                        option.value,
+                      );
+                    }}
+                    disabled={isSubmitting}
+                  />
 
-                <span className="admin-event-form__status-content">
-                  <strong>{option.label}</strong>
-                  <small>
-                    {option.description}
-                  </small>
-                </span>
-              </label>
-            ))}
+                  <span
+                    className="admin-event-form__status-radio"
+                    aria-hidden="true"
+                  />
+
+                  <span className="admin-event-form__status-content">
+                    <strong>
+                      {option.label}
+                    </strong>
+
+                    <small>
+                      {option.description}
+                    </small>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </section>
       </div>
 
-      <div className="admin-event-form__actions">
+      {errorMessage && (
+        <div
+          className="admin-event-form__error-banner"
+          role="alert"
+        >
+          <AlertCircle
+            size={18}
+            aria-hidden="true"
+          />
+
+          <div>
+            <strong>
+              Unable to save event
+            </strong>
+
+            <p>{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
+      <footer className="admin-event-form__actions">
         <p>
-          Fields marked with <span>*</span> are required.
+          Fields marked with
+          <span> *</span> are required.
         </p>
 
         <button
@@ -641,18 +844,24 @@ function EventForm({
             <>
               <LoaderCircle
                 className="admin-event-form__spinner"
-                size={18}
+                size={16}
+                aria-hidden="true"
               />
-              Saving event...
+
+              Saving...
             </>
           ) : (
             <>
-              <Save size={18} />
+              <Save
+                size={16}
+                aria-hidden="true"
+              />
+
               {submitLabel}
             </>
           )}
         </button>
-      </div>
+      </footer>
     </form>
   );
 }
