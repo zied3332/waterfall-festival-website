@@ -2,6 +2,7 @@ import {
   useEffect,
   useState,
 } from "react";
+
 import {
   BrowserRouter,
   Route,
@@ -13,6 +14,7 @@ import {
 import AdminLayout from "./admin/AdminLayout";
 import ProtectedRoute from "./admin/components/ProtectedRoute";
 
+import AdminCalendar from "./admin/pages/AdminCalendar";
 import AdminEventCreate from "./admin/pages/AdminEventCreate";
 import AdminEventEdit from "./admin/pages/AdminEventEdit";
 import AdminEvents from "./admin/pages/AdminEvents";
@@ -67,7 +69,7 @@ function AppContent() {
 
     let isCancelled = false;
 
-    async function restoreSession() {
+    async function restoreSession(): Promise<void> {
       try {
         const currentUser =
           await getCurrentUser();
@@ -85,8 +87,11 @@ function AppContent() {
         clearAuthSession();
 
         if (
-          location.pathname.startsWith("/admin") &&
-          location.pathname !== "/admin/login"
+          location.pathname.startsWith(
+            "/admin",
+          ) &&
+          location.pathname !==
+            "/admin/login"
         ) {
           navigate("/admin/login", {
             replace: true,
@@ -109,7 +114,10 @@ function AppContent() {
     };
   }, [location.pathname, navigate]);
 
-  if (isSessionChecking && isAdminPage) {
+  if (
+    isSessionChecking &&
+    isAdminPage
+  ) {
     return (
       <div className="admin-session-loading">
         Verifying your session...
@@ -193,12 +201,19 @@ function AppContent() {
 
             <Route
               path="events/new"
-              element={<AdminEventCreate />}
+              element={
+                <AdminEventCreate />
+              }
             />
 
             <Route
               path="events/:id/edit"
               element={<AdminEventEdit />}
+            />
+
+            <Route
+              path="calendar"
+              element={<AdminCalendar />}
             />
 
             <Route
