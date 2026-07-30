@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import {
@@ -17,8 +18,9 @@ import {
 import EventForm from "../components/EventForm";
 
 import {
-  getAdminEvents,
+  getAdminEvent,
   updateEvent,
+  uploadEventHeroImage,
 } from "../../services/events.service";
 
 import type {
@@ -27,17 +29,6 @@ import type {
 } from "../../types/event";
 
 import "../style/admin-event-edit.css";
-
-type EventFormInitialValues = {
-  title: string;
-  description: string;
-  date: string;
-  location: string;
-  heroImageUrl: string;
-  capacity: string;
-  remainingTickets: string;
-  status: Event["status"];
-};
 
 type ApiError = {
   message?: string;
@@ -97,27 +88,6 @@ function formatDateForInput(
     .slice(0, 16);
 }
 
-function createInitialValues(
-  event: Event,
-): EventFormInitialValues {
-  return {
-    title: event.title,
-    description: event.description,
-    date: formatDateForInput(event.date),
-    location: event.location,
-    heroImageUrl: event.heroImageUrl ?? "",
-    capacity:
-      event.capacity !== null
-        ? String(event.capacity)
-        : "",
-    remainingTickets:
-      event.remainingTickets !== null
-        ? String(event.remainingTickets)
-        : "",
-    status: event.status,
-  };
-}
-
 function AdminEventEdit() {
   const { id } = useParams<{
     id: string;
@@ -140,17 +110,25 @@ function AdminEventEdit() {
   const [submitError, setSubmitError] =
     useState("");
 
+  const eventId = useMemo(() => {
+    const parsedId = Number(id);
+
+    if (
+      !id ||
+      !Number.isInteger(parsedId) ||
+      parsedId < 1
+    ) {
+      return null;
+    }
+
+    return parsedId;
+  }, [id]);
+
   useEffect(() => {
     let isCancelled = false;
 
     async function loadEvent(): Promise<void> {
-      const eventId = Number(id);
-
-      if (
-        !id ||
-        !Number.isInteger(eventId) ||
-        eventId < 1
-      ) {
+      if (eventId === null) {
         setLoadError(
           "The event ID is invalid.",
         );
@@ -163,22 +141,10 @@ function AdminEventEdit() {
       setLoadError("");
 
       try {
-        const events =
-          await getAdminEvents();
+        const selectedEvent =
+          await getAdminEvent(eventId);
 
         if (isCancelled) {
-          return;
-        }
-
-        const selectedEvent = events.find(
-          (item) => item.id === eventId,
-        );
-
-        if (!selectedEvent) {
-          setLoadError(
-            "The requested event could not be found.",
-          );
-
           return;
         }
 
@@ -206,10 +172,37 @@ function AdminEventEdit() {
     return () => {
       isCancelled = true;
     };
-  }, [id]);
+  }, [eventId]);
+
+  const initialValues = useMemo(() => {
+    if (!event) {
+      return undefined;
+    }
+
+    return {
+      title: event.title,
+      description: event.description,
+      date: formatDateForInput(
+        event.date,
+      ),
+      location: event.location,
+      capacity:
+        event.capacity !== null
+          ? String(event.capacity)
+          : "",
+      remainingTickets:
+        event.remainingTickets !== null
+          ? String(
+              event.remainingTickets,
+            )
+          : "",
+      status: event.status,
+    };
+  }, [event]);
 
   async function handleUpdateEvent(
     eventData: CreateEventInput,
+    heroImageFile: File | null,
   ): Promise<void> {
     if (!event || isSubmitting) {
       return;
@@ -223,6 +216,13 @@ function AdminEventEdit() {
         event.id,
         eventData,
       );
+
+      if (heroImageFile) {
+        await uploadEventHeroImage(
+          event.id,
+          heroImageFile,
+        );
+      }
 
       navigate("/admin/events", {
         replace: true,
@@ -346,9 +346,10 @@ function AdminEventEdit() {
       </header>
 
       <EventForm
-        initialValues={createInitialValues(
-          event,
-        )}
+        initialValues={initialValues}
+        currentImageUrl={
+          event.heroImageUrl
+        }
         submitLabel="Save changes"
         isSubmitting={isSubmitting}
         errorMessage={submitError}
