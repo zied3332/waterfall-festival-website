@@ -7,16 +7,15 @@ import {
 import {
   ArrowRight,
   Clock3,
-  
-  
   LockKeyhole,
   Mail,
   MapPin,
   MessageSquareText,
   Phone,
   Send,
-  
 } from "lucide-react";
+
+import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
 
 import {
   sendContactMessage,
@@ -41,7 +40,28 @@ const initialFormState: ContactFormState = {
   message: "",
 };
 
+function createPhoneHref(
+  phoneNumber: string,
+): string {
+  return `tel:${phoneNumber.replace(
+    /[^\d+]/g,
+    "",
+  )}`;
+}
+
+function createWhatsAppHref(
+  phoneNumber: string,
+): string {
+  const normalizedNumber =
+    phoneNumber.replace(/\D/g, "");
+
+  return `https://wa.me/${normalizedNumber}`;
+}
+
 function Contact() {
+  const { settings } =
+    useWebsiteSettings();
+
   const [formData, setFormData] =
     useState<ContactFormState>(
       initialFormState,
@@ -55,6 +75,60 @@ function Contact() {
 
   const [errorMessage, setErrorMessage] =
     useState("");
+
+  const festivalName =
+    settings?.festivalName?.trim() ||
+    "Waterfall Festival";
+
+  const publicEmail =
+    settings?.publicEmail?.trim() || "";
+
+  const supportEmail =
+    settings?.supportEmail?.trim() || "";
+
+  const displayedEmail =
+    supportEmail ||
+    publicEmail ||
+    "waterfallpartyphangan@gmail.com";
+
+  const phoneNumber =
+    settings?.phoneNumber?.trim() || "";
+
+  const whatsappNumber =
+    settings?.whatsappNumber?.trim() || "";
+
+  const location =
+    settings?.location?.trim() ||
+    "Koh Phangan, Thailand";
+
+  const address =
+    settings?.address?.trim() || "";
+
+  const displayedLocation =
+    address || location;
+
+  const googleMapsUrl =
+    settings?.googleMapsUrl?.trim() || "";
+
+  const contactFormEnabled =
+    settings?.contactFormEnabled ?? true;
+
+  const phoneHref = phoneNumber
+    ? createPhoneHref(phoneNumber)
+    : whatsappNumber
+      ? createWhatsAppHref(
+          whatsappNumber,
+        )
+      : "";
+
+  const displayedPhone =
+    phoneNumber ||
+    whatsappNumber ||
+    "Contact information coming soon";
+
+  const phoneLinkLabel = phoneNumber
+    ? "Call us"
+    : "Contact us on WhatsApp";
 
   function handleInputChange(
     event: ChangeEvent<
@@ -82,13 +156,23 @@ function Contact() {
   ): Promise<void> {
     event.preventDefault();
 
-    const trimmedName = formData.name.trim();
+    if (!contactFormEnabled) {
+      setErrorMessage(
+        "The contact form is currently unavailable.",
+      );
+
+      return;
+    }
+
+    const trimmedName =
+      formData.name.trim();
 
     const trimmedEmail = formData.email
       .trim()
       .toLowerCase();
 
-    const trimmedPhone = formData.phone.trim();
+    const trimmedPhone =
+      formData.phone.trim();
 
     const trimmedSubject =
       formData.subject.trim();
@@ -144,7 +228,7 @@ function Contact() {
       setFormData(initialFormState);
 
       setSuccessMessage(
-        "Your message was sent successfully. The Waterfall Festival team will contact you soon.",
+        `Your message was sent successfully. The ${festivalName} team will contact you soon.`,
       );
     } catch (error) {
       console.error(
@@ -211,8 +295,17 @@ function Contact() {
                   </h2>
 
                   <p className="contact-card-subtitle">
-                    We usually reply within
-                    <span> 24–48 hours.</span>
+                    {contactFormEnabled ? (
+                      <>
+                        We usually reply within
+                        <span> 24–48 hours.</span>
+                      </>
+                    ) : (
+                      <>
+                        The form is currently
+                        <span> unavailable.</span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -234,7 +327,10 @@ function Contact() {
                     minLength={2}
                     maxLength={100}
                     required
-                    disabled={isSubmitting}
+                    disabled={
+                      isSubmitting ||
+                      !contactFormEnabled
+                    }
                     onChange={handleInputChange}
                   />
                 </div>
@@ -254,7 +350,10 @@ function Contact() {
                     autoComplete="email"
                     maxLength={255}
                     required
-                    disabled={isSubmitting}
+                    disabled={
+                      isSubmitting ||
+                      !contactFormEnabled
+                    }
                     onChange={handleInputChange}
                   />
                 </div>
@@ -274,7 +373,10 @@ function Contact() {
                     placeholder="+66 99 247 8892"
                     autoComplete="tel"
                     maxLength={30}
-                    disabled={isSubmitting}
+                    disabled={
+                      isSubmitting ||
+                      !contactFormEnabled
+                    }
                     onChange={handleInputChange}
                   />
                 </div>
@@ -293,7 +395,10 @@ function Contact() {
                     value={formData.subject}
                     placeholder="What is this about?"
                     maxLength={150}
-                    disabled={isSubmitting}
+                    disabled={
+                      isSubmitting ||
+                      !contactFormEnabled
+                    }
                     onChange={handleInputChange}
                   />
                 </div>
@@ -312,7 +417,10 @@ function Contact() {
                     minLength={10}
                     maxLength={3000}
                     required
-                    disabled={isSubmitting}
+                    disabled={
+                      isSubmitting ||
+                      !contactFormEnabled
+                    }
                     onChange={handleInputChange}
                   />
                 </div>
@@ -339,10 +447,21 @@ function Contact() {
               <button
                 className="contact-button"
                 type="submit"
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting ||
+                  !contactFormEnabled
+                }
               >
                 <span>
-                  {isSubmitting ? (
+                  {!contactFormEnabled ? (
+                    <>
+                      <LockKeyhole
+                        size={18}
+                        aria-hidden="true"
+                      />
+                      Form Unavailable
+                    </>
+                  ) : isSubmitting ? (
                     <>
                       <Send
                         size={18}
@@ -381,7 +500,7 @@ function Contact() {
               <div className="contact-details-list">
                 <a
                   className="contact-detail-item"
-                  href="mailto:waterfallpartyphangan@gmail.com"
+                  href={`mailto:${displayedEmail}`}
                 >
                   <span
                     className="contact-detail-icon"
@@ -394,7 +513,7 @@ function Contact() {
                     <strong>Email</strong>
 
                     <span className="contact-detail-value">
-                      waterfallpartyphangan@gmail.com
+                      {displayedEmail}
                     </span>
 
                     <small>
@@ -404,52 +523,117 @@ function Contact() {
                   </span>
                 </a>
 
-                <a
-                  className="contact-detail-item"
-                  href="tel:+66992478892"
-                >
-                  <span
-                    className="contact-detail-icon"
-                    aria-hidden="true"
+                {phoneHref ? (
+                  <a
+                    className="contact-detail-item"
+                    href={phoneHref}
+                    target={
+                      phoneNumber
+                        ? undefined
+                        : "_blank"
+                    }
+                    rel={
+                      phoneNumber
+                        ? undefined
+                        : "noopener noreferrer"
+                    }
+                    aria-label={phoneLinkLabel}
                   >
-                    <Phone size={21} />
-                  </span>
-
-                  <span className="contact-detail-content">
-                    <strong>Phone</strong>
-
-                    <span className="contact-detail-value">
-                      +66 99 247 8892
+                    <span
+                      className="contact-detail-icon"
+                      aria-hidden="true"
+                    >
+                      <Phone size={21} />
                     </span>
 
-                    <small>
-                      Call or contact us through
-                      WhatsApp.
-                    </small>
-                  </span>
-                </a>
+                    <span className="contact-detail-content">
+                      <strong>Phone</strong>
 
-                <div className="contact-detail-item">
-                  <span
-                    className="contact-detail-icon"
-                    aria-hidden="true"
-                  >
-                    <MapPin size={21} />
-                  </span>
+                      <span className="contact-detail-value">
+                        {displayedPhone}
+                      </span>
 
-                  <span className="contact-detail-content">
-                    <strong>Location</strong>
-
-                    <span className="contact-detail-value">
-                      Koh Phangan, Thailand
+                      <small>
+                        {whatsappNumber
+                          ? "Call or contact us through WhatsApp."
+                          : "Call us for urgent questions."}
+                      </small>
+                    </span>
+                  </a>
+                ) : (
+                  <div className="contact-detail-item">
+                    <span
+                      className="contact-detail-icon"
+                      aria-hidden="true"
+                    >
+                      <Phone size={21} />
                     </span>
 
-                    <small>
-                      Home of the Waterfall
-                      Festival.
-                    </small>
-                  </span>
-                </div>
+                    <span className="contact-detail-content">
+                      <strong>Phone</strong>
+
+                      <span className="contact-detail-value">
+                        {displayedPhone}
+                      </span>
+
+                      <small>
+                        Please contact us by
+                        email.
+                      </small>
+                    </span>
+                  </div>
+                )}
+
+                {googleMapsUrl ? (
+                  <a
+                    className="contact-detail-item"
+                    href={googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span
+                      className="contact-detail-icon"
+                      aria-hidden="true"
+                    >
+                      <MapPin size={21} />
+                    </span>
+
+                    <span className="contact-detail-content">
+                      <strong>Location</strong>
+
+                      <span className="contact-detail-value">
+                        {displayedLocation}
+                      </span>
+
+                      <small>
+                        Open our location in
+                        Google Maps.
+                      </small>
+                    </span>
+                  </a>
+                ) : (
+                  <div className="contact-detail-item">
+                    <span
+                      className="contact-detail-icon"
+                      aria-hidden="true"
+                    >
+                      <MapPin size={21} />
+                    </span>
+
+                    <span className="contact-detail-content">
+                      <strong>Location</strong>
+
+                      <span className="contact-detail-value">
+                        {displayedLocation}
+                      </span>
+
+                      <small>
+                        Home of the{" "}
+                        {festivalName}.
+                      </small>
+                    </span>
+                  </div>
+                )}
 
                 <div className="contact-detail-item">
                   <span
@@ -473,8 +657,6 @@ function Contact() {
                   </span>
                 </div>
               </div>
-
-            
             </aside>
           </div>
 
