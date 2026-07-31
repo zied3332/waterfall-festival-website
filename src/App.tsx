@@ -41,7 +41,7 @@ import Gallery from "./pages/Gallery";
 import Home from "./pages/Home";
 import Tickets from "./pages/Tickets";
 import Venue from "./pages/Venue";
-
+import Calendar from "./pages/Calendar";
 import {
   clearAuthSession,
   getAccessToken,
@@ -140,7 +140,10 @@ function AppContent() {
             path="/events"
             element={<Events />}
           />
-
+<Route
+  path="/calendar"
+  element={<Calendar />}
+/>
           <Route
             path="/events/:slug"
             element={<EventDetails />}
