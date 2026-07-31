@@ -6,7 +6,6 @@
     "lib": ["ES2023", "DOM"],
     "module": "ESNext",
 
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },

@@ -18,6 +18,7 @@ export type Event = {
   status: EventStatus;
   createdAt: string;
   updatedAt: string;
+  ticketPurchaseUrl: string | null;
 };
 
 export type CreateEventInput = {

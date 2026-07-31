@@ -36,7 +36,7 @@ import Contact from "./pages/Contact";
 import EventDetails from "./pages/EventDetails";
 import Events from "./pages/Events";
 import Experience from "./pages/Experience";
-import Faq from "./pages/FAQ";
+import Faq from "./pages/Faq";
 import Gallery from "./pages/Gallery";
 import Home from "./pages/Home";
 import Tickets from "./pages/Tickets";

@@ -15,7 +15,6 @@ import TicketsPreviewSection from "../components/tickets/TicketsPreviewSection";
 import ExperiencePreviewSection from "../components/experience/ExperiencePreviewSection";
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
-import AIChatPreviewSection from "../components/chat/AIChatPreviewSection";
 
 import "./style/home.css";
 

@@ -14,12 +14,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+
 import {
-  FormEvent,
   useCallback,
   useEffect,
   useMemo,
   useState,
+  type FormEvent,
 } from "react";
 
 import {
@@ -31,6 +32,7 @@ import type {
   CreateTicketPreviewDto,
   TicketListMeta,
   TicketPreview,
+  TicketStatus,
 } from "../../services/ticket.service";
 
 import "../style/admin-tickets.css";
@@ -55,7 +57,7 @@ type TicketFormState = {
   slug: string;
   shortDescription: string;
   category: string;
-  status: string;
+  status: TicketStatus;
   price: string;
   originalPrice: string;
   currency: string;
@@ -169,7 +171,9 @@ function formatPrice(
   }
 }
 
-function formatStock(ticket: TicketPreview): string {
+function formatStock(
+  ticket: TicketPreview,
+): string {
   if (ticket.remainingQuantity === null) {
     return "Unlimited";
   }
@@ -185,28 +189,36 @@ function AdminTickets() {
   const [tickets, setTickets] = useState<
     TicketPreview[]
   >([]);
+
   const [meta, setMeta] =
     useState<TicketListMeta>(EMPTY_META);
 
   const [searchInput, setSearchInput] =
     useState("");
+
   const [searchQuery, setSearchQuery] =
     useState("");
+
   const [statusFilter, setStatusFilter] =
-    useState("");
+    useState<TicketStatus | "">("");
+
   const [page, setPage] = useState(1);
 
   const [isLoading, setIsLoading] =
     useState(true);
+
   const [isRefreshing, setIsRefreshing] =
     useState(false);
+
   const [isSubmitting, setIsSubmitting] =
     useState(false);
+
   const [isModalOpen, setIsModalOpen] =
     useState(false);
 
   const [feedback, setFeedback] =
     useState<Feedback | null>(null);
+
   const [form, setForm] =
     useState<TicketFormState>(INITIAL_FORM);
 
@@ -245,7 +257,11 @@ function AdminTickets() {
         setIsRefreshing(false);
       }
     },
-    [page, searchQuery, statusFilter],
+    [
+      page,
+      searchQuery,
+      statusFilter,
+    ],
   );
 
   useEffect(() => {
@@ -279,19 +295,21 @@ function AdminTickets() {
     );
   }, [tickets]);
 
-  const updateFormField = <
+  function updateFormField<
     Key extends keyof TicketFormState,
   >(
     key: Key,
     value: TicketFormState[Key],
-  ) => {
+  ): void {
     setForm((current) => ({
       ...current,
       [key]: value,
     }));
-  };
+  }
 
-  const handleNameChange = (value: string) => {
+  function handleNameChange(
+    value: string,
+  ): void {
     setForm((current) => ({
       ...current,
       name: value,
@@ -302,34 +320,35 @@ function AdminTickets() {
           ? createSlug(value)
           : current.slug,
     }));
-  };
+  }
 
-  const handleSearchSubmit = (
+  function handleSearchSubmit(
     event: FormEvent<HTMLFormElement>,
-  ) => {
+  ): void {
     event.preventDefault();
+
     setPage(1);
     setSearchQuery(searchInput.trim());
-  };
+  }
 
-  const openCreateModal = () => {
+  function openCreateModal(): void {
     setForm(INITIAL_FORM);
     setFeedback(null);
     setIsModalOpen(true);
-  };
+  }
 
-  const closeCreateModal = () => {
+  function closeCreateModal(): void {
     if (isSubmitting) {
       return;
     }
 
     setIsModalOpen(false);
     setForm(INITIAL_FORM);
-  };
+  }
 
-  const handleCreate = async (
+  async function handleCreate(
     event: FormEvent<HTMLFormElement>,
-  ) => {
+  ): Promise<void> {
     event.preventDefault();
     setFeedback(null);
 
@@ -345,6 +364,7 @@ function AdminTickets() {
         message:
           "Enter a valid event ID greater than zero.",
       });
+
       return;
     }
 
@@ -357,6 +377,7 @@ function AdminTickets() {
         message:
           "Enter a valid ticket price.",
       });
+
       return;
     }
 
@@ -374,7 +395,7 @@ function AdminTickets() {
       name: form.name.trim(),
       slug: createSlug(form.slug),
       category: form.category.trim(),
-      status: form.status.trim(),
+      status: form.status,
       price,
       currency: form.currency
         .trim()
@@ -382,7 +403,8 @@ function AdminTickets() {
       availabilityMode:
         form.availabilityMode.trim(),
       isFeatured: form.isFeatured,
-      sortOrder: Number(form.sortOrder) || 0,
+      sortOrder:
+        Number(form.sortOrder) || 0,
     };
 
     if (form.shortDescription.trim()) {
@@ -419,7 +441,8 @@ function AdminTickets() {
     }
 
     if (form.badge.trim()) {
-      payload.badge = form.badge.trim();
+      payload.badge =
+        form.badge.trim();
     }
 
     if (benefits.length > 0) {
@@ -456,7 +479,7 @@ function AdminTickets() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <section className="admin-tickets">
@@ -480,12 +503,15 @@ function AdminTickets() {
           className="admin-tickets__add"
           onClick={openCreateModal}
         >
-          <Plus size={17} aria-hidden="true" />
+          <Plus
+            size={17}
+            aria-hidden="true"
+          />
           Add ticket
         </button>
       </div>
 
-      {feedback && (
+      {feedback ? (
         <div
           className={`admin-tickets__feedback admin-tickets__feedback--${feedback.type}`}
           role={
@@ -508,31 +534,41 @@ function AdminTickets() {
 
           <span>{feedback.message}</span>
         </div>
-      )}
+      ) : null}
 
       <div className="admin-tickets__stats">
         <article className="admin-tickets__stat-card">
           <span>Total tickets</span>
           <strong>{meta.totalItems}</strong>
-          <small>All matching ticket types</small>
+          <small>
+            All matching ticket types
+          </small>
         </article>
 
         <article className="admin-tickets__stat-card">
           <span>Available stock</span>
-          <strong>{stats.availableStock}</strong>
-          <small>Across the current page</small>
+          <strong>
+            {stats.availableStock}
+          </strong>
+          <small>
+            Across the current page
+          </small>
         </article>
 
         <article className="admin-tickets__stat-card">
           <span>Sold out</span>
           <strong>{stats.soldOut}</strong>
-          <small>On the current page</small>
+          <small>
+            On the current page
+          </small>
         </article>
 
         <article className="admin-tickets__stat-card">
           <span>Featured</span>
           <strong>{stats.featured}</strong>
-          <small>On the current page</small>
+          <small>
+            On the current page
+          </small>
         </article>
       </div>
 
@@ -550,7 +586,9 @@ function AdminTickets() {
             type="search"
             value={searchInput}
             onChange={(event) =>
-              setSearchInput(event.target.value)
+              setSearchInput(
+                event.target.value,
+              )
             }
             placeholder="Search tickets..."
             aria-label="Search tickets"
@@ -567,20 +605,25 @@ function AdminTickets() {
               value={statusFilter}
               onChange={(event) => {
                 setPage(1);
+
                 setStatusFilter(
-                  event.target.value,
+                  event.target
+                    .value as TicketStatus | "",
                 );
               }}
             >
               <option value="">
                 All statuses
               </option>
+
               <option value="AVAILABLE">
                 Available
               </option>
+
               <option value="LIMITED">
                 Limited
               </option>
+
               <option value="SOLD_OUT">
                 Sold out
               </option>
@@ -613,6 +656,7 @@ function AdminTickets() {
         <div className="admin-tickets__table-header">
           <div>
             <h2>Ticket list</h2>
+
             <p>
               Ticket previews displayed on the
               public festival website.
@@ -634,10 +678,14 @@ function AdminTickets() {
               className="admin-tickets__spin"
               aria-hidden="true"
             />
-            <strong>Loading tickets</strong>
+
+            <strong>
+              Loading tickets
+            </strong>
+
             <p>
-              Retrieving ticket information from
-              the backend.
+              Retrieving ticket information
+              from the backend.
             </p>
           </div>
         ) : tickets.length === 0 ? (
@@ -646,10 +694,14 @@ function AdminTickets() {
               size={30}
               aria-hidden="true"
             />
-            <strong>No tickets found</strong>
+
+            <strong>
+              No tickets found
+            </strong>
+
             <p>
-              Add a ticket or change your current
-              filters.
+              Add a ticket or change your
+              current filters.
             </p>
 
             <button
@@ -674,6 +726,7 @@ function AdminTickets() {
                     <th>Price</th>
                     <th>Stock</th>
                     <th>Status</th>
+
                     <th className="admin-tickets__actions-title">
                       Actions
                     </th>
@@ -702,13 +755,13 @@ function AdminTickets() {
                             </span>
                           </div>
 
-                          {ticket.isFeatured && (
+                          {ticket.isFeatured ? (
                             <Star
                               size={15}
                               className="admin-tickets__featured"
                               aria-label="Featured ticket"
                             />
-                          )}
+                          ) : null}
                         </div>
                       </td>
 
@@ -717,8 +770,10 @@ function AdminTickets() {
                           <strong>
                             {ticket.event.title}
                           </strong>
+
                           <span>
-                            {ticket.event.location ||
+                            {ticket.event
+                              .location ||
                               "Location unavailable"}
                           </span>
                         </div>
@@ -734,14 +789,14 @@ function AdminTickets() {
                           </strong>
 
                           {ticket.originalPrice !==
-                            null && (
+                          null ? (
                             <span>
                               {formatPrice(
                                 ticket.originalPrice,
                                 ticket.currency,
                               )}
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </td>
 
@@ -765,7 +820,7 @@ function AdminTickets() {
 
                       <td>
                         <div className="admin-tickets__actions">
-                          {ticket.externalPurchaseUrl && (
+                          {ticket.externalPurchaseUrl ? (
                             <a
                               className="admin-tickets__icon-btn"
                               href={
@@ -781,7 +836,7 @@ function AdminTickets() {
                                 aria-hidden="true"
                               />
                             </a>
-                          )}
+                          ) : null}
 
                           <button
                             type="button"
@@ -819,7 +874,10 @@ function AdminTickets() {
             <div className="admin-tickets__pagination">
               <span>
                 Page {meta.page} of{" "}
-                {Math.max(meta.totalPages, 1)}
+                {Math.max(
+                  meta.totalPages,
+                  1,
+                )}
               </span>
 
               <div>
@@ -827,7 +885,10 @@ function AdminTickets() {
                   type="button"
                   onClick={() =>
                     setPage((current) =>
-                      Math.max(1, current - 1),
+                      Math.max(
+                        1,
+                        current - 1,
+                      ),
                     )
                   }
                   disabled={
@@ -844,11 +905,14 @@ function AdminTickets() {
                 <button
                   type="button"
                   onClick={() =>
-                    setPage((current) =>
-                      current + 1,
+                    setPage(
+                      (current) =>
+                        current + 1,
                     )
                   }
-                  disabled={!meta.hasNextPage}
+                  disabled={
+                    !meta.hasNextPage
+                  }
                   aria-label="Next page"
                 >
                   <ChevronRight
@@ -862,13 +926,14 @@ function AdminTickets() {
         )}
       </div>
 
-      {isModalOpen && (
+      {isModalOpen ? (
         <div
           className="admin-tickets__modal-backdrop"
           role="presentation"
           onMouseDown={(event) => {
             if (
-              event.target === event.currentTarget
+              event.target ===
+              event.currentTarget
             ) {
               closeCreateModal();
             }
@@ -882,13 +947,18 @@ function AdminTickets() {
           >
             <div className="admin-tickets__modal-header">
               <div>
-                <span>Create ticket</span>
+                <span>
+                  Create ticket
+                </span>
+
                 <h2 id="create-ticket-title">
                   Add a ticket preview
                 </h2>
+
                 <p>
-                  The purchase button will redirect
-                  visitors to Eventpop.
+                  The purchase button will
+                  redirect visitors to
+                  Eventpop.
                 </p>
               </div>
 
@@ -912,6 +982,7 @@ function AdminTickets() {
               <div className="admin-tickets__form-grid">
                 <label>
                   <span>Ticket name</span>
+
                   <input
                     required
                     value={form.name}
@@ -926,6 +997,7 @@ function AdminTickets() {
 
                 <label>
                   <span>Slug</span>
+
                   <input
                     required
                     value={form.slug}
@@ -943,6 +1015,7 @@ function AdminTickets() {
 
                 <label>
                   <span>Event ID</span>
+
                   <input
                     required
                     type="number"
@@ -960,6 +1033,7 @@ function AdminTickets() {
 
                 <label>
                   <span>Category enum</span>
+
                   <input
                     required
                     value={form.category}
@@ -976,26 +1050,54 @@ function AdminTickets() {
                 </label>
 
                 <label>
-                  <span>Status enum</span>
-                  <input
+                  <span>Status</span>
+
+                  <select
                     required
                     value={form.status}
                     onChange={(event) =>
                       updateFormField(
                         "status",
-                        event.target.value
-                          .trimStart()
-                          .toUpperCase(),
+                        event.target
+                          .value as TicketStatus,
                       )
                     }
-                    placeholder="AVAILABLE"
-                  />
+                  >
+                    <option value="DRAFT">
+                      Draft
+                    </option>
+
+                    <option value="SCHEDULED">
+                      Scheduled
+                    </option>
+
+                    <option value="AVAILABLE">
+                      Available
+                    </option>
+
+                    <option value="LIMITED">
+                      Limited
+                    </option>
+
+                    <option value="SOLD_OUT">
+                      Sold out
+                    </option>
+
+                    <option value="EXPIRED">
+                      Expired
+                    </option>
+
+                    <option value="HIDDEN">
+                      Hidden
+                    </option>
+                  </select>
                 </label>
 
                 <label>
                   <span>
                     Availability mode enum
                   </span>
+
                   <input
                     required
                     value={
@@ -1015,6 +1117,7 @@ function AdminTickets() {
 
                 <label>
                   <span>Price</span>
+
                   <input
                     required
                     type="number"
@@ -1032,12 +1135,17 @@ function AdminTickets() {
                 </label>
 
                 <label>
-                  <span>Original price</span>
+                  <span>
+                    Original price
+                  </span>
+
                   <input
                     type="number"
                     min="0"
                     step="0.01"
-                    value={form.originalPrice}
+                    value={
+                      form.originalPrice
+                    }
                     onChange={(event) =>
                       updateFormField(
                         "originalPrice",
@@ -1050,6 +1158,7 @@ function AdminTickets() {
 
                 <label>
                   <span>Currency</span>
+
                   <input
                     required
                     maxLength={3}
@@ -1066,11 +1175,16 @@ function AdminTickets() {
                 </label>
 
                 <label>
-                  <span>Total quantity</span>
+                  <span>
+                    Total quantity
+                  </span>
+
                   <input
                     type="number"
                     min="0"
-                    value={form.totalQuantity}
+                    value={
+                      form.totalQuantity
+                    }
                     onChange={(event) =>
                       updateFormField(
                         "totalQuantity",
@@ -1085,6 +1199,7 @@ function AdminTickets() {
                   <span>
                     Remaining quantity
                   </span>
+
                   <input
                     type="number"
                     min="0"
@@ -1103,6 +1218,7 @@ function AdminTickets() {
 
                 <label>
                   <span>Sort order</span>
+
                   <input
                     type="number"
                     min="0"
@@ -1117,7 +1233,10 @@ function AdminTickets() {
                 </label>
 
                 <label className="admin-tickets__field--wide">
-                  <span>Short description</span>
+                  <span>
+                    Short description
+                  </span>
+
                   <textarea
                     rows={3}
                     value={
@@ -1134,7 +1253,10 @@ function AdminTickets() {
                 </label>
 
                 <label>
-                  <span>Availability label</span>
+                  <span>
+                    Availability label
+                  </span>
+
                   <input
                     value={
                       form.availabilityLabel
@@ -1151,6 +1273,7 @@ function AdminTickets() {
 
                 <label>
                   <span>Badge</span>
+
                   <input
                     value={form.badge}
                     onChange={(event) =>
@@ -1167,6 +1290,7 @@ function AdminTickets() {
                   <span>
                     Eventpop purchase URL
                   </span>
+
                   <input
                     type="url"
                     value={
@@ -1186,6 +1310,7 @@ function AdminTickets() {
                   <span>
                     Benefits, one per line
                   </span>
+
                   <textarea
                     rows={5}
                     value={form.benefits}
@@ -1204,7 +1329,9 @@ function AdminTickets() {
                 <label className="admin-tickets__checkbox admin-tickets__field--wide">
                   <input
                     type="checkbox"
-                    checked={form.isFeatured}
+                    checked={
+                      form.isFeatured
+                    }
                     onChange={(event) =>
                       updateFormField(
                         "isFeatured",
@@ -1256,7 +1383,7 @@ function AdminTickets() {
             </form>
           </section>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
