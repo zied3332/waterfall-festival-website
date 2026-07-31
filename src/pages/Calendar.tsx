@@ -30,7 +30,7 @@ import type {
   Event,
 } from "../types/event";
 
-import "../style/calendar.css";
+import "./style/calendar.css";
 
 type CalendarDay = {
   date: Date;

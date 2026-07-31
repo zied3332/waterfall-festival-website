@@ -26,6 +26,7 @@ type ApiError = {
   response?: {
     data?: {
       message?: string | string[];
+      error?: string;
     };
   };
 };
@@ -41,6 +42,7 @@ function getErrorMessage(
   }
 
   const apiError = error as ApiError;
+
   const responseMessage =
     apiError.response?.data?.message;
 
@@ -48,11 +50,17 @@ function getErrorMessage(
     return responseMessage.join(" ");
   }
 
-  if (typeof responseMessage === "string") {
+  if (
+    typeof responseMessage === "string" &&
+    responseMessage.trim()
+  ) {
     return responseMessage;
   }
 
-  if (typeof apiError.message === "string") {
+  if (
+    typeof apiError.message === "string" &&
+    apiError.message.trim()
+  ) {
     return apiError.message;
   }
 
@@ -67,6 +75,10 @@ function AdminEventCreate() {
 
   const [errorMessage, setErrorMessage] =
     useState("");
+
+  function clearErrorMessage(): void {
+    setErrorMessage("");
+  }
 
   async function handleCreateEvent(
     eventData: CreateEventInput,
@@ -84,10 +96,20 @@ function AdminEventCreate() {
         await createEvent(eventData);
 
       if (heroImageFile) {
-        await uploadEventHeroImage(
-          createdEvent.id,
-          heroImageFile,
-        );
+        try {
+          await uploadEventHeroImage(
+            createdEvent.id,
+            heroImageFile,
+          );
+        } catch (error: unknown) {
+          setErrorMessage(
+            `The event was created, but the hero image could not be uploaded. ${getErrorMessage(
+              error,
+            )}`,
+          );
+
+          return;
+        }
       }
 
       navigate("/admin/events", {
@@ -153,6 +175,9 @@ function AdminEventCreate() {
         submitLabel="Create event"
         isSubmitting={isSubmitting}
         errorMessage={errorMessage}
+        onClearErrorMessage={
+          clearErrorMessage
+        }
         onSubmit={handleCreateEvent}
       />
     </section>

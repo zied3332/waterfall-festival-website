@@ -15,6 +15,7 @@ import {
   type ChangeEvent,
   type FormEvent,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -26,6 +27,9 @@ import type {
 
 const MAX_IMAGE_SIZE =
   5 * 1024 * 1024;
+
+const FESTIVAL_TIME_ZONE =
+  "Asia/Bangkok";
 
 const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
@@ -55,6 +59,7 @@ type EventFormProps = {
   submitLabel: string;
   isSubmitting: boolean;
   errorMessage?: string;
+  onClearErrorMessage?: () => void;
   onSubmit: (
     eventData: CreateEventInput,
     heroImageFile: File | null,
@@ -102,12 +107,116 @@ const STATUS_OPTIONS: Array<{
   },
 ];
 
+function getDateKeyInTimeZone(
+  date: Date,
+  timeZone: string,
+): string {
+  const parts =
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+
+  const year = parts.find(
+    (part) => part.type === "year",
+  )?.value;
+
+  const month = parts.find(
+    (part) => part.type === "month",
+  )?.value;
+
+  const day = parts.find(
+    (part) => part.type === "day",
+  )?.value;
+
+  if (!year || !month || !day) {
+    return "";
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
+function getBackendFieldErrors(
+  message: string,
+): EventFormErrors {
+  const normalizedMessage =
+    message.toLowerCase();
+
+  if (
+    normalizedMessage.includes("date") ||
+    normalizedMessage.includes("past day") ||
+    normalizedMessage.includes("current day")
+  ) {
+    return {
+      date: message,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("title") ||
+    normalizedMessage.includes("slug") ||
+    normalizedMessage.includes("similar event")
+  ) {
+    return {
+      title: message,
+    };
+  }
+
+  if (
+    normalizedMessage.includes(
+      "remaining ticket",
+    )
+  ) {
+    return {
+      remainingTickets: message,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("capacity")
+  ) {
+    return {
+      capacity: message,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("description")
+  ) {
+    return {
+      description: message,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("location")
+  ) {
+    return {
+      location: message,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("image") ||
+    normalizedMessage.includes("file")
+  ) {
+    return {
+      heroImage: message,
+    };
+  }
+
+  return {};
+}
+
 function EventForm({
   initialValues,
   currentImageUrl,
   submitLabel,
   isSubmitting,
   errorMessage = "",
+  onClearErrorMessage,
   onSubmit,
 }: EventFormProps) {
   const [values, setValues] =
@@ -125,8 +234,24 @@ function EventForm({
   const [localPreviewUrl, setLocalPreviewUrl] =
     useState<string | null>(null);
 
+  const formRef =
+    useRef<HTMLFormElement | null>(null);
+
   const fileInputRef =
     useRef<HTMLInputElement | null>(null);
+
+  const festivalToday = useMemo(
+    () =>
+      getDateKeyInTimeZone(
+        new Date(),
+        FESTIVAL_TIME_ZONE,
+      ),
+    [],
+  );
+
+  const minimumDateTime = festivalToday
+    ? `${festivalToday}T00:00`
+    : undefined;
 
   useEffect(() => {
     setValues({
@@ -151,6 +276,56 @@ function EventForm({
     };
   }, [selectedImage]);
 
+  useEffect(() => {
+    if (!errorMessage) {
+      return;
+    }
+
+    const backendErrors =
+      getBackendFieldErrors(errorMessage);
+
+    if (
+      Object.keys(backendErrors).length === 0
+    ) {
+      return;
+    }
+
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      ...backendErrors,
+    }));
+
+    requestAnimationFrame(() => {
+      focusFirstInvalidField();
+    });
+  }, [errorMessage]);
+
+  function focusFirstInvalidField(): void {
+    const firstInvalidField =
+      formRef.current?.querySelector<
+        HTMLInputElement | HTMLTextAreaElement
+      >('[aria-invalid="true"]');
+
+    if (!firstInvalidField) {
+      return;
+    }
+
+    firstInvalidField.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+
+    firstInvalidField.focus({
+      preventScroll: true,
+    });
+  }
+
+  function clearExternalError(): void {
+    if (errorMessage) {
+      onClearErrorMessage?.();
+    }
+  }
+
   function updateValue(
     field: keyof EventFormValues,
     value: string,
@@ -164,6 +339,8 @@ function EventForm({
       ...currentErrors,
       [field]: undefined,
     }));
+
+    clearExternalError();
   }
 
   function handleImageChange(
@@ -171,6 +348,8 @@ function EventForm({
   ): void {
     const file =
       event.target.files?.[0] ?? null;
+
+    clearExternalError();
 
     setErrors((currentErrors) => ({
       ...currentErrors,
@@ -214,6 +393,13 @@ function EventForm({
   function removeSelectedImage(): void {
     setSelectedImage(null);
 
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      heroImage: undefined,
+    }));
+
+    clearExternalError();
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -222,56 +408,81 @@ function EventForm({
   function validateForm(): boolean {
     const nextErrors: EventFormErrors = {};
 
-    if (!values.title.trim()) {
+    const trimmedTitle =
+      values.title.trim();
+
+    const trimmedDescription =
+      values.description.trim();
+
+    const trimmedLocation =
+      values.location.trim();
+
+    if (!trimmedTitle) {
       nextErrors.title =
         "Event title is required.";
     }
 
-    if (!values.description.trim()) {
+    if (!trimmedDescription) {
       nextErrors.description =
         "Event description is required.";
     }
 
     if (!values.date) {
       nextErrors.date =
-        "Event date is required.";
+        "Event date and time are required.";
+    } else {
+      const selectedDateKey =
+        values.date.slice(0, 10);
+
+      if (
+        festivalToday &&
+        selectedDateKey < festivalToday
+      ) {
+        nextErrors.date =
+          "Event date cannot be before the current day in Thailand.";
+      }
     }
 
-    if (!values.location.trim()) {
+    if (!trimmedLocation) {
       nextErrors.location =
         "Event location is required.";
     }
 
-    const capacity = values.capacity
-      ? Number(values.capacity)
-      : undefined;
+    const capacity =
+      values.capacity === ""
+        ? undefined
+        : Number(values.capacity);
 
     const remainingTickets =
-      values.remainingTickets
-        ? Number(values.remainingTickets)
-        : undefined;
+      values.remainingTickets === ""
+        ? undefined
+        : Number(values.remainingTickets);
 
     if (
       capacity !== undefined &&
       (!Number.isInteger(capacity) ||
-        capacity < 0)
+        capacity < 1)
     ) {
       nextErrors.capacity =
-        "Capacity must be a positive whole number.";
+        "Capacity must be a whole number of at least 1.";
     }
 
     if (
       remainingTickets !== undefined &&
-      (!Number.isInteger(remainingTickets) ||
+      (!Number.isInteger(
+        remainingTickets,
+      ) ||
         remainingTickets < 0)
     ) {
       nextErrors.remainingTickets =
-        "Remaining tickets must be a positive whole number.";
+        "Remaining tickets must be a whole number of 0 or more.";
     }
 
     if (
       capacity !== undefined &&
       remainingTickets !== undefined &&
+      Number.isInteger(capacity) &&
+      Number.isInteger(remainingTickets) &&
       remainingTickets > capacity
     ) {
       nextErrors.remainingTickets =
@@ -280,7 +491,16 @@ function EventForm({
 
     setErrors(nextErrors);
 
-    return Object.keys(nextErrors).length === 0;
+    const isValid =
+      Object.keys(nextErrors).length === 0;
+
+    if (!isValid) {
+      requestAnimationFrame(() => {
+        focusFirstInvalidField();
+      });
+    }
+
+    return isValid;
   }
 
   async function handleSubmit(
@@ -288,18 +508,25 @@ function EventForm({
   ): Promise<void> {
     event.preventDefault();
 
-    if (isSubmitting || !validateForm()) {
+    if (isSubmitting) {
       return;
     }
 
-    const capacity = values.capacity
-      ? Number(values.capacity)
-      : undefined;
+    clearExternalError();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    const capacity =
+      values.capacity === ""
+        ? undefined
+        : Number(values.capacity);
 
     const remainingTickets =
-      values.remainingTickets
-        ? Number(values.remainingTickets)
-        : undefined;
+      values.remainingTickets === ""
+        ? undefined
+        : Number(values.remainingTickets);
 
     const eventData: CreateEventInput = {
       title: values.title.trim(),
@@ -325,8 +552,26 @@ function EventForm({
   const displayedImageUrl =
     localPreviewUrl ?? currentImageUrl ?? null;
 
+  const validationErrorCount =
+    Object.values(errors).filter(
+      (message) =>
+        typeof message === "string" &&
+        message.length > 0,
+    ).length;
+
+  const displayedErrorMessage =
+    errorMessage ||
+    (validationErrorCount > 0
+      ? `Please correct ${validationErrorCount} highlighted ${
+          validationErrorCount === 1
+            ? "field"
+            : "fields"
+        } before saving.`
+      : "");
+
   return (
     <form
+      ref={formRef}
       className="admin-event-form"
       onSubmit={(event) => {
         void handleSubmit(event);
@@ -388,6 +633,7 @@ function EventForm({
                 <small
                   id="event-title-error"
                   className="admin-event-form__field-error"
+                  role="alert"
                 >
                   {errors.title}
                 </small>
@@ -418,13 +664,13 @@ function EventForm({
                 )}
                 aria-describedby={
                   errors.description
-                    ? "event-description-error"
-                    : undefined
+                    ? "event-description-help event-description-error"
+                    : "event-description-help"
                 }
               />
 
               <div className="admin-event-form__field-footer">
-                <small>
+                <small id="event-description-help">
                   Explain what visitors can
                   expect from this event.
                 </small>
@@ -439,6 +685,7 @@ function EventForm({
                 <small
                   id="event-description-error"
                   className="admin-event-form__field-error"
+                  role="alert"
                 >
                   {errors.description}
                 </small>
@@ -462,6 +709,7 @@ function EventForm({
                 <input
                   id="event-date"
                   type="datetime-local"
+                  min={minimumDateTime}
                   value={values.date}
                   onChange={(event) => {
                     updateValue(
@@ -473,11 +721,25 @@ function EventForm({
                   aria-invalid={Boolean(
                     errors.date,
                   )}
+                  aria-describedby={
+                    errors.date
+                      ? "event-date-help event-date-error"
+                      : "event-date-help"
+                  }
                 />
               </div>
 
+              <small id="event-date-help">
+                Dates are validated using the
+                festival timezone in Thailand.
+              </small>
+
               {errors.date && (
-                <small className="admin-event-form__field-error">
+                <small
+                  id="event-date-error"
+                  className="admin-event-form__field-error"
+                  role="alert"
+                >
                   {errors.date}
                 </small>
               )}
@@ -512,11 +774,20 @@ function EventForm({
                   aria-invalid={Boolean(
                     errors.location,
                   )}
+                  aria-describedby={
+                    errors.location
+                      ? "event-location-error"
+                      : undefined
+                  }
                 />
               </div>
 
               {errors.location && (
-                <small className="admin-event-form__field-error">
+                <small
+                  id="event-location-error"
+                  className="admin-event-form__field-error"
+                  role="alert"
+                >
                   {errors.location}
                 </small>
               )}
@@ -559,7 +830,11 @@ function EventForm({
               aria-invalid={Boolean(
                 errors.heroImage,
               )}
-              aria-describedby="event-image-help"
+              aria-describedby={
+                errors.heroImage
+                  ? "event-image-help event-image-error"
+                  : "event-image-help"
+              }
             />
 
             <small id="event-image-help">
@@ -568,7 +843,11 @@ function EventForm({
             </small>
 
             {errors.heroImage && (
-              <small className="admin-event-form__field-error">
+              <small
+                id="event-image-error"
+                className="admin-event-form__field-error"
+                role="alert"
+              >
                 {errors.heroImage}
               </small>
             )}
@@ -671,7 +950,7 @@ function EventForm({
                 <input
                   id="event-capacity"
                   type="number"
-                  min="0"
+                  min="1"
                   step="1"
                   value={values.capacity}
                   onChange={(event) => {
@@ -685,11 +964,20 @@ function EventForm({
                   aria-invalid={Boolean(
                     errors.capacity,
                   )}
+                  aria-describedby={
+                    errors.capacity
+                      ? "event-capacity-error"
+                      : undefined
+                  }
                 />
               </div>
 
               {errors.capacity && (
-                <small className="admin-event-form__field-error">
+                <small
+                  id="event-capacity-error"
+                  className="admin-event-form__field-error"
+                  role="alert"
+                >
                   {errors.capacity}
                 </small>
               )}
@@ -725,11 +1013,20 @@ function EventForm({
                   aria-invalid={Boolean(
                     errors.remainingTickets,
                   )}
+                  aria-describedby={
+                    errors.remainingTickets
+                      ? "remaining-tickets-error"
+                      : undefined
+                  }
                 />
               </div>
 
               {errors.remainingTickets && (
-                <small className="admin-event-form__field-error">
+                <small
+                  id="remaining-tickets-error"
+                  className="admin-event-form__field-error"
+                  role="alert"
+                >
                   {errors.remainingTickets}
                 </small>
               )}
@@ -809,10 +1106,11 @@ function EventForm({
         </section>
       </div>
 
-      {errorMessage && (
+      {displayedErrorMessage && (
         <div
           className="admin-event-form__error-banner"
           role="alert"
+          aria-live="assertive"
         >
           <AlertCircle
             size={18}
@@ -824,7 +1122,9 @@ function EventForm({
               Unable to save event
             </strong>
 
-            <p>{errorMessage}</p>
+            <p>
+              {displayedErrorMessage}
+            </p>
           </div>
         </div>
       )}
