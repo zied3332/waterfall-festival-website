@@ -40,6 +40,28 @@ type SocialLink = {
   size: number;
 };
 
+function resolveImageUrl(
+  configuredUrl: string | null | undefined,
+  fallbackUrl: string,
+): string {
+  const value = configuredUrl?.trim();
+
+  if (!value) {
+    return fallbackUrl;
+  }
+
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("data:") ||
+    value.startsWith("blob:")
+  ) {
+    return value;
+  }
+
+  return fallbackUrl;
+}
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] =
     useState(false);
@@ -48,15 +70,18 @@ export default function Navbar() {
     useWebsiteSettings();
 
   const festivalName =
-    settings?.festivalName ||
+    settings?.festivalName?.trim() ||
     "Waterfall Festival";
 
-  const desktopLogo =
-    settings?.logoUrl || fallbackLogo;
+  const desktopLogo = resolveImageUrl(
+    settings?.logoUrl,
+    fallbackLogo,
+  );
 
-  const compactLogo =
-    settings?.compactLogoUrl ||
-    fallbackCompactLogo;
+  const compactLogo = resolveImageUrl(
+    settings?.compactLogoUrl,
+    fallbackCompactLogo,
+  );
 
   const navigationLinks: NavigationLink[] = [
     {
@@ -148,6 +173,9 @@ export default function Navbar() {
   const ticketsPageEnabled =
     settings?.ticketsPageEnabled ?? true;
 
+  const showSocialLinks =
+    settings?.showSocialLinksInFooter ?? true;
+
   const defaultLanguage =
     settings?.defaultLanguage
       ?.trim()
@@ -183,6 +211,13 @@ export default function Navbar() {
               src={desktopLogo}
               alt={festivalName}
               className="navbar__logo"
+              onError={(event) => {
+                event.currentTarget.onerror =
+                  null;
+
+                event.currentTarget.src =
+                  fallbackLogo;
+              }}
             />
           </picture>
         </Link>
@@ -237,36 +272,36 @@ export default function Navbar() {
         </div>
 
         <div className="navbar__right">
-          {visibleSocialLinks.length >
-            0 && (
-            <div
-              className="navbar__socials"
-              aria-label="Social media links"
-            >
-              {visibleSocialLinks.map(
-                (socialLink) => {
-                  const SocialIcon =
-                    socialLink.icon;
+          {showSocialLinks &&
+            visibleSocialLinks.length > 0 && (
+              <div
+                className="navbar__socials"
+                aria-label="Social media links"
+              >
+                {visibleSocialLinks.map(
+                  (socialLink) => {
+                    const SocialIcon =
+                      socialLink.icon;
 
-                  return (
-                    <a
-                      key={socialLink.label}
-                      href={socialLink.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Visit ${festivalName} on ${socialLink.label}`}
-                      title={socialLink.label}
-                    >
-                      <SocialIcon
-                        size={socialLink.size}
-                        aria-hidden="true"
-                      />
-                    </a>
-                  );
-                },
-              )}
-            </div>
-          )}
+                    return (
+                      <a
+                        key={socialLink.label}
+                        href={socialLink.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Visit ${festivalName} on ${socialLink.label}`}
+                        title={socialLink.label}
+                      >
+                        <SocialIcon
+                          size={socialLink.size}
+                          aria-hidden="true"
+                        />
+                      </a>
+                    );
+                  },
+                )}
+              </div>
+            )}
 
           <select
             key={defaultLanguage}
