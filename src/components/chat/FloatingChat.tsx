@@ -1,55 +1,131 @@
 import { useState } from "react";
-import { MessageCircle, X, Send } from "lucide-react";
+
+import {
+  MessageCircle,
+  Send,
+  X,
+} from "lucide-react";
+
+import { useWebsiteSettings } from "../../context/WebsiteSettingsContext";
+
 import "./floating-chat.css";
 
 function FloatingChat() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] =
+    useState(false);
+
+  const { settings } =
+    useWebsiteSettings();
+
+  if (
+    settings &&
+    !settings.assistantEnabled
+  ) {
+    return null;
+  }
+
+  const festivalName =
+    settings?.festivalName?.trim() ||
+    "Waterfall Festival";
+
+  const assistantName =
+    settings?.assistantName?.trim() ||
+    "Festival Assistant";
+
+  const welcomeMessage =
+    settings?.assistantWelcomeMessage?.trim() ||
+    `Hi! I am your ${festivalName} assistant.`;
+
+  const placeholder =
+    settings?.assistantPlaceholder?.trim() ||
+    "Ask something...";
+
+  function toggleChat(): void {
+    setOpen((current) => !current);
+  }
+
+  function closeChat(): void {
+    setOpen(false);
+  }
 
   return (
     <>
-      {/* Chat Window */}
-
-      <div className={`chat-window ${open ? "open" : ""}`}>
+      <div
+        className={`chat-window ${
+          open ? "open" : ""
+        }`}
+        aria-hidden={!open}
+      >
         <div className="chat-header">
           <div>
-            <h3>Festival Assistant</h3>
+            <h3>{assistantName}</h3>
             <p>Online now</p>
           </div>
 
-          <button onClick={() => setOpen(false)}>
-            <X size={20} />
+          <button
+            type="button"
+            onClick={closeChat}
+            aria-label="Close assistant"
+          >
+            <X
+              size={20}
+              aria-hidden="true"
+            />
           </button>
         </div>
 
         <div className="chat-body">
           <div className="bot-message">
-            👋 Hi! I'm your Waterfall Festival assistant.
+            👋 {welcomeMessage}
           </div>
 
           <div className="bot-message">
-            Ask me about tickets, events, parking, schedules or the venue.
+            Ask me about tickets, events,
+            parking, schedules, or the venue.
           </div>
         </div>
 
         <div className="chat-footer">
           <input
             type="text"
-            placeholder="Ask something..."
+            placeholder={placeholder}
+            aria-label={`Message ${assistantName}`}
           />
 
-          <button>
-            <Send size={18} />
+          <button
+            type="button"
+            aria-label="Send message"
+          >
+            <Send
+              size={18}
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
 
-      {/* Floating Button */}
-
       <button
+        type="button"
         className="chat-button"
-        onClick={() => setOpen(!open)}
+        onClick={toggleChat}
+        aria-label={
+          open
+            ? `Close ${assistantName}`
+            : `Open ${assistantName}`
+        }
+        aria-expanded={open}
       >
-        <MessageCircle size={28} />
+        {open ? (
+          <X
+            size={28}
+            aria-hidden="true"
+          />
+        ) : (
+          <MessageCircle
+            size={28}
+            aria-hidden="true"
+          />
+        )}
       </button>
     </>
   );
