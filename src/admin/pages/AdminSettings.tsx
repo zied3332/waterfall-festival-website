@@ -1,15 +1,20 @@
 import {
+  useCallback,
+  useEffect,
   useMemo,
   useState,
   type ChangeEvent,
   type FormEvent,
   type ReactNode,
 } from "react";
+
 import {
+  AlertCircle,
   Bot,
   CheckCircle2,
   Globe2,
   Image,
+  LoaderCircle,
   Mail,
   Palette,
   RotateCcw,
@@ -19,6 +24,17 @@ import {
   Sparkles,
   ToggleLeft,
 } from "lucide-react";
+
+import {
+  getAdminSettings,
+  updateAdminSettings,
+} from "../../services/settings.service";
+
+import type {
+  FestivalStatus,
+  UpdateWebsiteSettingsDto,
+  WebsiteSettings,
+} from "../../types/settings";
 
 import "../style/admin-settings.css";
 
@@ -30,11 +46,6 @@ type SettingsTabId =
   | "features"
   | "branding";
 
-type FestivalStatus =
-  | "UPCOMING"
-  | "LIVE"
-  | "FINISHED";
-
 type SettingsForm = {
   festivalName: string;
   tagline: string;
@@ -43,9 +54,10 @@ type SettingsForm = {
   startDate: string;
   endDate: string;
   timezone: string;
-  status: FestivalStatus;
+  festivalStatus: FestivalStatus;
   defaultLanguage: string;
   websiteUrl: string;
+
   publicEmail: string;
   supportEmail: string;
   phoneNumber: string;
@@ -53,79 +65,96 @@ type SettingsForm = {
   address: string;
   googleMapsUrl: string;
   contactFormEnabled: boolean;
+
   instagramUrl: string;
   facebookUrl: string;
   tiktokUrl: string;
   youtubeUrl: string;
   spotifyUrl: string;
   showSocialLinksInFooter: boolean;
+
   assistantEnabled: boolean;
   assistantName: string;
   assistantWelcomeMessage: string;
   assistantPlaceholder: string;
   assistantOfflineMessage: string;
   escalationEmail: string;
+
   eventsPageEnabled: boolean;
   ticketsPageEnabled: boolean;
   experiencePageEnabled: boolean;
   galleryPageEnabled: boolean;
   faqPageEnabled: boolean;
   newsletterEnabled: boolean;
+
   primaryAccent: string;
   secondaryAccent: string;
+
   logoUrl: string;
   compactLogoUrl: string;
   faviconUrl: string;
   socialImageUrl: string;
+
+  footerDescription: string;
   footerCopyright: string;
 };
 
-const initialSettings: SettingsForm = {
-  festivalName: "Waterfall Festival Koh Phangan",
-  tagline: "Nature. Music. Freedom.",
-  location: "Koh Phangan, Thailand",
-  venue: "Waterfall Party Venue",
-  startDate: "2025-12-28",
-  endDate: "2026-01-02",
+type Feedback = {
+  type: "success" | "error";
+  message: string;
+};
+
+const emptySettings: SettingsForm = {
+  festivalName: "",
+  tagline: "",
+  location: "",
+  venue: "",
+  startDate: "",
+  endDate: "",
   timezone: "Asia/Bangkok",
-  status: "UPCOMING",
+  festivalStatus: "UPCOMING",
   defaultLanguage: "English",
-  websiteUrl: "https://www.waterfallfestival.com",
-  publicEmail: "info@waterfallfestival.com",
-  supportEmail: "support@waterfallfestival.com",
-  phoneNumber: "+66 000 000 000",
-  whatsappNumber: "+66 000 000 000",
-  address: "Waterfall Party, Koh Phangan, Thailand",
-  googleMapsUrl: "https://maps.google.com",
+  websiteUrl: "",
+
+  publicEmail: "",
+  supportEmail: "",
+  phoneNumber: "",
+  whatsappNumber: "",
+  address: "",
+  googleMapsUrl: "",
   contactFormEnabled: true,
-  instagramUrl: "https://instagram.com/waterfallfestival",
-  facebookUrl: "https://facebook.com/waterfallfestival",
-  tiktokUrl: "https://tiktok.com/@waterfallfestival",
-  youtubeUrl: "https://youtube.com",
+
+  instagramUrl: "",
+  facebookUrl: "",
+  tiktokUrl: "",
+  youtubeUrl: "",
   spotifyUrl: "",
   showSocialLinksInFooter: true,
+
   assistantEnabled: true,
-  assistantName: "Waterfall Assistant",
-  assistantWelcomeMessage:
-    "Hi! Ask me about tickets, events, the venue, or festival information.",
-  assistantPlaceholder: "Ask about the festival...",
-  assistantOfflineMessage:
-    "The assistant is temporarily unavailable. Please contact our support team.",
-  escalationEmail: "support@waterfallfestival.com",
+  assistantName: "",
+  assistantWelcomeMessage: "",
+  assistantPlaceholder: "",
+  assistantOfflineMessage: "",
+  escalationEmail: "",
+
   eventsPageEnabled: true,
   ticketsPageEnabled: true,
   experiencePageEnabled: true,
   galleryPageEnabled: true,
   faqPageEnabled: true,
   newsletterEnabled: false,
+
   primaryAccent: "#7c3aed",
   secondaryAccent: "#22d3ee",
-  logoUrl: "/logo.png",
-  compactLogoUrl: "/logo-mark.png",
-  faviconUrl: "/favicon.ico",
-  socialImageUrl: "/social-share.jpg",
-  footerCopyright:
-    "© Waterfall Festival. All rights reserved.",
+
+  logoUrl: "",
+  compactLogoUrl: "",
+  faviconUrl: "",
+  socialImageUrl: "",
+
+  footerDescription: "",
+  footerCopyright: "",
 };
 
 const tabs: Array<{
@@ -133,24 +162,172 @@ const tabs: Array<{
   label: string;
   icon: typeof Settings;
 }> = [
-  { id: "general", label: "General", icon: Settings },
-  { id: "contact", label: "Contact", icon: Mail },
-  { id: "social", label: "Social", icon: Share2 },
-  { id: "assistant", label: "AI Assistant", icon: Bot },
-  { id: "features", label: "Features", icon: ToggleLeft },
-  { id: "branding", label: "Branding", icon: Palette },
+  {
+    id: "general",
+    label: "General",
+    icon: Settings,
+  },
+  {
+    id: "contact",
+    label: "Contact",
+    icon: Mail,
+  },
+  {
+    id: "social",
+    label: "Social",
+    icon: Share2,
+  },
+  {
+    id: "assistant",
+    label: "AI Assistant",
+    icon: Bot,
+  },
+  {
+    id: "features",
+    label: "Features",
+    icon: ToggleLeft,
+  },
+  {
+    id: "branding",
+    label: "Branding",
+    icon: Palette,
+  },
 ];
+
+function formatDateForInput(
+  value: string | null,
+): string {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function mapSettingsToForm(
+  settings: WebsiteSettings,
+): SettingsForm {
+  return {
+    festivalName: settings.festivalName,
+    tagline: settings.tagline,
+    location: settings.location,
+    venue: settings.venue,
+    startDate: formatDateForInput(
+      settings.startDate,
+    ),
+    endDate: formatDateForInput(
+      settings.endDate,
+    ),
+    timezone: settings.timezone,
+    festivalStatus: settings.festivalStatus,
+    defaultLanguage: settings.defaultLanguage,
+    websiteUrl: settings.websiteUrl,
+
+    publicEmail: settings.publicEmail,
+    supportEmail: settings.supportEmail,
+    phoneNumber: settings.phoneNumber,
+    whatsappNumber: settings.whatsappNumber,
+    address: settings.address,
+    googleMapsUrl: settings.googleMapsUrl,
+    contactFormEnabled:
+      settings.contactFormEnabled,
+
+    instagramUrl: settings.instagramUrl,
+    facebookUrl: settings.facebookUrl,
+    tiktokUrl: settings.tiktokUrl,
+    youtubeUrl: settings.youtubeUrl,
+    spotifyUrl: settings.spotifyUrl,
+    showSocialLinksInFooter:
+      settings.showSocialLinksInFooter,
+
+    assistantEnabled: settings.assistantEnabled,
+    assistantName: settings.assistantName,
+    assistantWelcomeMessage:
+      settings.assistantWelcomeMessage,
+    assistantPlaceholder:
+      settings.assistantPlaceholder,
+    assistantOfflineMessage:
+      settings.assistantOfflineMessage,
+    escalationEmail: settings.escalationEmail,
+
+    eventsPageEnabled:
+      settings.eventsPageEnabled,
+    ticketsPageEnabled:
+      settings.ticketsPageEnabled,
+    experiencePageEnabled:
+      settings.experiencePageEnabled,
+    galleryPageEnabled:
+      settings.galleryPageEnabled,
+    faqPageEnabled: settings.faqPageEnabled,
+    newsletterEnabled:
+      settings.newsletterEnabled,
+
+    primaryAccent: settings.primaryAccent,
+    secondaryAccent:
+      settings.secondaryAccent,
+
+    logoUrl: settings.logoUrl,
+    compactLogoUrl: settings.compactLogoUrl,
+    faviconUrl: settings.faviconUrl,
+    socialImageUrl: settings.socialImageUrl,
+
+    footerDescription:
+      settings.footerDescription,
+    footerCopyright: settings.footerCopyright,
+  };
+}
+
+function mapFormToUpdateDto(
+  settings: SettingsForm,
+): UpdateWebsiteSettingsDto {
+  return {
+    ...settings,
+    startDate: settings.startDate || null,
+    endDate: settings.endDate || null,
+  };
+}
+
+function getErrorMessage(
+  error: unknown,
+  fallbackMessage: string,
+): string {
+  if (
+    error instanceof Error &&
+    error.message.trim()
+  ) {
+    return error.message;
+  }
+
+  return fallbackMessage;
+}
 
 function AdminSettings() {
   const [activeTab, setActiveTab] =
     useState<SettingsTabId>("general");
+
   const [settings, setSettings] =
-    useState<SettingsForm>(initialSettings);
+    useState<SettingsForm>(emptySettings);
+
   const [savedSettings, setSavedSettings] =
-    useState<SettingsForm>(initialSettings);
-  const [isSaving, setIsSaving] = useState(false);
-  const [feedback, setFeedback] =
+    useState<SettingsForm>(emptySettings);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [isSaving, setIsSaving] =
+    useState(false);
+
+  const [loadError, setLoadError] =
     useState<string | null>(null);
+
+  const [feedback, setFeedback] =
+    useState<Feedback | null>(null);
 
   const hasUnsavedChanges = useMemo(
     () =>
@@ -159,7 +336,37 @@ function AdminSettings() {
     [savedSettings, settings],
   );
 
-  function updateField<Key extends keyof SettingsForm>(
+  const loadSettings = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      setFeedback(null);
+
+      const response = await getAdminSettings();
+      const formSettings =
+        mapSettingsToForm(response);
+
+      setSettings(formSettings);
+      setSavedSettings(formSettings);
+    } catch (error) {
+      setLoadError(
+        getErrorMessage(
+          error,
+          "Could not load website settings.",
+        ),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
+
+  function updateField<
+    Key extends keyof SettingsForm,
+  >(
     key: Key,
     value: SettingsForm[Key],
   ) {
@@ -167,23 +374,25 @@ function AdminSettings() {
       ...current,
       [key]: value,
     }));
+
     setFeedback(null);
   }
 
   function handleInputChange(
     event: ChangeEvent<
-      HTMLInputElement |
-      HTMLTextAreaElement |
-      HTMLSelectElement
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement
     >,
   ) {
-    const { name, value } = event.target;
+    const fieldName =
+      event.target.name as keyof SettingsForm;
 
-    setSettings((current) => ({
-      ...current,
-      [name]: value,
-    }));
-    setFeedback(null);
+    updateField(
+      fieldName,
+      event.target
+        .value as SettingsForm[typeof fieldName],
+    );
   }
 
   function handleReset() {
@@ -196,7 +405,11 @@ function AdminSettings() {
   ) {
     event.preventDefault();
 
-    if (!hasUnsavedChanges || isSaving) {
+    if (
+      !hasUnsavedChanges ||
+      isSaving ||
+      isLoading
+    ) {
       return;
     }
 
@@ -204,14 +417,73 @@ function AdminSettings() {
     setFeedback(null);
 
     try {
-      await new Promise((resolve) =>
-        window.setTimeout(resolve, 500),
-      );
-      setSavedSettings(settings);
-      setFeedback("Settings saved successfully.");
+      const updatedSettings =
+        await updateAdminSettings(
+          mapFormToUpdateDto(settings),
+        );
+
+      const updatedForm =
+        mapSettingsToForm(updatedSettings);
+
+      setSettings(updatedForm);
+      setSavedSettings(updatedForm);
+
+      setFeedback({
+        type: "success",
+        message:
+          "Settings saved successfully.",
+      });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: getErrorMessage(
+          error,
+          "Could not save website settings.",
+        ),
+      });
     } finally {
       setIsSaving(false);
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        className="admin-settings__feedback"
+        role="status"
+      >
+        <LoaderCircle
+          size={18}
+          className="admin-settings__spinner"
+        />
+
+        Loading website settings...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="admin-settings">
+        <div
+          className="admin-settings__feedback"
+          role="alert"
+        >
+          <AlertCircle size={18} />
+
+          <span>{loadError}</span>
+
+          <button
+            type="button"
+            className="admin-settings__secondary-button"
+            onClick={() => void loadSettings()}
+          >
+            <RotateCcw size={16} />
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -228,12 +500,14 @@ function AdminSettings() {
         >
           <div className="admin-settings__save-status">
             <CheckCircle2 size={16} />
+
             <div>
               <strong>
                 {hasUnsavedChanges
                   ? "Unsaved changes"
                   : "All changes saved"}
               </strong>
+
               <span>
                 {hasUnsavedChanges
                   ? "Review before leaving"
@@ -245,7 +519,9 @@ function AdminSettings() {
           <button
             type="button"
             className="admin-settings__secondary-button"
-            disabled={!hasUnsavedChanges || isSaving}
+            disabled={
+              !hasUnsavedChanges || isSaving
+            }
             onClick={handleReset}
           >
             <RotateCcw size={16} />
@@ -255,21 +531,42 @@ function AdminSettings() {
           <button
             type="submit"
             className="admin-settings__save-button"
-            disabled={!hasUnsavedChanges || isSaving}
+            disabled={
+              !hasUnsavedChanges || isSaving
+            }
           >
-            <Save size={16} />
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? (
+              <LoaderCircle
+                size={16}
+                className="admin-settings__spinner"
+              />
+            ) : (
+              <Save size={16} />
+            )}
+
+            {isSaving
+              ? "Saving..."
+              : "Save Changes"}
           </button>
         </div>
       </header>
 
       {feedback ? (
         <div
-          className="admin-settings__feedback"
-          role="status"
+          className={`admin-settings__feedback admin-settings__feedback--${feedback.type}`}
+          role={
+            feedback.type === "error"
+              ? "alert"
+              : "status"
+          }
         >
-          <CheckCircle2 size={17} />
-          {feedback}
+          {feedback.type === "success" ? (
+            <CheckCircle2 size={17} />
+          ) : (
+            <AlertCircle size={17} />
+          )}
+
+          {feedback.message}
         </div>
       ) : null}
 
@@ -279,15 +576,22 @@ function AdminSettings() {
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+          const isActive =
+            activeTab === tab.id;
 
           return (
             <button
               key={tab.id}
               type="button"
-              className={isActive ? "active" : ""}
-              aria-current={isActive ? "page" : undefined}
-              onClick={() => setActiveTab(tab.id)}
+              className={
+                isActive ? "active" : ""
+              }
+              aria-current={
+                isActive ? "page" : undefined
+              }
+              onClick={() =>
+                setActiveTab(tab.id)
+              }
             >
               <Icon size={17} />
               <span>{tab.label}</span>
@@ -305,10 +609,33 @@ function AdminSettings() {
               description="Basic information displayed across the public website."
             >
               <div className="admin-settings__grid admin-settings__grid--two">
-                <Input label="Festival name" name="festivalName" value={settings.festivalName} onChange={handleInputChange} />
-                <Input label="Tagline" name="tagline" value={settings.tagline} onChange={handleInputChange} />
-                <Input label="Location" name="location" value={settings.location} onChange={handleInputChange} />
-                <Input label="Venue" name="venue" value={settings.venue} onChange={handleInputChange} />
+                <Input
+                  label="Festival name"
+                  name="festivalName"
+                  value={settings.festivalName}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Tagline"
+                  name="tagline"
+                  value={settings.tagline}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Location"
+                  name="location"
+                  value={settings.location}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Venue"
+                  name="venue"
+                  value={settings.venue}
+                  onChange={handleInputChange}
+                />
               </div>
             </SettingsSection>
 
@@ -318,22 +645,77 @@ function AdminSettings() {
               description="Control festival dates and regional defaults."
             >
               <div className="admin-settings__grid admin-settings__grid--three">
-                <Input label="Start date" name="startDate" type="date" value={settings.startDate} onChange={handleInputChange} />
-                <Input label="End date" name="endDate" type="date" value={settings.endDate} onChange={handleInputChange} />
-                <Select label="Timezone" name="timezone" value={settings.timezone} onChange={handleInputChange}>
-                  <option value="Asia/Bangkok">Asia/Bangkok</option>
-                  <option value="Europe/Paris">Europe/Paris</option>
-                  <option value="Africa/Tunis">Africa/Tunis</option>
+                <Input
+                  label="Start date"
+                  name="startDate"
+                  type="date"
+                  value={settings.startDate}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="End date"
+                  name="endDate"
+                  type="date"
+                  value={settings.endDate}
+                  onChange={handleInputChange}
+                />
+
+                <Select
+                  label="Timezone"
+                  name="timezone"
+                  value={settings.timezone}
+                  onChange={handleInputChange}
+                >
+                  <option value="Asia/Bangkok">
+                    Asia/Bangkok
+                  </option>
+
+                  <option value="Europe/Paris">
+                    Europe/Paris
+                  </option>
+
+                  <option value="Africa/Tunis">
+                    Africa/Tunis
+                  </option>
                 </Select>
-                <Select label="Festival status" name="status" value={settings.status} onChange={handleInputChange}>
-                  <option value="UPCOMING">Upcoming</option>
-                  <option value="LIVE">Live</option>
-                  <option value="FINISHED">Finished</option>
+
+                <Select
+                  label="Festival status"
+                  name="festivalStatus"
+                  value={settings.festivalStatus}
+                  onChange={handleInputChange}
+                >
+                  <option value="UPCOMING">
+                    Upcoming
+                  </option>
+
+                  <option value="LIVE">
+                    Live
+                  </option>
+
+                  <option value="FINISHED">
+                    Finished
+                  </option>
                 </Select>
-                <Select label="Default language" name="defaultLanguage" value={settings.defaultLanguage} onChange={handleInputChange}>
-                  <option value="English">English</option>
-                  <option value="French">French</option>
-                  <option value="Thai">Thai</option>
+
+                <Select
+                  label="Default language"
+                  name="defaultLanguage"
+                  value={settings.defaultLanguage}
+                  onChange={handleInputChange}
+                >
+                  <option value="English">
+                    English
+                  </option>
+
+                  <option value="French">
+                    French
+                  </option>
+
+                  <option value="Thai">
+                    Thai
+                  </option>
                 </Select>
               </div>
             </SettingsSection>
@@ -363,13 +745,51 @@ function AdminSettings() {
               description="Public contact details shown across the website."
             >
               <div className="admin-settings__grid admin-settings__grid--two">
-                <Input label="Public email" name="publicEmail" type="email" value={settings.publicEmail} onChange={handleInputChange} />
-                <Input label="Support email" name="supportEmail" type="email" value={settings.supportEmail} onChange={handleInputChange} />
-                <Input label="Phone number" name="phoneNumber" value={settings.phoneNumber} onChange={handleInputChange} />
-                <Input label="WhatsApp number" name="whatsappNumber" value={settings.whatsappNumber} onChange={handleInputChange} />
+                <Input
+                  label="Public email"
+                  name="publicEmail"
+                  type="email"
+                  value={settings.publicEmail}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Support email"
+                  name="supportEmail"
+                  type="email"
+                  value={settings.supportEmail}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Phone number"
+                  name="phoneNumber"
+                  value={settings.phoneNumber}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="WhatsApp number"
+                  name="whatsappNumber"
+                  value={settings.whatsappNumber}
+                  onChange={handleInputChange}
+                />
               </div>
-              <Textarea label="Address" name="address" value={settings.address} onChange={handleInputChange} />
-              <Input label="Google Maps URL" name="googleMapsUrl" type="url" value={settings.googleMapsUrl} onChange={handleInputChange} />
+
+              <Textarea
+                label="Address"
+                name="address"
+                value={settings.address}
+                onChange={handleInputChange}
+              />
+
+              <Input
+                label="Google Maps URL"
+                name="googleMapsUrl"
+                type="url"
+                value={settings.googleMapsUrl}
+                onChange={handleInputChange}
+              />
             </SettingsSection>
 
             <SettingsSection
@@ -380,9 +800,14 @@ function AdminSettings() {
               <SwitchRow
                 title="Enable contact form"
                 description="Allow visitors to send enquiries from the public contact page."
-                checked={settings.contactFormEnabled}
+                checked={
+                  settings.contactFormEnabled
+                }
                 onChange={(checked) =>
-                  updateField("contactFormEnabled", checked)
+                  updateField(
+                    "contactFormEnabled",
+                    checked,
+                  )
                 }
               />
             </SettingsSection>
@@ -396,18 +821,58 @@ function AdminSettings() {
             description="Links to the festival's official social profiles."
           >
             <div className="admin-settings__grid admin-settings__grid--two">
-              <Input label="Instagram" name="instagramUrl" type="url" value={settings.instagramUrl} onChange={handleInputChange} />
-              <Input label="Facebook" name="facebookUrl" type="url" value={settings.facebookUrl} onChange={handleInputChange} />
-              <Input label="TikTok" name="tiktokUrl" type="url" value={settings.tiktokUrl} onChange={handleInputChange} />
-              <Input label="YouTube" name="youtubeUrl" type="url" value={settings.youtubeUrl} onChange={handleInputChange} />
-              <Input label="Spotify" name="spotifyUrl" type="url" value={settings.spotifyUrl} onChange={handleInputChange} />
+              <Input
+                label="Instagram"
+                name="instagramUrl"
+                type="url"
+                value={settings.instagramUrl}
+                onChange={handleInputChange}
+              />
+
+              <Input
+                label="Facebook"
+                name="facebookUrl"
+                type="url"
+                value={settings.facebookUrl}
+                onChange={handleInputChange}
+              />
+
+              <Input
+                label="TikTok"
+                name="tiktokUrl"
+                type="url"
+                value={settings.tiktokUrl}
+                onChange={handleInputChange}
+              />
+
+              <Input
+                label="YouTube"
+                name="youtubeUrl"
+                type="url"
+                value={settings.youtubeUrl}
+                onChange={handleInputChange}
+              />
+
+              <Input
+                label="Spotify"
+                name="spotifyUrl"
+                type="url"
+                value={settings.spotifyUrl}
+                onChange={handleInputChange}
+              />
             </div>
+
             <SwitchRow
               title="Show social links in footer"
               description="Display available social links in the public footer."
-              checked={settings.showSocialLinksInFooter}
+              checked={
+                settings.showSocialLinksInFooter
+              }
               onChange={(checked) =>
-                updateField("showSocialLinksInFooter", checked)
+                updateField(
+                  "showSocialLinksInFooter",
+                  checked,
+                )
               }
             />
           </SettingsSection>
@@ -423,29 +888,82 @@ function AdminSettings() {
               <SwitchRow
                 title="Enable AI assistant"
                 description="Show the assistant on supported public pages."
-                checked={settings.assistantEnabled}
+                checked={
+                  settings.assistantEnabled
+                }
                 onChange={(checked) =>
-                  updateField("assistantEnabled", checked)
+                  updateField(
+                    "assistantEnabled",
+                    checked,
+                  )
                 }
               />
+
               <div className="admin-settings__grid admin-settings__grid--two">
-                <Input label="Assistant name" name="assistantName" value={settings.assistantName} onChange={handleInputChange} />
-                <Input label="Input placeholder" name="assistantPlaceholder" value={settings.assistantPlaceholder} onChange={handleInputChange} />
+                <Input
+                  label="Assistant name"
+                  name="assistantName"
+                  value={settings.assistantName}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Input placeholder"
+                  name="assistantPlaceholder"
+                  value={
+                    settings.assistantPlaceholder
+                  }
+                  onChange={handleInputChange}
+                />
               </div>
-              <Textarea label="Welcome message" name="assistantWelcomeMessage" value={settings.assistantWelcomeMessage} onChange={handleInputChange} />
-              <Textarea label="Offline message" name="assistantOfflineMessage" value={settings.assistantOfflineMessage} onChange={handleInputChange} />
-              <Input label="Escalation email" name="escalationEmail" type="email" value={settings.escalationEmail} onChange={handleInputChange} helperText="Used when a visitor needs human support." />
+
+              <Textarea
+                label="Welcome message"
+                name="assistantWelcomeMessage"
+                value={
+                  settings.assistantWelcomeMessage
+                }
+                onChange={handleInputChange}
+              />
+
+              <Textarea
+                label="Offline message"
+                name="assistantOfflineMessage"
+                value={
+                  settings.assistantOfflineMessage
+                }
+                onChange={handleInputChange}
+              />
+
+              <Input
+                label="Escalation email"
+                name="escalationEmail"
+                type="email"
+                value={settings.escalationEmail}
+                onChange={handleInputChange}
+                helperText="Used when a visitor needs human support."
+              />
             </SettingsSection>
 
             <div className="admin-settings__connection-card">
               <div>
                 <Sparkles size={18} />
+
                 <div>
-                  <strong>AI service connected</strong>
-                  <span>The assistant is ready to receive festival knowledge.</span>
+                  <strong>
+                    AI service connected
+                  </strong>
+
+                  <span>
+                    The assistant is ready to
+                    receive festival knowledge.
+                  </span>
                 </div>
               </div>
-              <span className="admin-settings__connection-status">Connected</span>
+
+              <span className="admin-settings__connection-status">
+                Connected
+              </span>
             </div>
           </>
         ) : null}
@@ -457,12 +975,89 @@ function AdminSettings() {
             description="Enable or disable public website sections."
           >
             <div className="admin-settings__feature-list">
-              <SwitchRow title="Events page" description="Show published festival events." checked={settings.eventsPageEnabled} onChange={(checked) => updateField("eventsPageEnabled", checked)} />
-              <SwitchRow title="Tickets page" description="Allow visitors to view ticket information." checked={settings.ticketsPageEnabled} onChange={(checked) => updateField("ticketsPageEnabled", checked)} />
-              <SwitchRow title="Experience page" description="Display the festival experience content." checked={settings.experiencePageEnabled} onChange={(checked) => updateField("experiencePageEnabled", checked)} />
-              <SwitchRow title="Gallery page" description="Show published festival images." checked={settings.galleryPageEnabled} onChange={(checked) => updateField("galleryPageEnabled", checked)} />
-              <SwitchRow title="FAQ page" description="Display frequently asked questions." checked={settings.faqPageEnabled} onChange={(checked) => updateField("faqPageEnabled", checked)} />
-              <SwitchRow title="Newsletter" description="Show the newsletter subscription section." checked={settings.newsletterEnabled} onChange={(checked) => updateField("newsletterEnabled", checked)} />
+              <SwitchRow
+                title="Events page"
+                description="Show published festival events."
+                checked={
+                  settings.eventsPageEnabled
+                }
+                onChange={(checked) =>
+                  updateField(
+                    "eventsPageEnabled",
+                    checked,
+                  )
+                }
+              />
+
+              <SwitchRow
+                title="Tickets page"
+                description="Allow visitors to view ticket information."
+                checked={
+                  settings.ticketsPageEnabled
+                }
+                onChange={(checked) =>
+                  updateField(
+                    "ticketsPageEnabled",
+                    checked,
+                  )
+                }
+              />
+
+              <SwitchRow
+                title="Experience page"
+                description="Display the festival experience content."
+                checked={
+                  settings.experiencePageEnabled
+                }
+                onChange={(checked) =>
+                  updateField(
+                    "experiencePageEnabled",
+                    checked,
+                  )
+                }
+              />
+
+              <SwitchRow
+                title="Gallery page"
+                description="Show published festival images."
+                checked={
+                  settings.galleryPageEnabled
+                }
+                onChange={(checked) =>
+                  updateField(
+                    "galleryPageEnabled",
+                    checked,
+                  )
+                }
+              />
+
+              <SwitchRow
+                title="FAQ page"
+                description="Display frequently asked questions."
+                checked={
+                  settings.faqPageEnabled
+                }
+                onChange={(checked) =>
+                  updateField(
+                    "faqPageEnabled",
+                    checked,
+                  )
+                }
+              />
+
+              <SwitchRow
+                title="Newsletter"
+                description="Show the newsletter subscription section."
+                checked={
+                  settings.newsletterEnabled
+                }
+                onChange={(checked) =>
+                  updateField(
+                    "newsletterEnabled",
+                    checked,
+                  )
+                }
+              />
             </div>
           </SettingsSection>
         ) : null}
@@ -475,8 +1070,21 @@ function AdminSettings() {
               description="Control the visual accents used across the website."
             >
               <div className="admin-settings__grid admin-settings__grid--two">
-                <ColorInput label="Primary accent" name="primaryAccent" value={settings.primaryAccent} onChange={handleInputChange} />
-                <ColorInput label="Secondary accent" name="secondaryAccent" value={settings.secondaryAccent} onChange={handleInputChange} />
+                <ColorInput
+                  label="Primary accent"
+                  name="primaryAccent"
+                  value={settings.primaryAccent}
+                  onChange={handleInputChange}
+                />
+
+                <ColorInput
+                  label="Secondary accent"
+                  name="secondaryAccent"
+                  value={
+                    settings.secondaryAccent
+                  }
+                  onChange={handleInputChange}
+                />
               </div>
             </SettingsSection>
 
@@ -486,12 +1094,50 @@ function AdminSettings() {
               description="Logo, favicon, and sharing image used throughout the website."
             >
               <div className="admin-settings__grid admin-settings__grid--two">
-                <Input label="Main logo URL" name="logoUrl" value={settings.logoUrl} onChange={handleInputChange} />
-                <Input label="Compact logo URL" name="compactLogoUrl" value={settings.compactLogoUrl} onChange={handleInputChange} />
-                <Input label="Favicon URL" name="faviconUrl" value={settings.faviconUrl} onChange={handleInputChange} />
-                <Input label="Social sharing image" name="socialImageUrl" value={settings.socialImageUrl} onChange={handleInputChange} />
+                <Input
+                  label="Main logo URL"
+                  name="logoUrl"
+                  value={settings.logoUrl}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Compact logo URL"
+                  name="compactLogoUrl"
+                  value={settings.compactLogoUrl}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Favicon URL"
+                  name="faviconUrl"
+                  value={settings.faviconUrl}
+                  onChange={handleInputChange}
+                />
+
+                <Input
+                  label="Social sharing image"
+                  name="socialImageUrl"
+                  value={settings.socialImageUrl}
+                  onChange={handleInputChange}
+                />
               </div>
-              <Input label="Footer copyright" name="footerCopyright" value={settings.footerCopyright} onChange={handleInputChange} />
+
+              <Textarea
+                label="Footer description"
+                name="footerDescription"
+                value={
+                  settings.footerDescription
+                }
+                onChange={handleInputChange}
+              />
+
+              <Input
+                label="Footer copyright"
+                name="footerCopyright"
+                value={settings.footerCopyright}
+                onChange={handleInputChange}
+              />
             </SettingsSection>
           </>
         ) : null}
@@ -519,11 +1165,13 @@ function SettingsSection({
         <span className="admin-settings__section-icon">
           {icon}
         </span>
+
         <div>
           <h2>{title}</h2>
           <p>{description}</p>
         </div>
       </div>
+
       <div className="admin-settings__section-content">
         {children}
       </div>
@@ -531,9 +1179,16 @@ function SettingsSection({
   );
 }
 
+type StringFieldName = {
+  [Key in keyof SettingsForm]:
+    SettingsForm[Key] extends string
+      ? Key
+      : never;
+}[keyof SettingsForm];
+
 type InputProps = {
   label: string;
-  name: keyof SettingsForm;
+  name: StringFieldName;
   value: string;
   type?: string;
   helperText?: string;
@@ -553,20 +1208,24 @@ function Input({
   return (
     <label className="admin-settings__field">
       <span>{label}</span>
+
       <input
         name={name}
         type={type}
         value={value}
         onChange={onChange}
       />
-      {helperText ? <small>{helperText}</small> : null}
+
+      {helperText ? (
+        <small>{helperText}</small>
+      ) : null}
     </label>
   );
 }
 
 type TextareaProps = {
   label: string;
-  name: keyof SettingsForm;
+  name: StringFieldName;
   value: string;
   onChange: (
     event: ChangeEvent<HTMLTextAreaElement>,
@@ -582,6 +1241,7 @@ function Textarea({
   return (
     <label className="admin-settings__field">
       <span>{label}</span>
+
       <textarea
         name={name}
         value={value}
@@ -593,7 +1253,7 @@ function Textarea({
 
 type SelectProps = {
   label: string;
-  name: keyof SettingsForm;
+  name: StringFieldName;
   value: string;
   children: ReactNode;
   onChange: (
@@ -611,6 +1271,7 @@ function Select({
   return (
     <label className="admin-settings__field">
       <span>{label}</span>
+
       <select
         name={name}
         value={value}
@@ -624,7 +1285,7 @@ function Select({
 
 type ColorInputProps = {
   label: string;
-  name: keyof SettingsForm;
+  name: StringFieldName;
   value: string;
   onChange: (
     event: ChangeEvent<HTMLInputElement>,
@@ -640,6 +1301,7 @@ function ColorInput({
   return (
     <label className="admin-settings__field">
       <span>{label}</span>
+
       <div className="admin-settings__color-field">
         <input
           type="color"
@@ -648,6 +1310,7 @@ function ColorInput({
           onChange={onChange}
           aria-label={`${label} color picker`}
         />
+
         <input
           type="text"
           name={name}
@@ -678,6 +1341,7 @@ function SwitchRow({
         <strong>{title}</strong>
         <small>{description}</small>
       </span>
+
       <input
         type="checkbox"
         checked={checked}
@@ -685,6 +1349,7 @@ function SwitchRow({
           onChange(event.target.checked)
         }
       />
+
       <span
         className="admin-settings__switch"
         aria-hidden="true"
