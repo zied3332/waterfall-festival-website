@@ -62,7 +62,10 @@ export type AssistantChatMessage = {
   role: AssistantMessageRole;
   content: string;
   createdAt: string;
+
   suggestions?: string[];
+
+  sources?: AssistantSource[];
 };
 
 export type AssistantConversation = {
