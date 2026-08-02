@@ -1,5 +1,7 @@
 import {
   type FormEvent,
+  useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -53,15 +55,14 @@ function FloatingChat() {
   const [errorMessage, setErrorMessage] =
     useState("");
 
+  const inputRef =
+    useRef<HTMLInputElement>(null);
+
+  const messagesEndRef =
+    useRef<HTMLDivElement>(null);
+
   const { settings } =
     useWebsiteSettings();
-
-  if (
-    settings &&
-    !settings.assistantEnabled
-  ) {
-    return null;
-  }
 
   const festivalName =
     settings?.festivalName?.trim() ||
@@ -83,6 +84,55 @@ function FloatingChat() {
     settings?.assistantOfflineMessage?.trim() ||
     "The assistant is unavailable right now. Please try again later.";
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const animationFrame =
+      window.requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+        });
+      });
+
+    return () => {
+      window.cancelAnimationFrame(
+        animationFrame,
+      );
+    };
+  }, [
+    open,
+    messages,
+    isSending,
+    errorMessage,
+  ]);
+
+  useEffect(() => {
+    if (!open || isSending) {
+      return;
+    }
+
+    const animationFrame =
+      window.requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+
+    return () => {
+      window.cancelAnimationFrame(
+        animationFrame,
+      );
+    };
+  }, [open, isSending]);
+
+  if (
+    settings &&
+    !settings.assistantEnabled
+  ) {
+    return null;
+  }
+
   function toggleChat(): void {
     setOpen((current) => !current);
   }
@@ -98,7 +148,10 @@ function FloatingChat() {
 
     const message = inputValue.trim();
 
-    if (!message || isSending) {
+    if (
+      message.length < 2 ||
+      isSending
+    ) {
       return;
     }
 
@@ -150,13 +203,15 @@ function FloatingChat() {
         error,
       );
 
-      const message =
+      const resolvedErrorMessage =
         error instanceof Error &&
         error.message.trim()
           ? error.message
           : offlineMessage;
 
-      setErrorMessage(message);
+      setErrorMessage(
+        resolvedErrorMessage,
+      );
     } finally {
       setIsSending(false);
     }
@@ -164,17 +219,19 @@ function FloatingChat() {
 
   return (
     <>
-      <div
+      <section
         className={`chat-window ${
           open ? "open" : ""
         }`}
+        role="dialog"
+        aria-label={`${assistantName} chat`}
         aria-hidden={!open}
       >
-        <div className="chat-header">
+        <header className="chat-header">
           <div>
             <h3>{assistantName}</h3>
 
-            <p>
+            <p aria-live="polite">
               {isSending
                 ? "Thinking..."
                 : "Online now"}
@@ -185,17 +242,19 @@ function FloatingChat() {
             type="button"
             onClick={closeChat}
             aria-label="Close assistant"
+            tabIndex={open ? 0 : -1}
           >
             <X
               size={20}
               aria-hidden="true"
             />
           </button>
-        </div>
+        </header>
 
         <div
           className="chat-body"
           aria-live="polite"
+          aria-relevant="additions text"
         >
           <div className="bot-message">
             👋 {welcomeMessage}
@@ -221,7 +280,7 @@ function FloatingChat() {
 
           {isSending && (
             <div
-              className="bot-message"
+              className="bot-message chat-loading-message"
               role="status"
             >
               {assistantName} is preparing an
@@ -237,6 +296,12 @@ function FloatingChat() {
               {errorMessage}
             </div>
           )}
+
+          <div
+            ref={messagesEndRef}
+            className="chat-messages-end"
+            aria-hidden="true"
+          />
         </div>
 
         <form
@@ -246,12 +311,15 @@ function FloatingChat() {
           }
         >
           <input
+            ref={inputRef}
             type="text"
             value={inputValue}
             placeholder={placeholder}
             aria-label={`Message ${assistantName}`}
+            autoComplete="off"
             maxLength={1000}
-            disabled={isSending}
+            disabled={!open || isSending}
+            tabIndex={open ? 0 : -1}
             onChange={(event) => {
               setInputValue(
                 event.target.value,
@@ -266,7 +334,9 @@ function FloatingChat() {
           <button
             type="submit"
             aria-label="Send message"
+            tabIndex={open ? 0 : -1}
             disabled={
+              !open ||
               isSending ||
               inputValue.trim().length < 2
             }
@@ -277,7 +347,7 @@ function FloatingChat() {
             />
           </button>
         </form>
-      </div>
+      </section>
 
       <button
         type="button"
