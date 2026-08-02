@@ -141,12 +141,10 @@ function FloatingChat() {
     setOpen(false);
   }
 
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
+  async function sendMessage(
+    rawMessage: string,
   ): Promise<void> {
-    event.preventDefault();
-
-    const message = inputValue.trim();
+    const message = rawMessage.trim();
 
     if (
       message.length < 2 ||
@@ -191,6 +189,8 @@ function FloatingChat() {
         content: response.answer,
         createdAt:
           new Date().toISOString(),
+        suggestions:
+          response.suggestions,
       };
 
       setMessages((currentMessages) => [
@@ -215,6 +215,20 @@ function FloatingChat() {
     } finally {
       setIsSending(false);
     }
+  }
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ): Promise<void> {
+    event.preventDefault();
+
+    await sendMessage(inputValue);
+  }
+
+  async function handleSuggestionClick(
+    suggestion: string,
+  ): Promise<void> {
+    await sendMessage(suggestion);
   }
 
   return (
@@ -268,13 +282,46 @@ function FloatingChat() {
           {messages.map((message) => (
             <div
               key={message.id}
-              className={
-                message.role === "USER"
-                  ? "user-message"
-                  : "bot-message"
-              }
+              className="chat-message-group"
             >
-              {message.content}
+              <div
+                className={
+                  message.role === "USER"
+                    ? "user-message"
+                    : "bot-message"
+                }
+              >
+                {message.content}
+              </div>
+
+              {message.role ===
+                "ASSISTANT" &&
+                message.suggestions &&
+                message.suggestions.length >
+                  0 && (
+                  <div
+                    className="chat-suggestions"
+                    aria-label="Suggested questions"
+                  >
+                    {message.suggestions.map(
+                      (suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          className="chat-suggestion"
+                          disabled={isSending}
+                          onClick={() =>
+                            void handleSuggestionClick(
+                              suggestion,
+                            )
+                          }
+                        >
+                          {suggestion}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                )}
             </div>
           ))}
 
