@@ -20,7 +20,9 @@ type TicketCardProps = {
   soldOut?: boolean;
 };
 
-function getNumericPrice(price: string): string {
+function getNumericPrice(
+  price: string,
+): string {
   return (
     price.replace(/[^\d.,]/g, "").trim() ||
     price
@@ -45,24 +47,24 @@ function TicketCard({
         : "Available";
 
   const cardClassName = [
-    "ticket-card",
+    "ticket-preview-card",
     popular
-      ? "ticket-card--popular"
+      ? "ticket-preview-card--popular"
       : "",
     soldOut
-      ? "ticket-card--sold-out"
+      ? "ticket-preview-card--sold-out"
       : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   const statusClassName = [
-    "ticket-card__status",
+    "ticket-preview-card__status",
     soldOut
-      ? "ticket-card__status--sold"
+      ? "ticket-preview-card__status--sold"
       : "",
     popular
-      ? "ticket-card__status--popular"
+      ? "ticket-preview-card__status--popular"
       : "",
   ]
     .filter(Boolean)
@@ -71,7 +73,7 @@ function TicketCard({
   return (
     <article className={cardClassName}>
       {popular && !soldOut && (
-        <div className="ticket-card__popular-ribbon">
+        <div className="ticket-preview-card__popular-ribbon">
           <Zap
             size={13}
             fill="currentColor"
@@ -83,17 +85,17 @@ function TicketCard({
       )}
 
       <div
-        className="ticket-card__decorations"
+        className="ticket-preview-card__decorations"
         aria-hidden="true"
       >
-        <span className="ticket-card__circle ticket-card__circle--one" />
+        <span className="ticket-preview-card__circle ticket-preview-card__circle--one" />
 
-        <span className="ticket-card__circle ticket-card__circle--two" />
+        <span className="ticket-preview-card__circle ticket-preview-card__circle--two" />
       </div>
 
-      <div className="ticket-card__top">
-        <div className="ticket-card__type">
-          <span className="ticket-card__type-icon">
+      <div className="ticket-preview-card__top">
+        <div className="ticket-preview-card__type">
+          <span className="ticket-preview-card__type-icon">
             <Ticket
               size={16}
               aria-hidden="true"
@@ -108,47 +110,47 @@ function TicketCard({
         </span>
       </div>
 
-      <div className="ticket-card__main">
-        <div className="ticket-card__heading">
-          <h3 className="ticket-card__title">
+      <div className="ticket-preview-card__main">
+        <div className="ticket-preview-card__heading">
+          <h3 className="ticket-preview-card__title">
             {name}
           </h3>
 
-          <div className="ticket-card__price-wrapper">
-            <span className="ticket-card__currency">
+          <div className="ticket-preview-card__price-wrapper">
+            <span className="ticket-preview-card__currency">
               ฿
             </span>
 
-            <p className="ticket-card__price">
+            <p className="ticket-preview-card__price">
               {getNumericPrice(price)}
             </p>
 
-            <span className="ticket-card__price-label">
+            <span className="ticket-preview-card__price-label">
               per person
             </span>
           </div>
 
-          <p className="ticket-card__description">
+          <p className="ticket-preview-card__description">
             {description}
           </p>
         </div>
 
-        <div className="ticket-card__divider">
-          <span className="ticket-card__cut ticket-card__cut--left" />
+        <div className="ticket-preview-card__divider">
+          <span className="ticket-preview-card__cut ticket-preview-card__cut--left" />
 
-          <span className="ticket-card__divider-line" />
+          <span className="ticket-preview-card__divider-line" />
 
-          <span className="ticket-card__cut ticket-card__cut--right" />
+          <span className="ticket-preview-card__cut ticket-preview-card__cut--right" />
         </div>
 
-        <div className="ticket-card__body">
-          <p className="ticket-card__features-label">
+        <div className="ticket-preview-card__body">
+          <p className="ticket-preview-card__features-label">
             This pass includes
           </p>
 
-          <ul className="ticket-card__features">
+          <ul className="ticket-preview-card__features">
             <li>
-              <span className="ticket-card__check">
+              <span className="ticket-preview-card__check">
                 <Check
                   size={13}
                   strokeWidth={3}
@@ -156,11 +158,13 @@ function TicketCard({
                 />
               </span>
 
-              <span>Official online festival ticket</span>
+              <span>
+                Official online festival ticket
+              </span>
             </li>
 
             <li>
-              <span className="ticket-card__check">
+              <span className="ticket-preview-card__check">
                 <Check
                   size={13}
                   strokeWidth={3}
@@ -172,7 +176,7 @@ function TicketCard({
             </li>
 
             <li>
-              <span className="ticket-card__check">
+              <span className="ticket-preview-card__check">
                 <Check
                   size={13}
                   strokeWidth={3}
@@ -184,9 +188,9 @@ function TicketCard({
             </li>
           </ul>
 
-          <div className="ticket-card__availability-slot">
+          <div className="ticket-preview-card__availability-slot">
             {availableUntil ? (
-              <div className="ticket-card__availability">
+              <div className="ticket-preview-card__availability">
                 <Clock3
                   size={15}
                   aria-hidden="true"
@@ -200,7 +204,7 @@ function TicketCard({
                 </span>
               </div>
             ) : (
-              <div className="ticket-card__availability ticket-card__availability--default">
+              <div className="ticket-preview-card__availability ticket-preview-card__availability--default">
                 <Ticket
                   size={15}
                   aria-hidden="true"
@@ -217,19 +221,21 @@ function TicketCard({
         </div>
       </div>
 
-      <div className="ticket-card__footer">
+      <div className="ticket-preview-card__footer">
         {soldOut ? (
           <button
             type="button"
-            className="ticket-card__button"
+            className="ticket-preview-card__button"
             disabled
           >
-            <span>Currently Unavailable</span>
+            <span>
+              Currently Unavailable
+            </span>
           </button>
         ) : (
           <Link
             to="/tickets"
-            className="ticket-card__button"
+            className="ticket-preview-card__button"
             aria-label={`View ticket options for ${name}`}
           >
             <span>Choose This Pass</span>
