@@ -6,10 +6,20 @@ import {
 } from "react";
 
 import {
+  CalendarDays,
+  CircleHelp,
+  ExternalLink,
+  MapPin,
   MessageCircle,
   Send,
+  Sparkles,
+  Ticket,
   X,
 } from "lucide-react";
+
+import {
+  Link,
+} from "react-router-dom";
 
 import { useWebsiteSettings } from "../../context/WebsiteSettingsContext";
 
@@ -17,6 +27,8 @@ import { sendAssistantMessage } from "../../services/assistant.service";
 
 import type {
   AssistantChatMessage,
+  AssistantSource,
+  AssistantSourceType,
 } from "../../types/assistant";
 
 import "./floating-chat.css";
@@ -32,6 +44,71 @@ function createMessageId(): string {
   return `${Date.now()}-${Math.random()
     .toString(36)
     .slice(2)}`;
+}
+
+function isExternalUrl(
+  url: string,
+): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
+function getSourceLabel(
+  sourceType: AssistantSourceType,
+): string {
+  switch (sourceType) {
+    case "EVENT":
+      return "Event";
+
+    case "TICKET":
+      return "Ticket";
+
+    case "FAQ":
+      return "FAQ";
+
+    case "SETTINGS":
+      return "Festival info";
+
+    case "EXPERIENCE":
+      return "Experience";
+
+    default:
+      return "Source";
+  }
+}
+
+function getSourceIcon(
+  sourceType: AssistantSourceType,
+) {
+  switch (sourceType) {
+    case "EVENT":
+      return CalendarDays;
+
+    case "TICKET":
+      return Ticket;
+
+    case "FAQ":
+      return CircleHelp;
+
+    case "SETTINGS":
+      return MapPin;
+
+    case "EXPERIENCE":
+      return Sparkles;
+
+    default:
+      return ExternalLink;
+  }
+}
+
+function getSourceKey(
+  source: AssistantSource,
+): string {
+  return [
+    source.type,
+    source.id ?? "",
+    source.url ?? "",
+    source.label,
+  ].join("-");
 }
 
 function FloatingChat() {
@@ -191,6 +268,8 @@ function FloatingChat() {
           new Date().toISOString(),
         suggestions:
           response.suggestions,
+        sources:
+          response.sources,
       };
 
       setMessages((currentMessages) => [
@@ -293,6 +372,101 @@ function FloatingChat() {
               >
                 {message.content}
               </div>
+
+              {message.role ===
+                "ASSISTANT" &&
+                message.sources &&
+                message.sources.length >
+                  0 && (
+                  <div
+                    className="chat-sources"
+                    aria-label="Answer sources"
+                  >
+                    {message.sources.map(
+                      (source) => {
+                        const SourceIcon =
+                          getSourceIcon(
+                            source.type,
+                          );
+
+                        const sourceContent = (
+                          <>
+                            <span className="chat-source__icon">
+                              <SourceIcon
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            </span>
+
+                            <span className="chat-source__content">
+                              <span className="chat-source__type">
+                                {getSourceLabel(
+                                  source.type,
+                                )}
+                              </span>
+
+                              <span className="chat-source__label">
+                                {source.label}
+                              </span>
+                            </span>
+
+                            <ExternalLink
+                              className="chat-source__external-icon"
+                              size={14}
+                              aria-hidden="true"
+                            />
+                          </>
+                        );
+
+                        if (!source.url) {
+                          return (
+                            <div
+                              key={getSourceKey(
+                                source,
+                              )}
+                              className="chat-source chat-source--static"
+                            >
+                              {sourceContent}
+                            </div>
+                          );
+                        }
+
+                        if (
+                          isExternalUrl(
+                            source.url,
+                          )
+                        ) {
+                          return (
+                            <a
+                              key={getSourceKey(
+                                source,
+                              )}
+                              href={source.url}
+                              className="chat-source"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {sourceContent}
+                            </a>
+                          );
+                        }
+
+                        return (
+                          <Link
+                            key={getSourceKey(
+                              source,
+                            )}
+                            to={source.url}
+                            className="chat-source"
+                            onClick={closeChat}
+                          >
+                            {sourceContent}
+                          </Link>
+                        );
+                      },
+                    )}
+                  </div>
+                )}
 
               {message.role ===
                 "ASSISTANT" &&
