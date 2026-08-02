@@ -1,12 +1,14 @@
 import {
   type FormEvent,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
 import {
   CalendarDays,
+  ChevronRight,
   CircleHelp,
   ExternalLink,
   MapPin,
@@ -15,11 +17,10 @@ import {
   Sparkles,
   Ticket,
   X,
+  type LucideIcon,
 } from "lucide-react";
 
-import {
-  Link,
-} from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { useWebsiteSettings } from "../../context/WebsiteSettingsContext";
 
@@ -32,6 +33,8 @@ import type {
 } from "../../types/assistant";
 
 import "./floating-chat.css";
+
+const MAX_VISIBLE_SOURCES = 3;
 
 function createMessageId(): string {
   if (
@@ -46,39 +49,99 @@ function createMessageId(): string {
     .slice(2)}`;
 }
 
+function formatMessageTime(
+  value: string,
+): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(
+    undefined,
+    {
+      hour: "numeric",
+      minute: "2-digit",
+    },
+  ).format(date);
+}
+
 function isExternalUrl(
   url: string,
 ): boolean {
   return /^https?:\/\//i.test(url);
 }
 
-function getSourceLabel(
-  sourceType: AssistantSourceType,
-): string {
-  switch (sourceType) {
+function getSourcePriority(
+  source: AssistantSource,
+): number {
+  switch (source.type) {
     case "EVENT":
-      return "Event";
+      return 1;
 
     case "TICKET":
-      return "Ticket";
+      return 2;
 
     case "FAQ":
-      return "FAQ";
-
-    case "SETTINGS":
-      return "Festival info";
+      return 3;
 
     case "EXPERIENCE":
-      return "Experience";
+      return 4;
+
+    case "SETTINGS":
+      return 5;
 
     default:
-      return "Source";
+      return 10;
+  }
+}
+
+function getSourceActionLabel(
+  source: AssistantSource,
+): string {
+  switch (source.type) {
+    case "EVENT":
+      return "View event";
+
+    case "TICKET":
+      return source.url &&
+        isExternalUrl(source.url)
+        ? "Buy ticket"
+        : "View tickets";
+
+    case "FAQ":
+      return "Read FAQ";
+
+    case "EXPERIENCE":
+      return "Explore experience";
+
+    case "SETTINGS":
+      if (
+        source.url?.includes("maps") ||
+        source.url?.includes("google")
+      ) {
+        return "Open map";
+      }
+
+      if (source.url === "/contact") {
+        return "Contact festival";
+      }
+
+      if (source.url === "/venue") {
+        return "Venue information";
+      }
+
+      return "Festival information";
+
+    default:
+      return "Open link";
   }
 }
 
 function getSourceIcon(
   sourceType: AssistantSourceType,
-) {
+): LucideIcon {
   switch (sourceType) {
     case "EVENT":
       return CalendarDays;
@@ -109,6 +172,48 @@ function getSourceKey(
     source.url ?? "",
     source.label,
   ].join("-");
+}
+
+function prepareSources(
+  sources: AssistantSource[] | undefined,
+): AssistantSource[] {
+  if (!sources?.length) {
+    return [];
+  }
+
+  const uniqueSources =
+    new Map<string, AssistantSource>();
+
+  for (const source of sources) {
+    if (!source.url) {
+      continue;
+    }
+
+    if (
+      source.type === "SETTINGS" &&
+      source.url === "/"
+    ) {
+      continue;
+    }
+
+    const key = [
+      source.type,
+      source.id ?? "",
+      source.url,
+    ].join(":");
+
+    if (!uniqueSources.has(key)) {
+      uniqueSources.set(key, source);
+    }
+  }
+
+  return [...uniqueSources.values()]
+    .sort(
+      (firstSource, secondSource) =>
+        getSourcePriority(firstSource) -
+        getSourcePriority(secondSource),
+    )
+    .slice(0, MAX_VISIBLE_SOURCES);
 }
 
 function FloatingChat() {
@@ -160,6 +265,16 @@ function FloatingChat() {
   const offlineMessage =
     settings?.assistantOfflineMessage?.trim() ||
     "The assistant is unavailable right now. Please try again later.";
+
+  const latestAssistantMessageId =
+    useMemo(() => {
+      return [...messages]
+        .reverse()
+        .find(
+          (message) =>
+            message.role === "ASSISTANT",
+        )?.id;
+    }, [messages]);
 
   useEffect(() => {
     if (!open) {
@@ -310,6 +425,83 @@ function FloatingChat() {
     await sendMessage(suggestion);
   }
 
+  function renderSourceLink(
+    source: AssistantSource,
+  ) {
+    const SourceIcon =
+      getSourceIcon(source.type);
+
+    const content = (
+      <>
+        <span className="assistant-resource__icon">
+          <SourceIcon
+            size={17}
+            aria-hidden="true"
+          />
+        </span>
+
+        <span className="assistant-resource__copy">
+          <strong>
+            {getSourceActionLabel(source)}
+          </strong>
+
+          <small>{source.label}</small>
+        </span>
+
+        {source.url &&
+        isExternalUrl(source.url) ? (
+          <ExternalLink
+            className="assistant-resource__arrow"
+            size={15}
+            aria-hidden="true"
+          />
+        ) : (
+          <ChevronRight
+            className="assistant-resource__arrow"
+            size={16}
+            aria-hidden="true"
+          />
+        )}
+      </>
+    );
+
+    if (!source.url) {
+      return (
+        <div
+          key={getSourceKey(source)}
+          className="assistant-resource assistant-resource--static"
+        >
+          {content}
+        </div>
+      );
+    }
+
+    if (isExternalUrl(source.url)) {
+      return (
+        <a
+          key={getSourceKey(source)}
+          href={source.url}
+          className="assistant-resource"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {content}
+        </a>
+      );
+    }
+
+    return (
+      <Link
+        key={getSourceKey(source)}
+        to={source.url}
+        className="assistant-resource"
+        onClick={closeChat}
+      >
+        {content}
+      </Link>
+    );
+  }
+
   return (
     <>
       <section
@@ -321,14 +513,31 @@ function FloatingChat() {
         aria-hidden={!open}
       >
         <header className="chat-header">
-          <div>
-            <h3>{assistantName}</h3>
+          <div className="chat-header__identity">
+            <span
+              className="chat-header__avatar"
+              aria-hidden="true"
+            >
+              <Sparkles size={19} />
+            </span>
 
-            <p aria-live="polite">
-              {isSending
-                ? "Thinking..."
-                : "Online now"}
-            </p>
+            <div>
+              <h3>{assistantName}</h3>
+
+              <p aria-live="polite">
+                <span
+                  className={`chat-header__status-dot ${
+                    isSending
+                      ? "chat-header__status-dot--thinking"
+                      : ""
+                  }`}
+                />
+
+                {isSending
+                  ? "Thinking..."
+                  : "Online now"}
+              </p>
+            </div>
           </div>
 
           <button
@@ -349,169 +558,177 @@ function FloatingChat() {
           aria-live="polite"
           aria-relevant="additions text"
         >
-          <div className="bot-message">
-            👋 {welcomeMessage}
-          </div>
-
-          <div className="bot-message">
-            Ask me about tickets, events,
-            parking, schedules, or the venue.
-          </div>
-
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className="chat-message-group"
+          <article className="assistant-message">
+            <span
+              className="assistant-message__avatar"
+              aria-hidden="true"
             >
-              <div
-                className={
-                  message.role === "USER"
-                    ? "user-message"
-                    : "bot-message"
-                }
-              >
-                {message.content}
-              </div>
+              <Sparkles size={16} />
+            </span>
 
-              {message.role ===
-                "ASSISTANT" &&
-                message.sources &&
-                message.sources.length >
-                  0 && (
-                  <div
-                    className="chat-sources"
-                    aria-label="Answer sources"
-                  >
-                    {message.sources.map(
-                      (source) => {
-                        const SourceIcon =
-                          getSourceIcon(
-                            source.type,
-                          );
+            <div className="assistant-message__card">
+              <p className="assistant-message__answer">
+                👋 {welcomeMessage}
+              </p>
 
-                        const sourceContent = (
-                          <>
-                            <span className="chat-source__icon">
-                              <SourceIcon
-                                size={16}
-                                aria-hidden="true"
-                              />
-                            </span>
-
-                            <span className="chat-source__content">
-                              <span className="chat-source__type">
-                                {getSourceLabel(
-                                  source.type,
-                                )}
-                              </span>
-
-                              <span className="chat-source__label">
-                                {source.label}
-                              </span>
-                            </span>
-
-                            <ExternalLink
-                              className="chat-source__external-icon"
-                              size={14}
-                              aria-hidden="true"
-                            />
-                          </>
-                        );
-
-                        if (!source.url) {
-                          return (
-                            <div
-                              key={getSourceKey(
-                                source,
-                              )}
-                              className="chat-source chat-source--static"
-                            >
-                              {sourceContent}
-                            </div>
-                          );
-                        }
-
-                        if (
-                          isExternalUrl(
-                            source.url,
-                          )
-                        ) {
-                          return (
-                            <a
-                              key={getSourceKey(
-                                source,
-                              )}
-                              href={source.url}
-                              className="chat-source"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {sourceContent}
-                            </a>
-                          );
-                        }
-
-                        return (
-                          <Link
-                            key={getSourceKey(
-                              source,
-                            )}
-                            to={source.url}
-                            className="chat-source"
-                            onClick={closeChat}
-                          >
-                            {sourceContent}
-                          </Link>
-                        );
-                      },
-                    )}
-                  </div>
-                )}
-
-              {message.role ===
-                "ASSISTANT" &&
-                message.suggestions &&
-                message.suggestions.length >
-                  0 && (
-                  <div
-                    className="chat-suggestions"
-                    aria-label="Suggested questions"
-                  >
-                    {message.suggestions.map(
-                      (suggestion) => (
-                        <button
-                          key={suggestion}
-                          type="button"
-                          className="chat-suggestion"
-                          disabled={isSending}
-                          onClick={() =>
-                            void handleSuggestionClick(
-                              suggestion,
-                            )
-                          }
-                        >
-                          {suggestion}
-                        </button>
-                      ),
-                    )}
-                  </div>
-                )}
+              <p className="assistant-message__answer assistant-message__answer--secondary">
+                Ask me about tickets, events,
+                parking, schedules, or the venue.
+              </p>
             </div>
-          ))}
+          </article>
+
+          {messages.map((message) => {
+            const preparedSources =
+              message.role === "ASSISTANT"
+                ? prepareSources(
+                    message.sources,
+                  )
+                : [];
+
+            const messageTime =
+              formatMessageTime(
+                message.createdAt,
+              );
+
+            if (message.role === "USER") {
+              return (
+                <div
+                  key={message.id}
+                  className="user-message-group"
+                >
+                  <div className="user-message">
+                    {message.content}
+                  </div>
+
+                  {messageTime && (
+                    <span className="chat-message-time chat-message-time--user">
+                      {messageTime}
+                    </span>
+                  )}
+                </div>
+              );
+            }
+
+            const shouldShowSuggestions =
+              message.id ===
+                latestAssistantMessageId &&
+              message.suggestions &&
+              message.suggestions.length > 0;
+
+            return (
+              <article
+                key={message.id}
+                className="assistant-message"
+              >
+                <span
+                  className="assistant-message__avatar"
+                  aria-hidden="true"
+                >
+                  <Sparkles size={16} />
+                </span>
+
+                <div className="assistant-message__card">
+                  <p className="assistant-message__answer">
+                    {message.content}
+                  </p>
+
+                  {preparedSources.length >
+                    0 && (
+                    <div className="assistant-message__section">
+                      <span className="assistant-message__section-label">
+                        <ExternalLink
+                          size={13}
+                          aria-hidden="true"
+                        />
+                        Helpful links
+                      </span>
+
+                      <div className="assistant-message__resources">
+                        {preparedSources.map(
+                          renderSourceLink,
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {shouldShowSuggestions && (
+                    <div className="assistant-message__section">
+                      <span className="assistant-message__section-label">
+                        <CircleHelp
+                          size={14}
+                          aria-hidden="true"
+                        />
+                        You can also ask
+                      </span>
+
+                      <div
+                        className="chat-suggestions"
+                        aria-label="Suggested questions"
+                      >
+                        {message.suggestions?.map(
+                          (suggestion) => (
+                            <button
+                              key={suggestion}
+                              type="button"
+                              className="chat-suggestion"
+                              disabled={isSending}
+                              onClick={() =>
+                                void handleSuggestionClick(
+                                  suggestion,
+                                )
+                              }
+                            >
+                              {suggestion}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {messageTime && (
+                    <span className="chat-message-time">
+                      {messageTime}
+                    </span>
+                  )}
+                </div>
+              </article>
+            );
+          })}
 
           {isSending && (
-            <div
-              className="bot-message chat-loading-message"
+            <article
+              className="assistant-message"
               role="status"
             >
-              {assistantName} is preparing an
-              answer...
-            </div>
+              <span
+                className="assistant-message__avatar"
+                aria-hidden="true"
+              >
+                <Sparkles size={16} />
+              </span>
+
+              <div className="assistant-message__card assistant-message__card--loading">
+                <span>
+                  Let me check that for you
+                </span>
+
+                <span
+                  className="chat-typing-dots"
+                  aria-hidden="true"
+                >
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </div>
+            </article>
           )}
 
           {errorMessage && (
             <div
-              className="bot-message chat-error-message"
+              className="chat-error-message"
               role="alert"
             >
               {errorMessage}
@@ -583,12 +800,12 @@ function FloatingChat() {
       >
         {open ? (
           <X
-            size={28}
+            size={27}
             aria-hidden="true"
           />
         ) : (
           <MessageCircle
-            size={28}
+            size={26}
             aria-hidden="true"
           />
         )}
