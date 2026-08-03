@@ -4,11 +4,13 @@ import {
   LoaderCircle,
   Pencil,
 } from "lucide-react";
+
 import {
   useEffect,
   useMemo,
   useState,
 } from "react";
+
 import {
   Link,
   useNavigate,
@@ -51,6 +53,7 @@ function getErrorMessage(
   }
 
   const apiError = error as ApiError;
+
   const responseMessage =
     apiError.response?.data?.message;
 
@@ -58,11 +61,15 @@ function getErrorMessage(
     return responseMessage.join(" ");
   }
 
-  if (typeof responseMessage === "string") {
+  if (
+    typeof responseMessage === "string"
+  ) {
     return responseMessage;
   }
 
-  if (typeof apiError.message === "string") {
+  if (
+    typeof apiError.message === "string"
+  ) {
     return apiError.message;
   }
 
@@ -79,10 +86,12 @@ function formatDateForInput(
   }
 
   const timezoneOffset =
-    parsedDate.getTimezoneOffset() * 60_000;
+    parsedDate.getTimezoneOffset() *
+    60_000;
 
   return new Date(
-    parsedDate.getTime() - timezoneOffset,
+    parsedDate.getTime() -
+      timezoneOffset,
   )
     .toISOString()
     .slice(0, 16);
@@ -182,20 +191,28 @@ function AdminEventEdit() {
     return {
       title: event.title,
       description: event.description,
+
       date: formatDateForInput(
         event.date,
       ),
+
       location: event.location,
+
+      ticketPurchaseUrl:
+        event.ticketPurchaseUrl ?? "",
+
       capacity:
         event.capacity !== null
           ? String(event.capacity)
           : "",
+
       remainingTickets:
         event.remainingTickets !== null
           ? String(
               event.remainingTickets,
             )
           : "",
+
       status: event.status,
     };
   }, [event]);
@@ -227,7 +244,8 @@ function AdminEventEdit() {
       navigate("/admin/events", {
         replace: true,
         state: {
-          successMessage: `"${eventData.title}" was updated successfully.`,
+          successMessage:
+            `"${eventData.title}" was updated successfully.`,
         },
       });
     } catch (error: unknown) {
@@ -240,6 +258,10 @@ function AdminEventEdit() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleClearSubmitError(): void {
+    setSubmitError("");
   }
 
   if (isLoading) {
@@ -338,8 +360,9 @@ function AdminEventEdit() {
 
             <p className="admin-event-edit__description">
               Update the event details,
-              availability, image and publishing
-              status shown on the public website.
+              ticket link, availability,
+              poster and publishing status
+              shown on the public website.
             </p>
           </div>
         </div>
@@ -353,6 +376,9 @@ function AdminEventEdit() {
         submitLabel="Save changes"
         isSubmitting={isSubmitting}
         errorMessage={submitError}
+        onClearErrorMessage={
+          handleClearSubmitError
+        }
         onSubmit={handleUpdateEvent}
       />
     </section>
