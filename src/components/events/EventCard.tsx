@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import {
   CalendarDays,
   MapPin,
@@ -9,7 +11,6 @@ import "./Events.css";
 
 type EventCardProps = {
   event: Event;
-  onOpen: (event: Event) => void;
 };
 
 function formatEventDate(date: string): string {
@@ -40,91 +41,109 @@ function getEventBadge(date: string): string {
 
 function EventCard({
   event,
-  onOpen,
 }: EventCardProps) {
   const location =
     event.location?.trim() ||
     "Koh Phangan, Thailand";
 
-  function handleOpen(): void {
-    onOpen(event);
-  }
+  const internalEventUrl =
+    `/events/${event.slug}`;
 
-  return (
-    <article className="event-card">
-      <button
-        type="button"
-        className="event-card__link"
-        aria-label={`Open details for ${event.title}`}
-        onClick={handleOpen}
-      >
-        <div className="event-card__poster-wrapper">
-          {event.heroImageUrl ? (
-            <img
-              src={event.heroImageUrl}
-              alt={`${event.title} event poster`}
-              className="event-card__poster"
-              loading="lazy"
-            />
-          ) : (
-            <div className="event-card__poster-placeholder">
-              <CalendarDays
-                size={38}
-                aria-hidden="true"
-              />
+  const ticketPurchaseUrl =
+    event.ticketPurchaseUrl?.trim() || null;
 
-              <span>
-                Event poster coming soon
-              </span>
-            </div>
-          )}
-
-          <div
-            className="event-card__poster-shade"
+  const cardContent = (
+    <div className="event-card__poster-wrapper">
+      {event.heroImageUrl ? (
+        <img
+          src={event.heroImageUrl}
+          alt={`${event.title} event poster`}
+          className="event-card__poster"
+          loading="lazy"
+        />
+      ) : (
+        <div className="event-card__poster-placeholder">
+          <CalendarDays
+            size={38}
             aria-hidden="true"
           />
 
-          <div className="event-card__top">
-            <span className="event-card__badge">
-              {getEventBadge(event.date)}
-            </span>
-
-            <span className="event-card__view-label">
-              View details
-            </span>
-          </div>
-
-          <div className="event-card__summary">
-            <p className="event-card__festival">
-              Waterfall Festival
-            </p>
-
-            <h2 className="event-card__title">
-              {event.title}
-            </h2>
-
-            <div className="event-card__metadata">
-              <span>
-                <CalendarDays
-                  size={15}
-                  aria-hidden="true"
-                />
-
-                {formatEventDate(event.date)}
-              </span>
-
-              <span>
-                <MapPin
-                  size={15}
-                  aria-hidden="true"
-                />
-
-                {location}
-              </span>
-            </div>
-          </div>
+          <span>
+            Event poster coming soon
+          </span>
         </div>
-      </button>
+      )}
+
+      <div
+        className="event-card__poster-shade"
+        aria-hidden="true"
+      />
+
+      <div className="event-card__top">
+        <span className="event-card__badge">
+          {getEventBadge(event.date)}
+        </span>
+
+        <span className="event-card__view-label">
+          {ticketPurchaseUrl
+            ? "Get tickets"
+            : "View event"}
+        </span>
+      </div>
+
+      <div className="event-card__summary">
+        <p className="event-card__festival">
+          Waterfall Festival
+        </p>
+
+        <h2 className="event-card__title">
+          {event.title}
+        </h2>
+
+        <div className="event-card__metadata">
+          <span>
+            <CalendarDays
+              size={15}
+              aria-hidden="true"
+            />
+
+            {formatEventDate(event.date)}
+          </span>
+
+          <span>
+            <MapPin
+              size={15}
+              aria-hidden="true"
+            />
+
+            {location}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <article className="event-card">
+      {ticketPurchaseUrl ? (
+        <a
+          href={ticketPurchaseUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="event-card__link"
+          aria-label={`Buy tickets for ${event.title}`}
+        >
+          {cardContent}
+        </a>
+      ) : (
+        <Link
+          to={internalEventUrl}
+          className="event-card__link"
+          aria-label={`View ${event.title}`}
+        >
+          {cardContent}
+        </Link>
+      )}
     </article>
   );
 }
