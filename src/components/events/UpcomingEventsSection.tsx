@@ -20,6 +20,7 @@ import {
 import { Navigation } from "swiper/modules";
 
 import EventCard from "./EventCard";
+import EventDetailsModal from "./EventDetailsModal";
 
 import { getPublicEvents } from "../../services/events.service";
 import type { Event } from "../../types/event";
@@ -31,7 +32,12 @@ import "./Events.css";
 const EVENT_SKELETON_COUNT = 3;
 
 function UpcomingEventsSection() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] =
+    useState<Event[]>([]);
+
+  const [selectedEvent, setSelectedEvent] =
+    useState<Event | null>(null);
+
   const [isLoading, setIsLoading] =
     useState(true);
 
@@ -61,30 +67,178 @@ function UpcomingEventsSection() {
     void loadEvents();
   }, [loadEvents]);
 
+  function handleOpenEvent(
+    event: Event,
+  ): void {
+    setSelectedEvent(event);
+  }
+
+  function handleCloseEvent(): void {
+    setSelectedEvent(null);
+  }
+
   return (
-    <section className="events-section">
-      <div className="events-section__container">
-        <div className="events-section__header">
-          <div className="events-section__heading">
-            <p className="events-section__label">
-              Festival Calendar
-            </p>
+    <>
+      <section className="events-section">
+        <div className="events-section__container">
+          <div className="events-section__header">
+            <div className="events-section__heading">
+              <p className="events-section__label">
+                Festival Calendar
+              </p>
 
-            <h2 className="events-section__title">
-              Upcoming Events
-            </h2>
+              <h2 className="events-section__title">
+                Upcoming Events
+              </h2>
 
-            <p className="events-section__description">
-              Discover the next Waterfall Festival
-              experiences in Koh Phangan.
-            </p>
+              <p className="events-section__description">
+                Discover the next Waterfall
+                Festival experiences in Koh
+                Phangan.
+              </p>
+            </div>
+
+            {!isLoading &&
+              !error &&
+              events.length > 0 && (
+                <Link
+                  className="events-section__view-all"
+                  to="/events"
+                >
+                  View all events
+
+                  <ArrowRight
+                    size={18}
+                    aria-hidden="true"
+                  />
+                </Link>
+              )}
           </div>
+
+          {isLoading && (
+            <div
+              className="events-section__skeleton-grid"
+              aria-label="Loading upcoming events"
+            >
+              {Array.from({
+                length: EVENT_SKELETON_COUNT,
+              }).map((_, index) => (
+                <div
+                  className="events-card-skeleton"
+                  key={index}
+                  aria-hidden="true"
+                >
+                  <div className="events-card-skeleton__image" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!isLoading && error && (
+            <div className="events-section__message events-section__message--error">
+              <div>
+                <h3>
+                  We couldn’t load the events
+                </h3>
+
+                <p>
+                  Something went wrong while
+                  fetching the latest festival
+                  dates.
+                </p>
+              </div>
+
+              <button
+                className="events-section__retry"
+                type="button"
+                onClick={() =>
+                  void loadEvents()
+                }
+              >
+                <RotateCcw
+                  size={17}
+                  aria-hidden="true"
+                />
+
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {!isLoading &&
+            !error &&
+            events.length === 0 && (
+              <div className="events-section__message">
+                <span
+                  className="events-section__message-icon"
+                  aria-hidden="true"
+                >
+                  <CalendarDays size={24} />
+                </span>
+
+                <div>
+                  <h3>
+                    No upcoming events yet
+                  </h3>
+
+                  <p>
+                    New festival dates will
+                    appear here as soon as they
+                    are announced.
+                  </p>
+                </div>
+              </div>
+            )}
+
+          {!isLoading &&
+            !error &&
+            events.length > 0 && (
+              <Swiper
+                modules={[Navigation]}
+                navigation
+                watchOverflow
+                spaceBetween={18}
+                slidesPerView={1.08}
+                breakpoints={{
+                  480: {
+                    slidesPerView: 1.25,
+                    spaceBetween: 18,
+                  },
+                  640: {
+                    slidesPerView: 1.7,
+                    spaceBetween: 20,
+                  },
+                  768: {
+                    slidesPerView: 2,
+                    spaceBetween: 20,
+                  },
+                  1100: {
+                    slidesPerView: 3,
+                    spaceBetween: 22,
+                  },
+                }}
+                className="events-swiper"
+              >
+                {events.map((event) => (
+                  <SwiperSlide
+                    key={event.id}
+                  >
+                    <EventCard
+                      event={event}
+                      onOpen={
+                        handleOpenEvent
+                      }
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            )}
 
           {!isLoading &&
             !error &&
             events.length > 0 && (
               <Link
-                className="events-section__view-all"
+                className="events-section__mobile-view-all"
                 to="/events"
               >
                 View all events
@@ -96,140 +250,14 @@ function UpcomingEventsSection() {
               </Link>
             )}
         </div>
+      </section>
 
-        {isLoading && (
-          <div
-            className="events-section__skeleton-grid"
-            aria-label="Loading upcoming events"
-          >
-            {Array.from({
-              length: EVENT_SKELETON_COUNT,
-            }).map((_, index) => (
-              <div
-                className="events-card-skeleton"
-                key={index}
-                aria-hidden="true"
-              >
-                <div className="events-card-skeleton__image" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!isLoading && error && (
-          <div className="events-section__message events-section__message--error">
-            <div>
-              <h3>
-                We couldn’t load the events
-              </h3>
-
-              <p>
-                Something went wrong while
-                fetching the latest festival
-                dates.
-              </p>
-            </div>
-
-            <button
-              className="events-section__retry"
-              type="button"
-              onClick={() =>
-                void loadEvents()
-              }
-            >
-              <RotateCcw
-                size={17}
-                aria-hidden="true"
-              />
-
-              Try Again
-            </button>
-          </div>
-        )}
-
-        {!isLoading &&
-          !error &&
-          events.length === 0 && (
-            <div className="events-section__message">
-              <span
-                className="events-section__message-icon"
-                aria-hidden="true"
-              >
-                <CalendarDays size={24} />
-              </span>
-
-              <div>
-                <h3>
-                  No upcoming events yet
-                </h3>
-
-                <p>
-                  New festival dates will
-                  appear here as soon as they
-                  are announced.
-                </p>
-              </div>
-            </div>
-          )}
-
-        {!isLoading &&
-          !error &&
-          events.length > 0 && (
-            <Swiper
-              modules={[Navigation]}
-              navigation
-              watchOverflow
-              spaceBetween={18}
-              slidesPerView={1.08}
-              breakpoints={{
-                480: {
-                  slidesPerView: 1.25,
-                  spaceBetween: 18,
-                },
-                640: {
-                  slidesPerView: 1.7,
-                  spaceBetween: 20,
-                },
-                768: {
-                  slidesPerView: 2,
-                  spaceBetween: 20,
-                },
-                1100: {
-                  slidesPerView: 3,
-                  spaceBetween: 22,
-                },
-              }}
-              className="events-swiper"
-            >
-              {events.map((event) => (
-                <SwiperSlide
-                  key={event.id}
-                >
-                  <EventCard
-                    event={event}
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          )}
-
-        {!isLoading &&
-          !error &&
-          events.length > 0 && (
-            <Link
-              className="events-section__mobile-view-all"
-              to="/events"
-            >
-              View all events
-
-              <ArrowRight
-                size={18}
-                aria-hidden="true"
-              />
-            </Link>
-          )}
-      </div>
-    </section>
+      <EventDetailsModal
+        event={selectedEvent}
+        isOpen={selectedEvent !== null}
+        onClose={handleCloseEvent}
+      />
+    </>
   );
 }
 

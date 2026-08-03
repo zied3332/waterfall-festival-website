@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 import {
   CalendarDays,
   MapPin,
@@ -11,6 +9,7 @@ import "./Events.css";
 
 type EventCardProps = {
   event: Event;
+  onOpen: (event: Event) => void;
 };
 
 function formatEventDate(date: string): string {
@@ -41,19 +40,23 @@ function getEventBadge(date: string): string {
 
 function EventCard({
   event,
+  onOpen,
 }: EventCardProps) {
-  const eventUrl = `/events/${event.slug}`;
-
   const location =
     event.location?.trim() ||
     "Koh Phangan, Thailand";
 
+  function handleOpen(): void {
+    onOpen(event);
+  }
+
   return (
     <article className="event-card">
-      <Link
-        to={eventUrl}
+      <button
+        type="button"
         className="event-card__link"
-        aria-label={`View details for ${event.title}`}
+        aria-label={`Open details for ${event.title}`}
+        onClick={handleOpen}
       >
         <div className="event-card__poster-wrapper">
           {event.heroImageUrl ? (
@@ -121,7 +124,7 @@ function EventCard({
             </div>
           </div>
         </div>
-      </Link>
+      </button>
     </article>
   );
 }
