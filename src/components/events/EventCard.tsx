@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
 
 import {
-  ArrowRight,
   CalendarDays,
-  Clock3,
   MapPin,
 } from "lucide-react";
 
@@ -19,26 +17,13 @@ function formatEventDate(date: string): string {
   const parsedDate = new Date(date);
 
   if (Number.isNaN(parsedDate.getTime())) {
-    return "Date to be announced";
+    return "Date coming soon";
   }
 
   return new Intl.DateTimeFormat("en-US", {
     day: "numeric",
-    month: "long",
+    month: "short",
     year: "numeric",
-  }).format(parsedDate);
-}
-
-function formatEventTime(date: string): string {
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Time to be announced";
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
   }).format(parsedDate);
 }
 
@@ -59,12 +44,6 @@ function EventCard({
 }: EventCardProps) {
   const eventUrl = `/events/${event.slug}`;
 
-  const imageStyle = event.heroImageUrl
-    ? {
-        backgroundImage: `url("${event.heroImageUrl}")`,
-      }
-    : undefined;
-
   const location =
     event.location?.trim() ||
     "Koh Phangan, Thailand";
@@ -72,122 +51,77 @@ function EventCard({
   return (
     <article className="event-card">
       <Link
-        className="event-card__image-link"
         to={eventUrl}
+        className="event-card__link"
         aria-label={`View details for ${event.title}`}
       >
-        <div
-          className="event-card__image"
-          style={imageStyle}
-        >
+        <div className="event-card__poster-wrapper">
+          {event.heroImageUrl ? (
+            <img
+              src={event.heroImageUrl}
+              alt={`${event.title} event poster`}
+              className="event-card__poster"
+              loading="lazy"
+            />
+          ) : (
+            <div className="event-card__poster-placeholder">
+              <CalendarDays
+                size={38}
+                aria-hidden="true"
+              />
+
+              <span>
+                Event poster coming soon
+              </span>
+            </div>
+          )}
+
           <div
-            className="event-card__image-overlay"
+            className="event-card__poster-shade"
             aria-hidden="true"
           />
 
-          <div className="event-card__image-top">
+          <div className="event-card__top">
             <span className="event-card__badge">
               {getEventBadge(event.date)}
             </span>
 
-            <span className="event-card__location-badge">
-              <MapPin
-                size={13}
-                aria-hidden="true"
-              />
-
-              Koh Phangan
+            <span className="event-card__view-label">
+              View details
             </span>
           </div>
-        </div>
-      </Link>
 
-      <div className="event-card__content">
-        <div className="event-card__main">
-          <div className="event-card__heading">
-            <p className="event-card__label">
+          <div className="event-card__summary">
+            <p className="event-card__festival">
               Waterfall Festival
             </p>
 
             <h2 className="event-card__title">
-              <Link to={eventUrl}>
-                {event.title}
-              </Link>
+              {event.title}
             </h2>
-          </div>
 
-          <div className="event-card__details">
-            <div className="event-card__detail">
-              <span className="event-card__detail-icon">
+            <div className="event-card__metadata">
+              <span>
                 <CalendarDays
-                  size={17}
+                  size={15}
                   aria-hidden="true"
                 />
+
+                {formatEventDate(event.date)}
               </span>
 
-              <div>
-                <small>Date</small>
-
-                <strong>
-                  {formatEventDate(event.date)}
-                </strong>
-              </div>
-            </div>
-
-            <div className="event-card__detail">
-              <span className="event-card__detail-icon">
-                <Clock3
-                  size={17}
-                  aria-hidden="true"
-                />
-              </span>
-
-              <div>
-                <small>Time</small>
-
-                <strong>
-                  {formatEventTime(event.date)}
-                </strong>
-              </div>
-            </div>
-
-            <div className="event-card__detail">
-              <span className="event-card__detail-icon">
+              <span>
                 <MapPin
-                  size={17}
+                  size={15}
                   aria-hidden="true"
                 />
+
+                {location}
               </span>
-
-              <div>
-                <small>Location</small>
-
-                <strong>{location}</strong>
-              </div>
             </div>
           </div>
-
-          <p className="event-card__description">
-            {event.description?.trim() ||
-              "Discover an unforgettable Waterfall Festival experience with music, performances, and tropical island energy."}
-          </p>
         </div>
-
-        <div className="event-card__footer">
-          <Link
-            to={eventUrl}
-            className="event-card__button"
-            aria-label={`View ${event.title}`}
-          >
-            <span>View Event</span>
-
-            <ArrowRight
-              size={18}
-              aria-hidden="true"
-            />
-          </Link>
-        </div>
-      </div>
+      </Link>
     </article>
   );
 }
