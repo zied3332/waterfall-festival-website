@@ -1,6 +1,7 @@
 import {
   AlertCircle,
   CalendarDays,
+  ExternalLink,
   FileImage,
   FileText,
   ImagePlus,
@@ -11,6 +12,7 @@ import {
   Ticket,
   Users,
 } from "lucide-react";
+
 import {
   type ChangeEvent,
   type FormEvent,
@@ -43,13 +45,19 @@ type EventFormValues = {
   description: string;
   date: string;
   location: string;
+  ticketPurchaseUrl: string;
   capacity: string;
   remainingTickets: string;
   status: EventStatus;
 };
 
 type EventFormErrors =
-  Partial<Record<keyof EventFormValues, string>> & {
+  Partial<
+    Record<
+      keyof EventFormValues,
+      string
+    >
+  > & {
     heroImage?: string;
   };
 
@@ -71,6 +79,7 @@ const DEFAULT_VALUES: EventFormValues = {
   description: "",
   date: "",
   location: "",
+  ticketPurchaseUrl: "",
   capacity: "",
   remainingTickets: "",
   status: "DRAFT",
@@ -138,6 +147,21 @@ function getDateKeyInTimeZone(
   return `${year}-${month}-${day}`;
 }
 
+function isValidHttpUrl(
+  value: string,
+): boolean {
+  try {
+    const parsedUrl = new URL(value);
+
+    return (
+      parsedUrl.protocol === "http:" ||
+      parsedUrl.protocol === "https:"
+    );
+  } catch {
+    return false;
+  }
+}
+
 function getBackendFieldErrors(
   message: string,
 ): EventFormErrors {
@@ -145,9 +169,29 @@ function getBackendFieldErrors(
     message.toLowerCase();
 
   if (
+    normalizedMessage.includes(
+      "ticket purchase",
+    ) ||
+    normalizedMessage.includes(
+      "purchase url",
+    ) ||
+    normalizedMessage.includes(
+      "ticket url",
+    )
+  ) {
+    return {
+      ticketPurchaseUrl: message,
+    };
+  }
+
+  if (
     normalizedMessage.includes("date") ||
-    normalizedMessage.includes("past day") ||
-    normalizedMessage.includes("current day")
+    normalizedMessage.includes(
+      "past day",
+    ) ||
+    normalizedMessage.includes(
+      "current day",
+    )
   ) {
     return {
       date: message,
@@ -157,7 +201,9 @@ function getBackendFieldErrors(
   if (
     normalizedMessage.includes("title") ||
     normalizedMessage.includes("slug") ||
-    normalizedMessage.includes("similar event")
+    normalizedMessage.includes(
+      "similar event",
+    )
   ) {
     return {
       title: message,
@@ -183,7 +229,9 @@ function getBackendFieldErrors(
   }
 
   if (
-    normalizedMessage.includes("description")
+    normalizedMessage.includes(
+      "description",
+    )
   ) {
     return {
       description: message,
@@ -231,8 +279,10 @@ function EventForm({
   const [selectedImage, setSelectedImage] =
     useState<File | null>(null);
 
-  const [localPreviewUrl, setLocalPreviewUrl] =
-    useState<string | null>(null);
+  const [
+    localPreviewUrl,
+    setLocalPreviewUrl,
+  ] = useState<string | null>(null);
 
   const formRef =
     useRef<HTMLFormElement | null>(null);
@@ -285,7 +335,8 @@ function EventForm({
       getBackendFieldErrors(errorMessage);
 
     if (
-      Object.keys(backendErrors).length === 0
+      Object.keys(backendErrors).length ===
+      0
     ) {
       return;
     }
@@ -303,7 +354,8 @@ function EventForm({
   function focusFirstInvalidField(): void {
     const firstInvalidField =
       formRef.current?.querySelector<
-        HTMLInputElement | HTMLTextAreaElement
+        HTMLInputElement |
+        HTMLTextAreaElement
       >('[aria-invalid="true"]');
 
     if (!firstInvalidField) {
@@ -361,7 +413,9 @@ function EventForm({
       return;
     }
 
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    if (
+      !ALLOWED_IMAGE_TYPES.has(file.type)
+    ) {
       setSelectedImage(null);
 
       setErrors((currentErrors) => ({
@@ -417,6 +471,9 @@ function EventForm({
     const trimmedLocation =
       values.location.trim();
 
+    const trimmedTicketPurchaseUrl =
+      values.ticketPurchaseUrl.trim();
+
     if (!trimmedTitle) {
       nextErrors.title =
         "Event title is required.";
@@ -448,6 +505,16 @@ function EventForm({
         "Event location is required.";
     }
 
+    if (
+      trimmedTicketPurchaseUrl &&
+      !isValidHttpUrl(
+        trimmedTicketPurchaseUrl,
+      )
+    ) {
+      nextErrors.ticketPurchaseUrl =
+        "Enter a valid ticket URL beginning with http:// or https://.";
+    }
+
     const capacity =
       values.capacity === ""
         ? undefined
@@ -456,7 +523,9 @@ function EventForm({
     const remainingTickets =
       values.remainingTickets === ""
         ? undefined
-        : Number(values.remainingTickets);
+        : Number(
+            values.remainingTickets,
+          );
 
     if (
       capacity !== undefined &&
@@ -482,7 +551,9 @@ function EventForm({
       capacity !== undefined &&
       remainingTickets !== undefined &&
       Number.isInteger(capacity) &&
-      Number.isInteger(remainingTickets) &&
+      Number.isInteger(
+        remainingTickets,
+      ) &&
       remainingTickets > capacity
     ) {
       nextErrors.remainingTickets =
@@ -526,7 +597,12 @@ function EventForm({
     const remainingTickets =
       values.remainingTickets === ""
         ? undefined
-        : Number(values.remainingTickets);
+        : Number(
+            values.remainingTickets,
+          );
+
+    const ticketPurchaseUrl =
+      values.ticketPurchaseUrl.trim();
 
     const eventData: CreateEventInput = {
       title: values.title.trim(),
@@ -535,6 +611,8 @@ function EventForm({
       date: values.date,
       location: values.location.trim(),
       status: values.status,
+      ticketPurchaseUrl:
+        ticketPurchaseUrl || null,
       ...(capacity !== undefined && {
         capacity,
       }),
@@ -550,7 +628,9 @@ function EventForm({
   }
 
   const displayedImageUrl =
-    localPreviewUrl ?? currentImageUrl ?? null;
+    localPreviewUrl ??
+    currentImageUrl ??
+    null;
 
   const validationErrorCount =
     Object.values(errors).filter(
@@ -619,9 +699,9 @@ function EventForm({
                 }}
                 placeholder="Waterfall Festival 2026"
                 disabled={isSubmitting}
-                aria-invalid={
-                  Boolean(errors.title)
-                }
+                aria-invalid={Boolean(
+                  errors.title,
+                )}
                 aria-describedby={
                   errors.title
                     ? "event-title-error"
@@ -805,18 +885,18 @@ function EventForm({
             </span>
 
             <div>
-              <h2>Hero image</h2>
+              <h2>Event poster</h2>
 
               <p>
-                Upload the image shown on event
-                cards and the event details page.
+                Upload the poster displayed on
+                public event cards.
               </p>
             </div>
           </header>
 
           <div className="admin-event-form__field">
             <label htmlFor="event-hero-image">
-              Event image
+              Poster image
             </label>
 
             <input
@@ -838,6 +918,7 @@ function EventForm({
             />
 
             <small id="event-image-help">
+              Portrait posters are recommended.
               JPG, PNG, WebP or AVIF. Maximum
               file size: 5 MB.
             </small>
@@ -860,15 +941,15 @@ function EventForm({
                   src={displayedImageUrl}
                   alt={
                     localPreviewUrl
-                      ? "Preview of newly selected event image"
-                      : "Current saved event hero"
+                      ? "Preview of newly selected event poster"
+                      : "Current saved event poster"
                   }
                 />
 
                 <span className="admin-event-form__image-badge">
                   {localPreviewUrl
-                    ? "New image preview"
-                    : "Current saved image"}
+                    ? "New poster preview"
+                    : "Current saved poster"}
                 </span>
               </div>
 
@@ -905,7 +986,7 @@ function EventForm({
               />
 
               <strong>
-                No event image selected
+                No event poster selected
               </strong>
 
               <p>
@@ -926,16 +1007,75 @@ function EventForm({
             </span>
 
             <div>
-              <h2>Availability</h2>
+              <h2>
+                Tickets and availability
+              </h2>
 
               <p>
-                Configure capacity and remaining
-                ticket information.
+                Configure the official ticket
+                destination and availability.
               </p>
             </div>
           </header>
 
           <div className="admin-event-form__fields">
+            <div className="admin-event-form__field admin-event-form__field--full">
+              <label htmlFor="event-ticket-purchase-url">
+                Ticket purchase URL
+              </label>
+
+              <div className="admin-event-form__input-wrapper">
+                <ExternalLink
+                  size={16}
+                  aria-hidden="true"
+                />
+
+                <input
+                  id="event-ticket-purchase-url"
+                  type="url"
+                  value={
+                    values.ticketPurchaseUrl
+                  }
+                  onChange={(event) => {
+                    updateValue(
+                      "ticketPurchaseUrl",
+                      event.target.value,
+                    );
+                  }}
+                  placeholder="https://www.eventpop.me/e/..."
+                  disabled={isSubmitting}
+                  autoComplete="url"
+                  aria-invalid={Boolean(
+                    errors.ticketPurchaseUrl,
+                  )}
+                  aria-describedby={
+                    errors.ticketPurchaseUrl
+                      ? "event-ticket-purchase-url-help event-ticket-purchase-url-error"
+                      : "event-ticket-purchase-url-help"
+                  }
+                />
+              </div>
+
+              <small id="event-ticket-purchase-url-help">
+                Clicking the public event poster
+                opens this official ticket page.
+                Leave it empty to open the
+                internal event page instead.
+              </small>
+
+              {errors.ticketPurchaseUrl && (
+                <small
+                  id="event-ticket-purchase-url-error"
+                  className="admin-event-form__field-error"
+                  role="alert"
+                >
+                  {
+                    errors.ticketPurchaseUrl
+                  }
+                </small>
+              )}
+            </div>
+
             <div className="admin-event-form__field">
               <label htmlFor="event-capacity">
                 Capacity
@@ -1027,7 +1167,9 @@ function EventForm({
                   className="admin-event-form__field-error"
                   role="alert"
                 >
-                  {errors.remainingTickets}
+                  {
+                    errors.remainingTickets
+                  }
                 </small>
               )}
             </div>
@@ -1057,7 +1199,8 @@ function EventForm({
           <div className="admin-event-form__status-options">
             {STATUS_OPTIONS.map((option) => {
               const isSelected =
-                values.status === option.value;
+                values.status ===
+                option.value;
 
               return (
                 <label
