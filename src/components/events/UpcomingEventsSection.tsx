@@ -31,10 +31,7 @@ import "./Events.css";
 const EVENT_SKELETON_COUNT = 3;
 
 function UpcomingEventsSection() {
-  const [events, setEvents] = useState<Event[]>(
-    [],
-  );
-
+  const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] =
     useState(true);
 
@@ -70,7 +67,7 @@ function UpcomingEventsSection() {
         <div className="events-section__header">
           <div className="events-section__heading">
             <p className="events-section__label">
-              Festival calendar
+              Festival Calendar
             </p>
 
             <h2 className="events-section__title">
@@ -78,9 +75,8 @@ function UpcomingEventsSection() {
             </h2>
 
             <p className="events-section__description">
-              Discover the next Waterfall
-              Festival experiences in Koh
-              Phangan.
+              Discover the next Waterfall Festival
+              experiences in Koh Phangan.
             </p>
           </div>
 
@@ -115,16 +111,6 @@ function UpcomingEventsSection() {
                 aria-hidden="true"
               >
                 <div className="events-card-skeleton__image" />
-
-                <div className="events-card-skeleton__content">
-                  <div className="events-card-skeleton__line events-card-skeleton__line--label" />
-
-                  <div className="events-card-skeleton__line events-card-skeleton__line--title" />
-
-                  <div className="events-card-skeleton__line" />
-
-                  <div className="events-card-skeleton__line events-card-skeleton__line--short" />
-                </div>
               </div>
             ))}
           </div>
@@ -178,9 +164,9 @@ function UpcomingEventsSection() {
                 </h3>
 
                 <p>
-                  New festival dates will appear
-                  here as soon as they are
-                  announced.
+                  New festival dates will
+                  appear here as soon as they
+                  are announced.
                 </p>
               </div>
             </div>
@@ -216,8 +202,12 @@ function UpcomingEventsSection() {
               className="events-swiper"
             >
               {events.map((event) => (
-                <SwiperSlide key={event.id}>
-                  <EventCard event={event} />
+                <SwiperSlide
+                  key={event.id}
+                >
+                  <EventCard
+                    event={event}
+                  />
                 </SwiperSlide>
               ))}
             </Swiper>
