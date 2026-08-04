@@ -10,7 +10,6 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Flame,
-  LoaderCircle,
   Martini,
   Music2,
   RotateCcw,
@@ -31,31 +30,30 @@ import type {
   ExperiencePage,
 } from "../../types/experience";
 
+import gallery1 from "../../../assets/gallery-1.jpg";
+import gallery2 from "../../../assets/gallery-2.jpg";
+import gallery3 from "../../../assets/gallery-3.jpg";
+import gallery4 from "../../../assets/gallery-4.jpg";
+import gallery5 from "../../../assets/gallery-5.jpg";
+
 import "./experience-preview.css";
 
-const EXPERIENCE_HIGHLIGHT_LIMIT = 4;
-const EXPERIENCE_SKELETON_COUNT = 4;
+const MAX_PREVIEW_HIGHLIGHTS = 6;
 
-const DEFAULT_TITLE =
-  "More than music.";
+type ExperienceCardClass =
+  | "experience-preview-card--large"
+  | "experience-preview-card--standard"
+  | "experience-preview-card--tall"
+  | "experience-preview-card--wide";
 
-const DEFAULT_DESCRIPTION =
-  "Music, waterfalls, fire shows and tropical energy in one unforgettable experience.";
-
-const ICONS: Record<string, LucideIcon> = {
-  music: Music2,
-  music2: Music2,
-  flame: Flame,
-  fire: Flame,
-  waves: Waves,
-  waterfall: Waves,
-  trees: Trees,
-  jungle: Trees,
-  martini: Martini,
-  drinks: Martini,
-  star: Star,
-  vip: Star,
-  sparkles: Sparkles,
+type PreviewExperience = {
+  id: number | string;
+  number: string;
+  title: string;
+  description: string;
+  image: string;
+  icon: LucideIcon;
+  className: ExperienceCardClass;
 };
 
 type ApiError = {
@@ -67,6 +65,144 @@ type ApiError = {
   };
 };
 
+const DEFAULT_IMAGES = [
+  gallery1,
+  gallery4,
+  gallery2,
+  gallery5,
+  gallery3,
+  gallery1,
+];
+
+const CARD_CLASSES: ExperienceCardClass[] = [
+  "experience-preview-card--large",
+  "experience-preview-card--standard",
+  "experience-preview-card--tall",
+  "experience-preview-card--standard",
+  "experience-preview-card--wide",
+  "experience-preview-card--standard",
+];
+
+const DEFAULT_EXPERIENCES: PreviewExperience[] = [
+  {
+    id: "default-live-music",
+    number: "01",
+    title: "Live Music",
+    description:
+      "International DJs, powerful sound, and unforgettable performances beneath the stars.",
+    image: gallery1,
+    icon: Music2,
+    className:
+      "experience-preview-card--large",
+  },
+  {
+    id: "default-waterfalls",
+    number: "02",
+    title: "Waterfalls",
+    description:
+      "Dance beside the iconic waterfalls of Koh Phangan surrounded by tropical nature.",
+    image: gallery4,
+    icon: Waves,
+    className:
+      "experience-preview-card--standard",
+  },
+  {
+    id: "default-fire-shows",
+    number: "03",
+    title: "Fire Shows",
+    description:
+      "Spectacular fire performances that light up the jungle throughout the night.",
+    image: gallery2,
+    icon: Flame,
+    className:
+      "experience-preview-card--tall",
+  },
+  {
+    id: "default-jungle",
+    number: "04",
+    title: "Jungle Atmosphere",
+    description:
+      "Immersive lights, tropical trees, music, and unforgettable island energy.",
+    image: gallery5,
+    icon: Trees,
+    className:
+      "experience-preview-card--standard",
+  },
+  {
+    id: "default-food",
+    number: "05",
+    title: "Food & Drinks",
+    description:
+      "Thai food, fresh fruit, cold drinks, cocktails, and festival favourites.",
+    image: gallery3,
+    icon: Martini,
+    className:
+      "experience-preview-card--wide",
+  },
+  {
+    id: "default-vip",
+    number: "06",
+    title: "VIP Experience",
+    description:
+      "Premium areas, exclusive bars, comfortable spaces, and priority access.",
+    image: gallery1,
+    icon: Star,
+    className:
+      "experience-preview-card--standard",
+  },
+];
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  music: Music2,
+  music2: Music2,
+  dj: Music2,
+
+  waterfall: Waves,
+  waterfalls: Waves,
+  waves: Waves,
+
+  flame: Flame,
+  fire: Flame,
+  fireshow: Flame,
+  fireshows: Flame,
+
+  jungle: Trees,
+  trees: Trees,
+  nature: Trees,
+
+  food: Martini,
+  drink: Martini,
+  drinks: Martini,
+  martini: Martini,
+
+  vip: Star,
+  star: Star,
+  premium: Star,
+};
+
+function normalizeIconName(
+  iconName: string,
+): string {
+  return iconName
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]/g, "");
+}
+
+function getHighlightIcon(
+  iconName?: string | null,
+): LucideIcon {
+  if (!iconName) {
+    return Sparkles;
+  }
+
+  return (
+    ICON_MAP[
+      normalizeIconName(iconName)
+    ] ?? Sparkles
+  );
+}
+
 function getErrorMessage(
   error: unknown,
 ): string {
@@ -74,7 +210,7 @@ function getErrorMessage(
     typeof error !== "object" ||
     error === null
   ) {
-    return "Could not load the festival experience.";
+    return "Unable to load the festival experience.";
   }
 
   const apiError = error as ApiError;
@@ -86,36 +222,41 @@ function getErrorMessage(
     return responseMessage.join(" ");
   }
 
-  if (typeof responseMessage === "string") {
+  if (
+    typeof responseMessage === "string"
+  ) {
     return responseMessage;
   }
 
-  if (typeof apiError.message === "string") {
+  if (
+    typeof apiError.message === "string"
+  ) {
     return apiError.message;
   }
 
-  return "Could not load the festival experience.";
+  return "Unable to load the festival experience.";
 }
 
-function getHighlightIcon(
-  iconName: string | null | undefined,
-): LucideIcon {
-  if (!iconName) {
-    return Sparkles;
-  }
-
-  const normalizedIconName = iconName
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]/g, "");
-
-  return ICONS[normalizedIconName] ?? Sparkles;
+function getVisibleHighlights(
+  page: ExperiencePage,
+): ExperienceHighlight[] {
+  return [...(page.highlights ?? [])]
+    .filter(
+      (highlight) =>
+        highlight.isVisible !== false,
+    )
+    .sort(
+      (firstHighlight, secondHighlight) =>
+        (firstHighlight.sortOrder ?? 0) -
+        (secondHighlight.sortOrder ?? 0),
+    )
+    .slice(0, MAX_PREVIEW_HIGHLIGHTS);
 }
 
 function getVisibleImages(
-  experiencePage: ExperiencePage,
+  page: ExperiencePage,
 ): ExperienceImage[] {
-  return [...(experiencePage.images ?? [])]
+  return [...(page.images ?? [])]
     .filter(
       (image) =>
         image.isVisible !== false &&
@@ -126,7 +267,9 @@ function getVisibleImages(
         firstImage.isFeatured !==
         secondImage.isFeatured
       ) {
-        return firstImage.isFeatured ? -1 : 1;
+        return firstImage.isFeatured
+          ? -1
+          : 1;
       }
 
       return (
@@ -136,25 +279,53 @@ function getVisibleImages(
     });
 }
 
-function getVisibleHighlights(
-  experiencePage: ExperiencePage,
-): ExperienceHighlight[] {
-  return [...(experiencePage.highlights ?? [])]
-    .filter(
-      (highlight) =>
-        highlight.isVisible !== false,
-    )
-    .sort(
-      (firstHighlight, secondHighlight) =>
-        (firstHighlight.sortOrder ?? 0) -
-        (secondHighlight.sortOrder ?? 0),
-    )
-    .slice(0, EXPERIENCE_HIGHLIGHT_LIMIT);
+function createPreviewExperiences(
+  page: ExperiencePage,
+): PreviewExperience[] {
+  const highlights =
+    getVisibleHighlights(page);
+
+  const images = getVisibleImages(page);
+
+  if (highlights.length === 0) {
+    return DEFAULT_EXPERIENCES;
+  }
+
+  return highlights.map(
+    (highlight, index) => ({
+      id: highlight.id,
+      number: String(index + 1).padStart(
+        2,
+        "0",
+      ),
+      title: highlight.title,
+      description:
+        highlight.description,
+      image:
+        images[index]?.imageUrl ||
+        images[index % images.length]
+          ?.imageUrl ||
+        DEFAULT_IMAGES[
+          index % DEFAULT_IMAGES.length
+        ],
+      icon: getHighlightIcon(
+        highlight.icon,
+      ),
+      className:
+        CARD_CLASSES[
+          index % CARD_CLASSES.length
+        ],
+    }),
+  );
 }
 
 function ExperiencePreviewSection() {
-  const [experiencePage, setExperiencePage] =
-    useState<ExperiencePage | null>(null);
+  const [
+    experiencePage,
+    setExperiencePage,
+  ] = useState<ExperiencePage | null>(
+    null,
+  );
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -174,6 +345,7 @@ function ExperiencePreviewSection() {
         setExperiencePage(data);
       } catch (loadError: unknown) {
         setExperiencePage(null);
+
         setError(
           getErrorMessage(loadError),
         );
@@ -186,70 +358,49 @@ function ExperiencePreviewSection() {
     void loadExperience();
   }, [loadExperience]);
 
-  const visibleImages = useMemo(
+  const experiences = useMemo(
     () =>
       experiencePage
-        ? getVisibleImages(experiencePage)
-        : [],
-    [experiencePage],
-  );
-
-  const visibleHighlights = useMemo(
-    () =>
-      experiencePage
-        ? getVisibleHighlights(
+        ? createPreviewExperiences(
             experiencePage,
           )
-        : [],
+        : DEFAULT_EXPERIENCES,
     [experiencePage],
   );
 
-  const featuredImage =
-    visibleImages[0] ?? null;
-
-  const sectionLabel =
+  const eyebrow =
     experiencePage?.heroBadge?.trim() ||
-    "The Experience";
+    "The Festival Experience";
 
-  const sectionTitle =
+  const title =
     experiencePage?.heroTitle?.trim() ||
-    DEFAULT_TITLE;
+    "More than a festival.";
 
-  const sectionDescription =
-    experiencePage?.heroDescription?.trim() ||
+  const subtitle =
     experiencePage?.heroSubtitle?.trim() ||
-    DEFAULT_DESCRIPTION;
+    "A world of its own.";
 
-  const actionLabel =
+  const description =
+    experiencePage?.heroDescription?.trim() ||
+    "Discover music, waterfalls, fire, lights, food, and tropical island energy in one unforgettable night.";
+
+  const buttonText =
     experiencePage?.buttonText?.trim() ||
     "Explore the experience";
 
-  const configuredActionUrl =
-    experiencePage?.buttonUrl?.trim();
+  const buttonUrl =
+    experiencePage?.buttonUrl?.trim() ||
+    "/experience";
 
-  const actionUrl =
-    configuredActionUrl || "/experience";
+  const isExternalButton =
+    /^https?:\/\//i.test(buttonUrl);
 
-  const isExternalAction =
-    /^https?:\/\//i.test(actionUrl);
-
-  const imageAlt =
-    featuredImage?.altText?.trim() ||
-    "Waterfall Festival experience";
-
-  const imageCaption =
-    featuredImage?.caption?.trim();
-
-  const hasExperienceContent =
-    Boolean(featuredImage) ||
-    visibleHighlights.length > 0;
-
-  const actionContent = (
+  const buttonContent = (
     <>
-      <span>{actionLabel}</span>
+      {buttonText}
 
       <ArrowRight
-        size={18}
+        size={17}
         aria-hidden="true"
       />
     </>
@@ -266,66 +417,67 @@ function ExperiencePreviewSection() {
       >
         <div className="experience-preview__grid-pattern" />
 
-        <div className="experience-preview__glow experience-preview__glow--purple" />
+        <div className="experience-preview__glow experience-preview__glow--one" />
 
-        <div className="experience-preview__glow experience-preview__glow--cyan" />
+        <div className="experience-preview__glow experience-preview__glow--two" />
       </div>
 
       <div className="experience-preview__container">
         <header className="experience-preview__header">
-          <p className="experience-preview__eyebrow">
-            <Sparkles
-              size={14}
-              aria-hidden="true"
-            />
+          <div className="experience-preview__header-content">
+            <div className="experience-preview__eyebrow">
+              <Sparkles size={14} />
 
-            <span>{sectionLabel}</span>
-          </p>
+              <span>{eyebrow}</span>
+            </div>
 
-          <h2
-            id="experience-preview-title"
-            className="experience-preview__title"
-          >
-            {sectionTitle}
-          </h2>
+            <h2
+              id="experience-preview-title"
+              className="experience-preview__title"
+            >
+              {title}
 
-          <p className="experience-preview__description">
-            {sectionDescription}
-          </p>
+              <span>{subtitle}</span>
+            </h2>
+          </div>
+
+          <div className="experience-preview__header-side">
+            <p className="experience-preview__description">
+              {description}
+            </p>
+
+            <Link
+              className="experience-preview__header-link"
+              to="/experience"
+            >
+              Explore everything
+
+              <ArrowRight
+                size={17}
+                aria-hidden="true"
+              />
+            </Link>
+          </div>
         </header>
 
         {isLoading && (
           <div
-            className="experience-preview__layout"
+            className="experience-preview__grid"
             aria-label="Loading festival experience"
           >
-            <div className="experience-preview__image-skeleton">
-              <LoaderCircle
-                className="experience-preview__loader"
-                size={28}
+            {Array.from({
+              length: 6,
+            }).map((_, index) => (
+              <div
+                key={index}
+                className={[
+                  "experience-preview-card",
+                  "experience-preview-card--skeleton",
+                  CARD_CLASSES[index],
+                ].join(" ")}
                 aria-hidden="true"
               />
-            </div>
-
-            <div className="experience-preview__highlight-list">
-              {Array.from({
-                length:
-                  EXPERIENCE_SKELETON_COUNT,
-              }).map((_, index) => (
-                <div
-                  className="experience-preview__highlight-skeleton"
-                  key={index}
-                  aria-hidden="true"
-                >
-                  <span />
-
-                  <div>
-                    <span />
-                    <span />
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         )}
 
@@ -336,7 +488,7 @@ function ExperiencePreviewSection() {
           >
             <span className="experience-preview__state-icon">
               <Sparkles
-                size={24}
+                size={23}
                 aria-hidden="true"
               />
             </span>
@@ -366,167 +518,75 @@ function ExperiencePreviewSection() {
           </div>
         )}
 
-        {!isLoading &&
-          !error &&
-          !hasExperienceContent && (
-            <div className="experience-preview__state">
-              <span className="experience-preview__state-icon">
-                <Sparkles
-                  size={24}
-                  aria-hidden="true"
-                />
-              </span>
+        {!isLoading && !error && (
+          <div className="experience-preview__grid">
+            {experiences.map((item) => {
+              const Icon = item.icon;
 
-              <div>
-                <h3>
-                  Experience content is coming
-                  soon
-                </h3>
-
-                <p>
-                  Festival highlights and images
-                  will appear here when they are
-                  published.
-                </p>
-              </div>
-            </div>
-          )}
-
-        {!isLoading &&
-          !error &&
-          hasExperienceContent && (
-            <div className="experience-preview__layout">
-              <div className="experience-preview__visual">
-                {featuredImage ? (
+              return (
+                <article
+                  className={`experience-preview-card ${item.className}`}
+                  key={item.id}
+                >
                   <img
-                    className="experience-preview__image"
-                    src={featuredImage.imageUrl}
-                    alt={imageAlt}
+                    className="experience-preview-card__image"
+                    src={item.image}
+                    alt=""
                     loading="lazy"
                   />
-                ) : (
-                  <div className="experience-preview__image-placeholder">
-                    <Sparkles
-                      size={34}
-                      aria-hidden="true"
-                    />
 
-                    <span>
-                      Festival image coming soon
+                  <div
+                    className="experience-preview-card__overlay"
+                    aria-hidden="true"
+                  />
+
+                  <div className="experience-preview-card__top">
+                    <span className="experience-preview-card__number">
+                      {item.number}
                     </span>
-                  </div>
-                )}
 
-                <div
-                  className="experience-preview__image-overlay"
-                  aria-hidden="true"
-                />
-
-                {imageCaption && (
-                  <div className="experience-preview__caption">
-                    <span className="experience-preview__caption-icon">
-                      <Sparkles
-                        size={16}
+                    <span className="experience-preview-card__icon">
+                      <Icon
+                        size={18}
                         aria-hidden="true"
                       />
                     </span>
-
-                    <div>
-                      <strong>
-                        {imageCaption}
-                      </strong>
-
-                      <small>
-                        Koh Phangan, Thailand
-                      </small>
-                    </div>
                   </div>
-                )}
-              </div>
 
-              <div className="experience-preview__highlight-list">
-                {visibleHighlights.length >
-                0 ? (
-                  visibleHighlights.map(
-                    (highlight, index) => {
-                      const HighlightIcon =
-                        getHighlightIcon(
-                          highlight.icon,
-                        );
-
-                      return (
-                        <article
-                          className="experience-preview__highlight"
-                          key={highlight.id}
-                        >
-                          <span className="experience-preview__highlight-number">
-                            {String(
-                              index + 1,
-                            ).padStart(2, "0")}
-                          </span>
-
-                          <span className="experience-preview__highlight-icon">
-                            <HighlightIcon
-                              size={22}
-                              aria-hidden="true"
-                            />
-                          </span>
-
-                          <div className="experience-preview__highlight-content">
-                            <h3>
-                              {highlight.title}
-                            </h3>
-
-                            <p>
-                              {
-                                highlight.description
-                              }
-                            </p>
-                          </div>
-                        </article>
-                      );
-                    },
-                  )
-                ) : (
-                  <div className="experience-preview__highlights-empty">
-                    <Sparkles
-                      size={24}
-                      aria-hidden="true"
-                    />
+                  <div className="experience-preview-card__content">
+                    <h3>{item.title}</h3>
 
                     <p>
-                      Experience highlights will
-                      be added soon.
+                      {item.description}
                     </p>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
+                </article>
+              );
+            })}
+          </div>
+        )}
 
-        {!isLoading &&
-          !error &&
-          hasExperienceContent && (
-            <footer className="experience-preview__footer">
-              {isExternalAction ? (
-                <a
-                  className="experience-preview__button"
-                  href={actionUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {actionContent}
-                </a>
-              ) : (
-                <Link
-                  className="experience-preview__button"
-                  to={actionUrl}
-                >
-                  {actionContent}
-                </Link>
-              )}
-            </footer>
-          )}
+        {!isLoading && !error && (
+          <footer className="experience-preview__footer">
+            {isExternalButton ? (
+              <a
+                className="experience-preview__button"
+                href={buttonUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {buttonContent}
+              </a>
+            ) : (
+              <Link
+                className="experience-preview__button"
+                to={buttonUrl}
+              >
+                {buttonContent}
+              </Link>
+            )}
+          </footer>
+        )}
       </div>
     </section>
   );
