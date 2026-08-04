@@ -2,194 +2,374 @@ import { Link } from "react-router-dom";
 
 import {
   ArrowRight,
+  CalendarClock,
   Check,
-  Clock3,
+  ImageIcon,
   Ticket,
   Zap,
 } from "lucide-react";
 
+import type {
+  TicketPreview,
+  TicketStatus,
+} from "../../services/ticket.service";
+
 import "./Tickets.css";
 
 type TicketCardProps = {
-  name: string;
-  price: string;
-  description: string;
-  popular?: boolean;
-  remaining?: string;
-  availableUntil?: string;
-  soldOut?: boolean;
+  ticket: TicketPreview;
 };
 
-function getNumericPrice(
-  price: string,
+const MAX_VISIBLE_BENEFITS = 3;
+
+function formatPrice(
+  price: number,
+  currency: string,
 ): string {
-  return (
-    price.replace(/[^\d.,]/g, "").trim() ||
-    price
-  );
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits:
+        Number.isInteger(price) ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(price);
+  } catch {
+    return `${currency} ${price.toLocaleString(
+      "en-US",
+    )}`;
+  }
+}
+
+function formatDate(
+  value: string | null,
+): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    },
+  ).format(date);
+}
+
+function getStatusLabel(
+  status: TicketStatus,
+  remainingQuantity: number | null,
+  availabilityLabel: string | null,
+): string {
+  if (availabilityLabel?.trim()) {
+    return availabilityLabel.trim();
+  }
+
+  switch (status) {
+    case "SCHEDULED":
+      return "Coming soon";
+
+    case "LIMITED":
+      return remainingQuantity !== null
+        ? `Only ${remainingQuantity} left`
+        : "Limited";
+
+    case "SOLD_OUT":
+      return "Sold out";
+
+    case "EXPIRED":
+      return "Sale ended";
+
+    case "HIDDEN":
+      return "Unavailable";
+
+    case "DRAFT":
+      return "Unavailable";
+
+    case "AVAILABLE":
+    default:
+      return remainingQuantity !== null
+        ? `${remainingQuantity} left`
+        : "Available";
+  }
+}
+
+function getStatusModifier(
+  status: TicketStatus,
+): string {
+  switch (status) {
+    case "LIMITED":
+      return "ticket-preview-card__status--limited";
+
+    case "SOLD_OUT":
+    case "EXPIRED":
+    case "HIDDEN":
+    case "DRAFT":
+      return "ticket-preview-card__status--unavailable";
+
+    case "SCHEDULED":
+      return "ticket-preview-card__status--scheduled";
+
+    case "AVAILABLE":
+    default:
+      return "ticket-preview-card__status--available";
+  }
+}
+
+function isTicketUnavailable(
+  status: TicketStatus,
+): boolean {
+  return [
+    "SOLD_OUT",
+    "EXPIRED",
+    "HIDDEN",
+    "DRAFT",
+  ].includes(status);
 }
 
 function TicketCard({
-  name,
-  price,
-  description,
-  popular = false,
-  remaining,
-  availableUntil,
-  soldOut = false,
+  ticket,
 }: TicketCardProps) {
-  const statusLabel = soldOut
-    ? "Sold out"
-    : remaining
-      ? `${remaining} left`
-      : "Available";
+  const unavailable =
+    isTicketUnavailable(ticket.status);
+
+  const statusLabel = getStatusLabel(
+    ticket.status,
+    ticket.remainingQuantity,
+    ticket.availabilityLabel,
+  );
+
+  const formattedSaleEndDate =
+    formatDate(ticket.saleEndsAt);
+
+  const sortedBenefits = [
+    ...(ticket.benefits ?? []),
+  ]
+    .sort(
+      (firstBenefit, secondBenefit) =>
+        firstBenefit.sortOrder -
+        secondBenefit.sortOrder,
+    )
+    .slice(0, MAX_VISIBLE_BENEFITS);
 
   const cardClassName = [
     "ticket-preview-card",
-    popular
-      ? "ticket-preview-card--popular"
+    ticket.isFeatured
+      ? "ticket-preview-card--featured"
       : "",
-    soldOut
-      ? "ticket-preview-card--sold-out"
+    unavailable
+      ? "ticket-preview-card--unavailable"
       : "",
   ]
     .filter(Boolean)
     .join(" ");
 
+  const statusClassName = [
+    "ticket-preview-card__status",
+    getStatusModifier(ticket.status),
+  ].join(" ");
+
+  const internalTicketUrl =
+    `/tickets/${ticket.slug}`;
+
+  const purchaseUrl =
+    ticket.externalPurchaseUrl?.trim() ||
+    ticket.event?.ticketPurchaseUrl?.trim() ||
+    null;
+
+  const ticketDescription =
+    ticket.shortDescription?.trim() ||
+    ticket.description?.trim() ||
+    "Discover this Waterfall Festival pass and secure your place for an unforgettable night.";
+
+  const cardActionContent = (
+    <>
+      <span>
+        {purchaseUrl
+          ? "Buy ticket"
+          : "View pass"}
+      </span>
+
+      <ArrowRight
+        size={17}
+        aria-hidden="true"
+      />
+    </>
+  );
+
   return (
     <article className={cardClassName}>
-      <div className="ticket-preview-card__header">
-        <div className="ticket-preview-card__type">
-          <span className="ticket-preview-card__type-icon">
-            <Ticket
-              size={16}
+      <div className="ticket-preview-card__media">
+        {ticket.imageUrl ? (
+          <img
+            className="ticket-preview-card__image"
+            src={ticket.imageUrl}
+            alt={`${ticket.name} ticket`}
+            loading="lazy"
+          />
+        ) : (
+          <div className="ticket-preview-card__image-placeholder">
+            <ImageIcon
+              size={30}
               aria-hidden="true"
             />
+
+            <span>Festival pass</span>
+          </div>
+        )}
+
+        <div
+          className="ticket-preview-card__image-overlay"
+          aria-hidden="true"
+        />
+
+        <div className="ticket-preview-card__media-top">
+          <span className={statusClassName}>
+            {statusLabel}
           </span>
 
-          <span>Festival pass</span>
+          {ticket.badge?.trim() && (
+            <span className="ticket-preview-card__badge">
+              {ticket.isFeatured && (
+                <Zap
+                  size={12}
+                  fill="currentColor"
+                  aria-hidden="true"
+                />
+              )}
+
+              {ticket.badge.trim()}
+            </span>
+          )}
         </div>
 
-        <span
-          className={[
-            "ticket-preview-card__status",
-            soldOut
-              ? "ticket-preview-card__status--sold"
-              : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-        >
-          {statusLabel}
-        </span>
-      </div>
-
-      {popular && !soldOut && (
-        <div className="ticket-preview-card__popular">
-          <Zap
-            size={13}
-            fill="currentColor"
-            aria-hidden="true"
-          />
-
-          <span>Most popular</span>
-        </div>
-      )}
-
-      <div className="ticket-preview-card__content">
-        <h3 className="ticket-preview-card__title">
-          {name}
-        </h3>
-
-        <div className="ticket-preview-card__price-row">
-          <span className="ticket-preview-card__currency">
-            ฿
-          </span>
-
-          <strong className="ticket-preview-card__price">
-            {getNumericPrice(price)}
-          </strong>
-
-          <span className="ticket-preview-card__price-label">
-            per person
-          </span>
-        </div>
-
-        <p className="ticket-preview-card__description">
-          {description}
-        </p>
-
-        <ul className="ticket-preview-card__features">
-          <li>
-            <span className="ticket-preview-card__check">
-              <Check
-                size={12}
-                strokeWidth={3}
-                aria-hidden="true"
-              />
-            </span>
-
-            <span>
-              Official festival admission
-            </span>
-          </li>
-
-          <li>
-            <span className="ticket-preview-card__check">
-              <Check
-                size={12}
-                strokeWidth={3}
-                aria-hidden="true"
-              />
-            </span>
-
-            <span>
-              Secure online booking
-            </span>
-          </li>
-        </ul>
-
-        {(availableUntil ||
-          remaining ||
-          soldOut) && (
-          <div className="ticket-preview-card__availability">
-            <Clock3
+        <div className="ticket-preview-card__media-bottom">
+          <span className="ticket-preview-card__category">
+            <Ticket
               size={14}
               aria-hidden="true"
             />
 
-            <span>
-              {soldOut
-                ? "Ticket sales are currently closed"
-                : availableUntil
-                  ? `Available until ${availableUntil}`
-                  : `${remaining} tickets remaining`}
-            </span>
+            {ticket.category}
+          </span>
+        </div>
+      </div>
+
+      <div className="ticket-preview-card__content">
+        <div className="ticket-preview-card__heading">
+          <h3 className="ticket-preview-card__title">
+            {ticket.name}
+          </h3>
+
+          <div className="ticket-preview-card__pricing">
+            <strong>
+              {formatPrice(
+                ticket.price,
+                ticket.currency,
+              )}
+            </strong>
+
+            {ticket.originalPrice !== null &&
+              ticket.originalPrice >
+                ticket.price && (
+                <span>
+                  {formatPrice(
+                    ticket.originalPrice,
+                    ticket.currency,
+                  )}
+                </span>
+              )}
           </div>
+        </div>
+
+        <p className="ticket-preview-card__description">
+          {ticketDescription}
+        </p>
+
+        {sortedBenefits.length > 0 && (
+          <ul className="ticket-preview-card__benefits">
+            {sortedBenefits.map(
+              (benefit) => (
+                <li key={benefit.id}>
+                  <span className="ticket-preview-card__check">
+                    <Check
+                      size={12}
+                      strokeWidth={3}
+                      aria-hidden="true"
+                    />
+                  </span>
+
+                  <span>{benefit.text}</span>
+                </li>
+              ),
+            )}
+          </ul>
         )}
+
+        <div className="ticket-preview-card__meta">
+          {formattedSaleEndDate && (
+            <span>
+              <CalendarClock
+                size={14}
+                aria-hidden="true"
+              />
+
+              Sale ends{" "}
+              {formattedSaleEndDate}
+            </span>
+          )}
+
+          {!formattedSaleEndDate &&
+            ticket.minimumPerOrder !==
+              null && (
+              <span>
+                <Ticket
+                  size={14}
+                  aria-hidden="true"
+                />
+
+                Minimum{" "}
+                {ticket.minimumPerOrder} per
+                order
+              </span>
+            )}
+        </div>
       </div>
 
       <div className="ticket-preview-card__footer">
-        {soldOut ? (
+        {unavailable ? (
           <button
             type="button"
             className="ticket-preview-card__button"
             disabled
           >
-            Unavailable
+            Currently unavailable
           </button>
+        ) : purchaseUrl ? (
+          <a
+            href={purchaseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ticket-preview-card__button"
+            aria-label={`Buy ${ticket.name}`}
+          >
+            {cardActionContent}
+          </a>
         ) : (
           <Link
-            to="/tickets"
+            to={internalTicketUrl}
             className="ticket-preview-card__button"
-            aria-label={`View ticket details for ${name}`}
+            aria-label={`View ${ticket.name}`}
           >
-            <span>View pass</span>
-
-            <ArrowRight
-              size={17}
-              aria-hidden="true"
-            />
+            {cardActionContent}
           </Link>
         )}
       </div>
