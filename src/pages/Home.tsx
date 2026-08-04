@@ -85,7 +85,7 @@ function formatFestivalStatus(
       return "Upcoming Festival";
 
     default:
-      return "Tropical Music Experience";
+      return "Updates Coming Soon";
   }
 }
 
@@ -102,8 +102,8 @@ function getFestivalTitleParts(
 
   if (words.length === 0) {
     return {
-      firstLine: "Waterfall",
-      secondLine: "Festival",
+      firstLine: "Waterfall Festival",
+      secondLine: "Koh Phangan",
     };
   }
 
@@ -114,9 +114,47 @@ function getFestivalTitleParts(
     };
   }
 
+  const normalizedName = words
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    normalizedName.endsWith("koh phangan")
+  ) {
+    const firstLineWords =
+      words.slice(0, -2);
+
+    return {
+      firstLine:
+        firstLineWords.join(" ") ||
+        "Waterfall Festival",
+      secondLine: words
+        .slice(-2)
+        .join(" "),
+    };
+  }
+
+  if (
+    normalizedName ===
+    "waterfall festival"
+  ) {
+    return {
+      firstLine: "Waterfall",
+      secondLine: "Festival",
+    };
+  }
+
+  const splitIndex = Math.ceil(
+    words.length / 2,
+  );
+
   return {
-    firstLine: words.slice(0, -1).join(" "),
-    secondLine: words.at(-1) ?? "Festival",
+    firstLine: words
+      .slice(0, splitIndex)
+      .join(" "),
+    secondLine: words
+      .slice(splitIndex)
+      .join(" "),
   };
 }
 
@@ -126,7 +164,7 @@ function Home() {
 
   const festivalName =
     settings?.festivalName?.trim() ||
-    "Waterfall Festival";
+    "Waterfall Festival Koh Phangan";
 
   const tagline =
     settings?.tagline?.trim() ||
@@ -203,69 +241,103 @@ function Home() {
       <section
         className="home-hero"
         style={heroStyle}
+        aria-labelledby="home-hero-title"
       >
-        <div className="home-hero__background" />
-        <div className="home-hero__overlay" />
+        <div
+          className="home-hero__background"
+          aria-hidden="true"
+        />
 
-        <div className="home-hero__glow home-hero__glow--purple" />
-        <div className="home-hero__glow home-hero__glow--cyan" />
+        <div
+          className="home-hero__overlay"
+          aria-hidden="true"
+        />
+
+        <div
+          className="home-hero__glow home-hero__glow--purple"
+          aria-hidden="true"
+        />
+
+        <div
+          className="home-hero__glow home-hero__glow--cyan"
+          aria-hidden="true"
+        />
 
         <div className="home-hero__container">
           <div className="home-hero__content">
             <img
               src={logo}
-              alt={festivalName}
+              alt={`${festivalName} logo`}
               className="home-hero__logo"
             />
 
             <div className="home-hero__eyebrow">
+              <span
+                className="home-hero__eyebrow-line"
+                aria-hidden="true"
+              />
 
-          
+              <Sparkles
+                size={14}
+                aria-hidden="true"
+              />
 
+              <span>{tagline}</span>
 
+              <span
+                className="home-hero__eyebrow-line"
+                aria-hidden="true"
+              />
             </div>
 
-            <h1 className="home-hero__title">
+            <h1
+              id="home-hero-title"
+              className="home-hero__title"
+            >
               {titleParts.firstLine}
 
-              <span>
-                {titleParts.secondLine}
-              </span>
+              {titleParts.secondLine && (
+                <span>
+                  {titleParts.secondLine}
+                </span>
+              )}
             </h1>
 
             <p className="home-hero__description">
-              Experience an unforgettable night
-              of electronic music, fire
-              performances, tropical energy, and
-              dancing beneath the waterfall in{" "}
+              Electronic music, fire
+              performances and tropical energy
+              beneath the waterfalls of{" "}
               {location}.
             </p>
 
-            <div className="home-hero__actions">
-              {ticketsEnabled && (
-                <Link
-                  to="/tickets"
-                  className="home-hero__button home-hero__button--primary"
-                >
-                  Get Tickets
-                </Link>
-              )}
+            {(ticketsEnabled ||
+              eventsEnabled) && (
+              <div className="home-hero__actions">
+                {ticketsEnabled && (
+                  <Link
+                    to="/tickets"
+                    className="home-hero__button home-hero__button--primary"
+                  >
+                    Get Tickets
+                  </Link>
+                )}
 
-              {eventsEnabled && (
-                <Link
-                  to="/events"
-                  className="home-hero__button home-hero__button--secondary"
-                >
-                  Explore Events
-                </Link>
-              )}
-            </div>
+                {eventsEnabled && (
+                  <Link
+                    to="/events"
+                    className="home-hero__button home-hero__button--secondary"
+                  >
+                    Explore Events
+                  </Link>
+                )}
+              </div>
+            )}
 
             <div className="home-hero__details">
               <div className="home-hero__detail">
                 <div className="home-hero__detail-icon">
                   <MapPin
-                    size={19}
+                    size={18}
                     aria-hidden="true"
                   />
                 </div>
@@ -273,7 +345,9 @@ function Home() {
                 <div>
                   <span>Location</span>
 
-                  <strong>
+                  <strong
+                    title={displayedLocation}
+                  >
                     {displayedLocation}
                   </strong>
                 </div>
@@ -282,7 +356,7 @@ function Home() {
               <div className="home-hero__detail">
                 <div className="home-hero__detail-icon">
                   <CalendarDays
-                    size={19}
+                    size={18}
                     aria-hidden="true"
                   />
                 </div>
@@ -290,7 +364,9 @@ function Home() {
                 <div>
                   <span>Festival Dates</span>
 
-                  <strong>
+                  <strong
+                    title={festivalDates}
+                  >
                     {festivalDates}
                   </strong>
                 </div>
@@ -299,7 +375,7 @@ function Home() {
               <div className="home-hero__detail">
                 <div className="home-hero__detail-icon">
                   <Sparkles
-                    size={19}
+                    size={18}
                     aria-hidden="true"
                   />
                 </div>
@@ -307,7 +383,9 @@ function Home() {
                 <div>
                   <span>Status</span>
 
-                  <strong>
+                  <strong
+                    title={festivalStatus}
+                  >
                     {festivalStatus}
                   </strong>
                 </div>
@@ -321,14 +399,12 @@ function Home() {
             <a
               href={`#${firstSectionId}`}
               className="home-hero__scroll"
+              aria-label="Continue to homepage content"
             >
               <span>Discover More</span>
 
-              <div>
-                <ArrowDown
-                  size={17}
-                  aria-hidden="true"
-                />
+              <div aria-hidden="true">
+                <ArrowDown size={17} />
               </div>
             </a>
           )}
