@@ -2,9 +2,7 @@ import { Link } from "react-router-dom";
 
 import {
   ArrowRight,
-  ShieldCheck,
   Sparkles,
-  TicketCheck,
 } from "lucide-react";
 
 import TicketCard from "./TicketCard";
@@ -12,9 +10,19 @@ import { tickets } from "../../data/tickets";
 
 import "./Tickets.css";
 
+const MAX_PREVIEW_TICKETS = 3;
+
 function TicketsPreviewSection() {
+  const previewTickets = tickets.slice(
+    0,
+    MAX_PREVIEW_TICKETS,
+  );
+
   return (
-    <section className="tickets-preview">
+    <section
+      className="tickets-preview"
+      aria-labelledby="tickets-preview-title"
+    >
       <div
         className="tickets-preview__background"
         aria-hidden="true"
@@ -27,101 +35,89 @@ function TicketsPreviewSection() {
       </div>
 
       <div className="tickets-preview__container">
-        <div className="tickets-preview__header">
-          <div className="tickets-preview__header-content">
-            <div className="tickets-preview__eyebrow">
+        <header className="tickets-preview__header">
+          <div>
+            <p className="tickets-preview__eyebrow">
               <Sparkles
-                size={15}
+                size={14}
                 aria-hidden="true"
               />
 
-              <span>Festival Tickets</span>
-            </div>
+              <span>Festival passes</span>
+            </p>
 
-            <h2 className="tickets-preview__title">
-              Choose your pass.
-              <span>
-                Join the experience.
-              </span>
+            <h2
+              id="tickets-preview-title"
+              className="tickets-preview__title"
+            >
+              Choose your experience.
             </h2>
 
             <p className="tickets-preview__description">
-              Select the pass that matches your
-              Waterfall Festival experience.
-              Book online, secure your place,
-              and get ready for an unforgettable
-              night in Koh Phangan.
+              Explore available passes and book
+              through the official ticket
+              provider.
             </p>
           </div>
 
-          <div className="tickets-preview__trust">
-            <div className="tickets-preview__trust-item">
-              <span className="tickets-preview__trust-icon">
-                <ShieldCheck
-                  size={20}
-                  aria-hidden="true"
-                />
-              </span>
-
-              <div>
-                <strong>Secure booking</strong>
-
-                <span>
-                  Protected online payment
-                </span>
-              </div>
-            </div>
-
-            <div className="tickets-preview__trust-item">
-              <span className="tickets-preview__trust-icon">
-                <TicketCheck
-                  size={20}
-                  aria-hidden="true"
-                />
-              </span>
-
-              <div>
-                <strong>
-                  Instant confirmation
-                </strong>
-
-                <span>
-                  Your ticket arrives by email
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="tickets-preview__grid">
-          {tickets.map((ticket, index) => (
-            <TicketCard
-              key={ticket.id}
-              {...ticket}
-              popular={index === 1}
-            />
-          ))}
-        </div>
-
-        <div className="tickets-preview__footer">
-          <p>
-            Not sure which ticket is right for
-            you? Explore every available pass
-            and compare the full details.
-          </p>
-
           <Link
             to="/tickets"
-            className="tickets-preview__link"
+            className="tickets-preview__header-link"
           >
-            View All Tickets
+            View all tickets
 
             <ArrowRight
-              size={18}
+              size={17}
               aria-hidden="true"
             />
           </Link>
-        </div>
+        </header>
+
+        {previewTickets.length > 0 ? (
+          <div className="tickets-preview__grid">
+            {previewTickets.map(
+              (ticket, index) => (
+                <TicketCard
+                  key={ticket.id}
+                  {...ticket}
+                  popular={index === 1}
+                />
+              ),
+            )}
+          </div>
+        ) : (
+          <div className="tickets-preview__empty">
+            <Sparkles
+              size={24}
+              aria-hidden="true"
+            />
+
+            <h3>
+              Tickets are coming soon
+            </h3>
+
+            <p>
+              Available festival passes will
+              appear here when sales open.
+            </p>
+          </div>
+        )}
+
+        {previewTickets.length > 0 && (
+          <footer className="tickets-preview__footer">
+            <Link
+              to="/tickets"
+              className="tickets-preview__button"
+            >
+              Explore all passes
+
+              <ArrowRight
+                size={18}
+                aria-hidden="true"
+              />
+            </Link>
+          </footer>
+        )}
       </div>
     </section>
   );
