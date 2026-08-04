@@ -17,7 +17,7 @@ import { Link } from "react-router-dom";
 import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
 
 import "./Footer.css";
-
+import fallbackLogo from "./logo2.png";
 type FooterLink = {
   label: string;
   to: string;
@@ -83,10 +83,14 @@ function Footer() {
     settings?.footerCopyright?.trim() ||
     `© ${new Date().getFullYear()} ${festivalName}. All rights reserved.`;
 
-  const logoUrl =
-    settings?.logoUrl?.trim() ||
-    "/logo.png";
+ const configuredLogoUrl =
+  settings?.logoUrl?.trim();
 
+const logoUrl =
+  configuredLogoUrl &&
+  configuredLogoUrl !== "/logo2.png"
+    ? configuredLogoUrl
+    : fallbackLogo;
   const location =
     settings?.location?.trim() ||
     "Koh Phangan, Thailand";
@@ -206,11 +210,15 @@ function Footer() {
               aria-label={`${festivalName} homepage`}
             >
               <img
-                src={logoUrl}
-                alt=""
-                className="footer__logo"
-              />
-
+  src={logoUrl}
+  alt={`${festivalName} logo`}
+  className="footer__logo"
+  onError={(event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src =
+      fallbackLogo;
+  }}
+/>
               <span>{festivalName}</span>
             </Link>
 
