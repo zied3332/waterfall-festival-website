@@ -1,7 +1,8 @@
 import { getAccessToken } from "./auth.service";
 
 const API_URL =
-  import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+  import.meta.env.VITE_API_URL ??
+  `http://${window.location.hostname}:3000`;
 
 type RequestOptions = Omit<RequestInit, "headers"> & {
   headers?: HeadersInit;

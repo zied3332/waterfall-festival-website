@@ -219,16 +219,10 @@ function Home() {
             />
 
             <div className="home-hero__eyebrow">
-              <span className="home-hero__eyebrow-line" />
 
-              <Sparkles
-                size={15}
-                aria-hidden="true"
-              />
+          
 
-              <span>{tagline}</span>
 
-              <span className="home-hero__eyebrow-line" />
             </div>
 
             <h1 className="home-hero__title">

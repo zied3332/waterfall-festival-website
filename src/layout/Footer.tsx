@@ -4,8 +4,15 @@ import {
   FaSpotify,
   FaYoutube,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
+
 import type { IconType } from "react-icons";
+
+import {
+  Mail,
+  MapPin,
+} from "lucide-react";
+
+import { Link } from "react-router-dom";
 
 import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
 
@@ -17,28 +24,75 @@ type FooterLink = {
   isVisible: boolean;
 };
 
-
 type SocialLink = {
   label: string;
   href: string;
   icon: IconType;
 };
 
+type FooterLinkGroupProps = {
+  title: string;
+  links: FooterLink[];
+};
+
+function FooterLinkGroup({
+  title,
+  links,
+}: FooterLinkGroupProps) {
+  const visibleLinks = links.filter(
+    (link) => link.isVisible,
+  );
+
+  if (visibleLinks.length === 0) {
+    return null;
+  }
+
+  return (
+    <nav
+      className="footer__column"
+      aria-label={`${title} footer links`}
+    >
+      <h3>{title}</h3>
+
+      <ul>
+        {visibleLinks.map((link) => (
+          <li key={link.to}>
+            <Link to={link.to}>
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 function Footer() {
   const { settings } =
     useWebsiteSettings();
 
   const festivalName =
-    settings?.festivalName ||
-    "Waterfall Festival";
+    settings?.festivalName?.trim() ||
+    "Waterfall Festival Koh Phangan";
 
   const footerDescription =
-    settings?.footerDescription ||
-    "Experience Thailand's most unforgettable music festival in the heart of Koh Phangan. Music, nature and unforgettable memories await.";
+    settings?.footerDescription?.trim() ||
+    "Experience Thailand's most unforgettable music festival in the heart of Koh Phangan.";
 
   const footerCopyright =
-    settings?.footerCopyright ||
+    settings?.footerCopyright?.trim() ||
     `© ${new Date().getFullYear()} ${festivalName}. All rights reserved.`;
+
+  const logoUrl =
+    settings?.logoUrl?.trim() ||
+    "/logo.png";
+
+  const location =
+    settings?.location?.trim() ||
+    "Koh Phangan, Thailand";
+
+  const publicEmail =
+    settings?.publicEmail?.trim() || "";
 
   const festivalLinks: FooterLink[] = [
     {
@@ -88,39 +142,43 @@ function Footer() {
     },
     {
       label:
-        settings?.assistantName ||
-        "AI Assistant",
+        settings?.assistantName?.trim() ||
+        "Waterfall Assistant",
       to: "/chat",
       isVisible:
         settings?.assistantEnabled !== false,
     },
   ];
 
-const socialLinks: SocialLink[] = [
-  {
-    label: "Instagram",
-    href: settings?.instagramUrl ?? "",
-    icon: FaInstagram,
-  },
-  {
-    label: "Facebook",
-    href: settings?.facebookUrl ?? "",
-    icon: FaFacebookF,
-  },
-  {
-    label: "YouTube",
-    href: settings?.youtubeUrl ?? "",
-    icon: FaYoutube,
-  },
-  {
-    label: "Spotify",
-    href: settings?.spotifyUrl ?? "",
-    icon: FaSpotify,
-  },
-].filter(
-  (socialLink) =>
-    socialLink.href.trim().length > 0,
-);
+  const socialLinks: SocialLink[] = [
+    {
+      label: "Instagram",
+      href:
+        settings?.instagramUrl?.trim() || "",
+      icon: FaInstagram,
+    },
+    {
+      label: "Facebook",
+      href:
+        settings?.facebookUrl?.trim() || "",
+      icon: FaFacebookF,
+    },
+    {
+      label: "YouTube",
+      href:
+        settings?.youtubeUrl?.trim() || "",
+      icon: FaYoutube,
+    },
+    {
+      label: "Spotify",
+      href:
+        settings?.spotifyUrl?.trim() || "",
+      icon: FaSpotify,
+    },
+  ].filter(
+    (socialLink) =>
+      socialLink.href.length > 0,
+  );
 
   const shouldShowSocialLinks =
     settings?.showSocialLinksInFooter !==
@@ -129,12 +187,61 @@ const socialLinks: SocialLink[] = [
 
   return (
     <footer className="footer">
+      <div
+        className="footer__glow footer__glow--purple"
+        aria-hidden="true"
+      />
+
+      <div
+        className="footer__glow footer__glow--cyan"
+        aria-hidden="true"
+      />
+
       <div className="footer__container">
         <div className="footer__grid">
           <div className="footer__brand">
-            <h2>{festivalName}</h2>
+            <Link
+              to="/"
+              className="footer__brand-link"
+              aria-label={`${festivalName} homepage`}
+            >
+              <img
+                src={logoUrl}
+                alt=""
+                className="footer__logo"
+              />
 
-            <p>{footerDescription}</p>
+              <span>{festivalName}</span>
+            </Link>
+
+            <p className="footer__description">
+              {footerDescription}
+            </p>
+
+            <div className="footer__contact-details">
+              <div className="footer__contact-item">
+                <MapPin
+                  size={16}
+                  aria-hidden="true"
+                />
+
+                <span>{location}</span>
+              </div>
+
+              {publicEmail && (
+                <a
+                  className="footer__contact-item"
+                  href={`mailto:${publicEmail}`}
+                >
+                  <Mail
+                    size={16}
+                    aria-hidden="true"
+                  />
+
+                  <span>{publicEmail}</span>
+                </a>
+              )}
+            </div>
           </div>
 
           <FooterLinkGroup
@@ -147,30 +254,41 @@ const socialLinks: SocialLink[] = [
             links={visitorLinks}
           />
 
-          <div>
+          <div className="footer__column footer__social-column">
             <h3>Follow Us</h3>
 
             {shouldShowSocialLinks ? (
-              <div className="footer__socials">
-                {socialLinks.map(
-                  ({
-                    label,
-                    href,
-                    icon: Icon,
-                  }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Visit ${festivalName} on ${label}`}
-                      title={label}
-                    >
-                      <Icon size={20} />
-                    </a>
-                  ),
-                )}
-              </div>
+              <>
+                <p className="footer__social-description">
+                  Follow the latest festival
+                  announcements, photos and
+                  videos.
+                </p>
+
+                <div className="footer__socials">
+                  {socialLinks.map(
+                    ({
+                      label,
+                      href,
+                      icon: Icon,
+                    }) => (
+                      <a
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Visit ${festivalName} on ${label}`}
+                        title={label}
+                      >
+                        <Icon
+                          size={18}
+                          aria-hidden="true"
+                        />
+                      </a>
+                    ),
+                  )}
+                </div>
+              </>
             ) : (
               <p className="footer__socials-empty">
                 Social links are currently
@@ -183,7 +301,10 @@ const socialLinks: SocialLink[] = [
         <div className="footer__bottom">
           <p>{footerCopyright}</p>
 
-          <div className="footer__links">
+          <nav
+            className="footer__legal-links"
+            aria-label="Legal links"
+          >
             <Link to="/privacy">
               Privacy
             </Link>
@@ -195,44 +316,10 @@ const socialLinks: SocialLink[] = [
             <Link to="/cookies">
               Cookies
             </Link>
-          </div>
+          </nav>
         </div>
       </div>
     </footer>
-  );
-}
-
-type FooterLinkGroupProps = {
-  title: string;
-  links: FooterLink[];
-};
-
-function FooterLinkGroup({
-  title,
-  links,
-}: FooterLinkGroupProps) {
-  const visibleLinks = links.filter(
-    (link) => link.isVisible,
-  );
-
-  if (visibleLinks.length === 0) {
-    return null;
-  }
-
-  return (
-    <div>
-      <h3>{title}</h3>
-
-      <ul>
-        {visibleLinks.map((link) => (
-          <li key={link.to}>
-            <Link to={link.to}>
-              {link.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
 
