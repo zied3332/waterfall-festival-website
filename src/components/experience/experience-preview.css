@@ -7,7 +7,7 @@
   overflow: hidden;
   isolation: isolate;
 
-  padding: 82px 24px 72px;
+  padding: 76px 24px 68px;
 
   background: #05050d;
   color: #ffffff;
@@ -93,16 +93,16 @@
 .experience-preview__header {
   display: grid;
   grid-template-columns:
-    minmax(0, 1.25fr)
-    minmax(280px, 0.65fr);
-  align-items: flex-end;
-  gap: 52px;
+    minmax(0, 1fr)
+    minmax(280px, 0.72fr);
+  align-items: end;
+  gap: 44px;
 
-  margin-bottom: 38px;
+  margin-bottom: 34px;
 }
 
 .experience-preview__header-content {
-  max-width: 700px;
+  max-width: 620px;
 }
 
 .experience-preview__eyebrow {
@@ -129,25 +129,28 @@
 }
 
 .experience-preview__title {
-  max-width: 680px;
-  margin: 17px 0 0;
+  max-width: 620px;
+  margin: 16px 0 0;
 
   color: #ffffff;
 
   font-size: clamp(
-    2.65rem,
-    4.8vw,
-    4.35rem
+    2.25rem,
+    3.7vw,
+    3.65rem
   );
   font-weight: 950;
-  line-height: 1;
-  letter-spacing: -0.05em;
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .experience-preview__title span {
   display: block;
 
-  margin-top: 3px;
+  margin-top: 4px;
 
   background:
     linear-gradient(
@@ -166,19 +169,22 @@
   display: flex;
   align-items: flex-start;
   flex-direction: column;
+
+  max-width: 430px;
 }
 
 .experience-preview__description {
   display: -webkit-box;
   overflow: hidden;
 
+  max-width: 430px;
   margin: 0;
 
   color:
     rgba(255, 255, 255, 0.57);
 
-  font-size: 0.9rem;
-  line-height: 1.7;
+  font-size: 0.86rem;
+  line-height: 1.65;
 
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -189,11 +195,11 @@
   align-items: center;
   gap: 8px;
 
-  margin-top: 19px;
+  margin-top: 18px;
 
   color: #c4b5fd;
 
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 850;
   text-decoration: none;
 
@@ -626,8 +632,22 @@
     gap: 18px;
   }
 
+  .experience-preview__header-content {
+    max-width: 660px;
+  }
+
+  .experience-preview__title {
+    max-width: 660px;
+
+    font-size: clamp(
+      2.2rem,
+      6vw,
+      3.4rem
+    );
+  }
+
   .experience-preview__header-side {
-    max-width: 620px;
+    max-width: 520px;
   }
 
   .experience-preview-card {
@@ -647,9 +667,9 @@
 @media (max-width: 700px) {
   .experience-preview {
     padding:
-      64px
+      62px
       16px
-      58px;
+      56px;
   }
 
   .experience-preview__header {
@@ -657,15 +677,19 @@
   }
 
   .experience-preview__title {
+    max-width: 540px;
+
     font-size: clamp(
-      2.35rem,
-      11vw,
-      3.35rem
+      2rem,
+      9vw,
+      2.8rem
     );
+    line-height: 1.04;
+    letter-spacing: -0.04em;
   }
 
   .experience-preview__description {
-    font-size: 0.86rem;
+    font-size: 0.84rem;
   }
 
   .experience-preview__grid {
@@ -733,7 +757,7 @@
   }
 
   .experience-preview__title {
-    font-size: 2.35rem;
+    font-size: 2.05rem;
   }
 
   .experience-preview-card,
