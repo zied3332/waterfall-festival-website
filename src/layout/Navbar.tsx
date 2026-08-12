@@ -22,7 +22,6 @@ import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
 import "./Navbar.css";
 
 import fallbackLogo from "./logo.png";
-import fallbackCompactLogo from "./logo2.png";
 
 type NavigationLink = {
   label: string;
@@ -73,11 +72,6 @@ export default function Navbar() {
   const desktopLogo = resolveImageUrl(
     settings?.logoUrl,
     fallbackLogo,
-  );
-
-  const compactLogo = resolveImageUrl(
-    settings?.compactLogoUrl,
-    fallbackCompactLogo,
   );
 
   const navigationLinks: NavigationLink[] = [
@@ -183,6 +177,7 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Desktop / tablet top navigation */}
       <header className="navbar">
         <nav
           className="navbar__inner"
@@ -193,25 +188,18 @@ export default function Navbar() {
             className="navbar__brand"
             aria-label={`${festivalName} homepage`}
           >
-            <picture>
-              <source
-                srcSet={compactLogo}
-                media="(max-width: 900px)"
-              />
+            <img
+              src={desktopLogo}
+              alt={festivalName}
+              className="navbar__logo"
+              onError={(event) => {
+                event.currentTarget.onerror =
+                  null;
 
-              <img
-                src={desktopLogo}
-                alt={festivalName}
-                className="navbar__logo"
-                onError={(event) => {
-                  event.currentTarget.onerror =
-                    null;
-
-                  event.currentTarget.src =
-                    fallbackLogo;
-                }}
-              />
-            </picture>
+                event.currentTarget.src =
+                  fallbackLogo;
+              }}
+            />
           </Link>
 
           <div className="navbar__links">
@@ -310,6 +298,7 @@ export default function Navbar() {
         </nav>
       </header>
 
+      {/* Mobile-only bottom navigation */}
       <nav
         className="mobile-bottom-nav"
         aria-label="Mobile navigation"
