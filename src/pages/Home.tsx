@@ -284,6 +284,11 @@ function Home() {
 
               <span>{tagline}</span>
 
+              <Sparkles
+                size={14}
+                aria-hidden="true"
+              />
+
               <span
                 className="home-hero__eyebrow-line"
                 aria-hidden="true"
