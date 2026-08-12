@@ -1,29 +1,52 @@
+/* =========================
+   Desktop navbar
+========================= */
+
 .navbar {
   width: 100%;
   height: 86px;
-  background: #03040a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
   position: sticky;
   top: 0;
   z-index: 100;
+
+  border-bottom: 1px solid
+    rgba(255, 255, 255, 0.08);
+
+  background:
+    rgba(3, 4, 10, 0.96);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .navbar__inner {
-  height: 100%;
+  width: 100%;
   max-width: 1440px;
-  margin: 0 auto;
-  padding: 0 18px;
+  height: 100%;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 28px;
+
+  margin: 0 auto;
+  padding: 0 18px;
 }
 
+
+/* =========================
+   Brand
+========================= */
+
 .navbar__brand {
+  min-width: 230px;
+
   display: flex;
   align-items: center;
+
   text-decoration: none;
-  min-width: 230px;
 }
 
 .navbar__brand picture {
@@ -34,33 +57,42 @@
 .navbar__logo {
   width: 180px;
   height: auto;
+
   display: block;
+
   object-fit: contain;
 }
 
-.navbar__menu-button {
-  display: none;
-  background: transparent;
-  border: none;
-  color: white;
-  cursor: pointer;
-}
+
+/* =========================
+   Desktop links
+========================= */
 
 .navbar__links {
   display: flex;
   align-items: center;
+
   gap: 34px;
 }
 
 .navbar__links a {
   position: relative;
-  padding: 34px 0 30px;
+
+  padding:
+    34px
+    0
+    30px;
+
   color: #ffffff;
-  text-decoration: none;
+
   font-size: 12px;
   font-weight: 900;
+
+  text-decoration: none;
   text-transform: uppercase;
-  transition: color 0.2s ease;
+
+  transition:
+    color 0.2s ease;
 }
 
 .navbar__links a:hover,
@@ -69,71 +101,150 @@
 }
 
 .navbar__links a.active::after {
-  content: "";
   position: absolute;
-  left: 0;
+
   right: 0;
   bottom: 18px;
+  left: 0;
+
   height: 2px;
+
   background: #a855f7;
+
+  content: "";
 }
+
+
+/* =========================
+   Right side
+========================= */
 
 .navbar__right {
   display: flex;
   align-items: center;
+
   gap: 20px;
 }
+
+
+/* =========================
+   Social links
+========================= */
 
 .navbar__socials {
   display: flex;
   align-items: center;
+
   gap: 18px;
+}
+
+.navbar__socials a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   color: white;
+
+  text-decoration: none;
+
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
-.navbar__socials svg {
-  cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.navbar__socials svg:hover {
+.navbar__socials a:hover {
   color: #a855f7;
-  transform: translateY(-2px);
+
+  transform:
+    translateY(-2px);
 }
+
+
+/* =========================
+   Language
+========================= */
 
 .navbar__lang {
   height: 44px;
+
   padding: 0 14px;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.18);
+
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  outline: none;
+
   background: #05050d;
+
   color: white;
+
   font-size: 12px;
   font-weight: 800;
-  outline: none;
 }
+
+
+/* =========================
+   Ticket CTA
+========================= */
 
 .navbar__button {
   height: 46px;
-  padding: 0 22px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
-  color: white;
-  text-decoration: none;
+
   display: inline-flex;
   align-items: center;
+
   gap: 10px;
+
+  padding: 0 22px;
+
+  border-radius: 6px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7c3aed,
+      #9333ea
+    );
+
+  color: white;
+
   font-size: 12px;
   font-weight: 900;
+
+  text-decoration: none;
   text-transform: uppercase;
-  box-shadow: 0 12px 28px rgba(124, 58, 237, 0.35);
-  transition: transform 0.2s ease, filter 0.2s ease;
+
+  box-shadow:
+    0 12px 28px
+    rgba(124, 58, 237, 0.35);
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
 }
 
 .navbar__button:hover {
-  transform: translateY(-2px);
+  transform:
+    translateY(-2px);
+
   filter: brightness(1.1);
 }
+
+
+/* =========================
+   Mobile bottom navigation
+========================= */
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+
+/* =========================
+   Medium desktop
+========================= */
 
 @media (max-width: 1100px) {
   .navbar__links {
@@ -143,87 +254,382 @@
   .navbar__socials {
     display: none;
   }
-}
-
-@media (max-width: 900px) {
-  .navbar {
-    height: 90px;
-  }
-
-  .navbar__inner {
-    height: 90px;
-    padding: 0 30px;
-    flex-wrap: nowrap;
-    gap: 0;
-    position: relative;
-  }
 
   .navbar__brand {
-    min-width: auto;
-    height: 90px;
-    display: flex;
-    align-items: center;
-    margin-left: -18px;
-  }
-
-  .navbar__brand picture {
-    height: 90px;
-    display: flex;
-    align-items: center;
+    min-width: 190px;
   }
 
   .navbar__logo {
-    width: 150px;
-    transform: translateX(-14px) translateY(-5px);
+    width: 160px;
+  }
+}
+
+
+/* =========================
+   Mobile
+========================= */
+
+@media (max-width: 900px) {
+  /*
+   * Keep only a compact logo bar at the top.
+   * Main navigation moves to the bottom.
+   */
+
+  .navbar {
+    height: 70px;
   }
 
-  .navbar__menu-button {
+  .navbar__inner {
+    height: 70px;
+
+    justify-content: center;
+
+    padding: 0 16px;
+  }
+
+  .navbar__brand {
+    min-width: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: auto;
-    width: 58px;
-    height: 58px;
-    padding: 0;
-    background: transparent;
-    border: 2px solid #f5b21b;
-    border-radius: 6px;
-    color: white;
-    cursor: pointer;
-    transform: translateY(0);
+
+    margin: 0;
   }
 
+  .navbar__brand picture {
+    height: 70px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .navbar__logo {
+    width: 118px;
+
+    transform: none;
+  }
+
+  .navbar__links,
   .navbar__right {
     display: none;
   }
 
-  .navbar__links {
-    display: none;
-    position: absolute;
-    top: 90px;
+
+  /* =========================
+     Fixed bottom bar
+  ========================= */
+
+  .mobile-bottom-nav {
+    position: fixed;
+    z-index: 1000;
+
+    right: 0;
+    bottom: 0;
     left: 0;
-    width: 100%;
-    background: #03040a;
-    padding: 18px 28px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+    min-height: 68px;
+
+    display: grid;
+
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+
+    padding:
+      6px
+      max(
+        8px,
+        env(safe-area-inset-right)
+      )
+      calc(
+        6px +
+        env(safe-area-inset-bottom)
+      )
+      max(
+        8px,
+        env(safe-area-inset-left)
+      );
+
+    border-top: 1px solid
+      rgba(255, 255, 255, 0.1);
+
+    background:
+      rgba(4, 5, 13, 0.94);
+
+    box-shadow:
+      0 -12px 38px
+      rgba(0, 0, 0, 0.42);
+
+    backdrop-filter:
+      blur(22px);
+
+    -webkit-backdrop-filter:
+      blur(22px);
   }
 
-  .navbar__links--open {
+
+  /* =========================
+     Bottom nav item
+  ========================= */
+
+  .mobile-bottom-nav__item {
+    min-width: 0;
+    min-height: 54px;
+
+    position: relative;
+
     display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    gap: 4px;
+
+    padding:
+      5px
+      3px;
+
+    border-radius: 12px;
+
+    color:
+      rgba(255, 255, 255, 0.5);
+
+    font-size: 0.62rem;
+    font-weight: 750;
+
+    letter-spacing: 0.01em;
+
+    text-decoration: none;
+
+    transition:
+      color 180ms ease,
+      background-color 180ms ease,
+      transform 180ms ease;
   }
 
-  .navbar__links a {
-    width: 100%;
-    padding: 14px 0;
-    white-space: nowrap;
+  .mobile-bottom-nav__item svg {
+    flex: 0 0 auto;
+
+    stroke-width: 2;
   }
 
-  .navbar__links a.active::after {
-    bottom: 6px;
-    right: auto;
-    width: 36px;
+  .mobile-bottom-nav__item span {
+    line-height: 1;
+  }
+
+
+  /* =========================
+     Active nav item
+  ========================= */
+
+  .mobile-bottom-nav__item.active {
+    color: #c084fc;
+
+    background:
+      rgba(168, 85, 247, 0.08);
+  }
+
+  .mobile-bottom-nav__item.active::before {
+    position: absolute;
+
+    top: -6px;
+    left: 50%;
+
+    width: 28px;
+    height: 2px;
+
+    border-radius: 999px;
+
+    background:
+      linear-gradient(
+        90deg,
+        #a855f7,
+        #22d3ee
+      );
+
+    box-shadow:
+      0 0 14px
+      rgba(168, 85, 247, 0.7);
+
+    content: "";
+
+    transform:
+      translateX(-50%);
+  }
+
+
+  /* =========================
+     Tickets item
+  ========================= */
+
+  .mobile-bottom-nav__ticket-icon {
+    width: 32px;
+    height: 32px;
+
+    display: grid;
+    place-items: center;
+
+    margin-top: -4px;
+
+    border: 1px solid
+      rgba(192, 132, 252, 0.25);
+
+    border-radius: 10px;
+
+    background:
+      rgba(124, 58, 237, 0.14);
+
+    color: #c084fc;
+
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  .mobile-bottom-nav__item--tickets.active
+  .mobile-bottom-nav__ticket-icon {
+    border-color:
+      rgba(192, 132, 252, 0.55);
+
+    background:
+      linear-gradient(
+        135deg,
+        rgba(124, 58, 237, 0.95),
+        rgba(147, 51, 234, 0.95)
+      );
+
+    color: white;
+
+    box-shadow:
+      0 6px 18px
+      rgba(124, 58, 237, 0.32);
+
+    transform:
+      translateY(-1px);
+  }
+
+
+  /* =========================
+     Touch state
+  ========================= */
+
+  .mobile-bottom-nav__item:active {
+    transform:
+      scale(0.94);
+  }
+
+
+  /*
+   * Reserve space so the fixed bottom
+   * nav does not cover page content.
+   */
+
+  body {
+    padding-bottom:
+      calc(
+        68px +
+        env(safe-area-inset-bottom)
+      );
+  }
+}
+
+
+/* =========================
+   Small phones
+========================= */
+
+@media (max-width: 430px) {
+  .navbar {
+    height: 64px;
+  }
+
+  .navbar__inner {
+    height: 64px;
+  }
+
+  .navbar__brand picture {
+    height: 64px;
+  }
+
+  .navbar__logo {
+    width: 105px;
+  }
+
+  .mobile-bottom-nav {
+    min-height: 64px;
+
+    padding-top: 5px;
+  }
+
+  .mobile-bottom-nav__item {
+    min-height: 51px;
+
+    gap: 3px;
+
+    font-size: 0.58rem;
+  }
+
+  .mobile-bottom-nav__item svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .mobile-bottom-nav__ticket-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  body {
+    padding-bottom:
+      calc(
+        64px +
+        env(safe-area-inset-bottom)
+      );
+  }
+}
+
+
+/* =========================
+   Very small phones
+========================= */
+
+@media (max-width: 350px) {
+  .mobile-bottom-nav__item {
+    font-size: 0.54rem;
+  }
+
+  .mobile-bottom-nav__ticket-icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+
+/* =========================
+   Desktop only
+========================= */
+
+@media (min-width: 901px) {
+  body {
+    padding-bottom: 0;
+  }
+}
+
+
+/* =========================
+   Reduced motion
+========================= */
+
+@media (
+  prefers-reduced-motion: reduce
+) {
+  .navbar__socials a,
+  .navbar__button,
+  .mobile-bottom-nav__item,
+  .mobile-bottom-nav__ticket-icon {
+    transition: none;
   }
 }
