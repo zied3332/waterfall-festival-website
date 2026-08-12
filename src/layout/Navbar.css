@@ -13,8 +13,7 @@
   border-bottom: 1px solid
     rgba(255, 255, 255, 0.08);
 
-  background:
-    rgba(3, 4, 10, 0.96);
+  background: rgba(3, 4, 10, 0.96);
 
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -49,11 +48,6 @@
   text-decoration: none;
 }
 
-.navbar__brand picture {
-  display: flex;
-  align-items: center;
-}
-
 .navbar__logo {
   width: 180px;
   height: auto;
@@ -78,10 +72,7 @@
 .navbar__links a {
   position: relative;
 
-  padding:
-    34px
-    0
-    30px;
+  padding: 34px 0 30px;
 
   color: #ffffff;
 
@@ -91,8 +82,7 @@
   text-decoration: none;
   text-transform: uppercase;
 
-  transition:
-    color 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .navbar__links a:hover,
@@ -155,8 +145,7 @@
 .navbar__socials a:hover {
   color: #a855f7;
 
-  transform:
-    translateY(-2px);
+  transform: translateY(-2px);
 }
 
 
@@ -226,8 +215,7 @@
 }
 
 .navbar__button:hover {
-  transform:
-    translateY(-2px);
+  transform: translateY(-2px);
 
   filter: brightness(1.1);
 }
@@ -271,56 +259,19 @@
 
 @media (max-width: 900px) {
   /*
-   * Keep only a compact logo bar at the top.
-   * Main navigation moves to the bottom.
+   * Remove the desktop top navigation
+   * completely on phones/tablets.
+   *
+   * Navigation is handled exclusively
+   * by the fixed bottom navigation.
    */
-
   .navbar {
-    height: 70px;
-  }
-
-  .navbar__inner {
-    height: 70px;
-
-    justify-content: center;
-
-    padding: 0 16px;
-  }
-
-  .navbar__brand {
-    min-width: 0;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    margin: 0;
-  }
-
-  .navbar__brand picture {
-    height: 70px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .navbar__logo {
-    width: 118px;
-
-    transform: none;
-  }
-
-  .navbar__links,
-  .navbar__right {
     display: none;
   }
 
-
-  /* =========================
-     Fixed bottom bar
-  ========================= */
-
+  /*
+   * Fixed mobile bottom navigation
+   */
   .mobile-bottom-nav {
     position: fixed;
     z-index: 1000;
@@ -361,11 +312,8 @@
       0 -12px 38px
       rgba(0, 0, 0, 0.42);
 
-    backdrop-filter:
-      blur(22px);
-
-    -webkit-backdrop-filter:
-      blur(22px);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
   }
 
 
@@ -380,15 +328,13 @@
     position: relative;
 
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
 
     gap: 4px;
 
-    padding:
-      5px
-      3px;
+    padding: 5px 3px;
 
     border-radius: 12px;
 
@@ -402,6 +348,9 @@
 
     text-decoration: none;
 
+    -webkit-tap-highlight-color:
+      transparent;
+
     transition:
       color 180ms ease,
       background-color 180ms ease,
@@ -414,13 +363,13 @@
     stroke-width: 2;
   }
 
-  .mobile-bottom-nav__item span {
+  .mobile-bottom-nav__item > span:last-child {
     line-height: 1;
   }
 
 
   /* =========================
-     Active nav item
+     Active item
   ========================= */
 
   .mobile-bottom-nav__item.active {
@@ -454,8 +403,7 @@
 
     content: "";
 
-    transform:
-      translateX(-50%);
+    transform: translateX(-50%);
   }
 
 
@@ -490,7 +438,7 @@
   }
 
   .mobile-bottom-nav__item--tickets.active
-  .mobile-bottom-nav__ticket-icon {
+    .mobile-bottom-nav__ticket-icon {
     border-color:
       rgba(192, 132, 252, 0.55);
 
@@ -507,25 +455,22 @@
       0 6px 18px
       rgba(124, 58, 237, 0.32);
 
-    transform:
-      translateY(-1px);
+    transform: translateY(-1px);
   }
 
 
   /* =========================
-     Touch state
+     Touch feedback
   ========================= */
 
   .mobile-bottom-nav__item:active {
-    transform:
-      scale(0.94);
+    transform: scale(0.94);
   }
 
 
-  /*
-   * Reserve space so the fixed bottom
-   * nav does not cover page content.
-   */
+  /* =========================
+     Bottom safe space
+  ========================= */
 
   body {
     padding-bottom:
@@ -542,22 +487,6 @@
 ========================= */
 
 @media (max-width: 430px) {
-  .navbar {
-    height: 64px;
-  }
-
-  .navbar__inner {
-    height: 64px;
-  }
-
-  .navbar__brand picture {
-    height: 64px;
-  }
-
-  .navbar__logo {
-    width: 105px;
-  }
-
   .mobile-bottom-nav {
     min-height: 64px;
 
