@@ -1,4 +1,9 @@
 import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
   Link,
   NavLink,
 } from "react-router-dom";
@@ -6,8 +11,14 @@ import {
 import {
   CalendarDays,
   Home,
+  Images,
+  Info,
   Mail,
+  MapPin,
+  Menu,
+  Sparkles,
   Ticket,
+  X,
 } from "lucide-react";
 
 import {
@@ -62,6 +73,9 @@ function resolveImageUrl(
 }
 
 export default function Navbar() {
+  const [moreOpen, setMoreOpen] =
+    useState(false);
+
   const { settings } =
     useWebsiteSettings();
 
@@ -74,6 +88,21 @@ export default function Navbar() {
     fallbackLogo,
   );
 
+  const eventsPageEnabled =
+    settings?.eventsPageEnabled ?? true;
+
+  const ticketsPageEnabled =
+    settings?.ticketsPageEnabled ?? true;
+
+  const experiencePageEnabled =
+    settings?.experiencePageEnabled ?? true;
+
+  const galleryPageEnabled =
+    settings?.galleryPageEnabled ?? true;
+
+  const faqPageEnabled =
+    settings?.faqPageEnabled ?? true;
+
   const navigationLinks: NavigationLink[] = [
     {
       label: "Home",
@@ -83,27 +112,22 @@ export default function Navbar() {
     {
       label: "Events",
       to: "/events",
-      isVisible:
-        settings?.eventsPageEnabled ?? true,
+      isVisible: eventsPageEnabled,
     },
     {
       label: "Tickets",
       to: "/tickets",
-      isVisible:
-        settings?.ticketsPageEnabled ?? true,
+      isVisible: ticketsPageEnabled,
     },
     {
       label: "Experience",
       to: "/experience",
-      isVisible:
-        settings?.experiencePageEnabled ??
-        true,
+      isVisible: experiencePageEnabled,
     },
     {
       label: "Gallery",
       to: "/gallery",
-      isVisible:
-        settings?.galleryPageEnabled ?? true,
+      isVisible: galleryPageEnabled,
     },
     {
       label: "Venue",
@@ -113,8 +137,7 @@ export default function Navbar() {
     {
       label: "FAQ",
       to: "/faq",
-      isVisible:
-        settings?.faqPageEnabled ?? true,
+      isVisible: faqPageEnabled,
     },
     {
       label: "Contact",
@@ -161,12 +184,6 @@ export default function Navbar() {
         socialLink.href.trim().length > 0,
     );
 
-  const ticketsPageEnabled =
-    settings?.ticketsPageEnabled ?? true;
-
-  const eventsPageEnabled =
-    settings?.eventsPageEnabled ?? true;
-
   const showSocialLinks =
     settings?.showSocialLinksInFooter ?? true;
 
@@ -175,9 +192,45 @@ export default function Navbar() {
       ?.trim()
       .toUpperCase() || "EN";
 
+  function closeMore(): void {
+    setMoreOpen(false);
+  }
+
+  function toggleMore(): void {
+    setMoreOpen(
+      (currentValue) => !currentValue,
+    );
+  }
+
+  useEffect(() => {
+    if (!moreOpen) {
+      return;
+    }
+
+    function handleEscape(
+      event: KeyboardEvent,
+    ): void {
+      if (event.key === "Escape") {
+        setMoreOpen(false);
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      handleEscape,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleEscape,
+      );
+    };
+  }, [moreOpen]);
+
   return (
     <>
-      {/* Desktop / tablet top navigation */}
+      {/* Desktop navigation */}
       <header className="navbar">
         <nav
           className="navbar__inner"
@@ -298,7 +351,111 @@ export default function Navbar() {
         </nav>
       </header>
 
-      {/* Mobile-only bottom navigation */}
+      {/* Mobile more overlay */}
+      {moreOpen && (
+        <button
+          type="button"
+          className="mobile-more__backdrop"
+          onClick={closeMore}
+          aria-label="Close more navigation"
+        />
+      )}
+
+      {/* Mobile more sheet */}
+      <div
+        className={`mobile-more ${
+          moreOpen
+            ? "mobile-more--open"
+            : ""
+        }`}
+        aria-hidden={!moreOpen}
+      >
+        <div className="mobile-more__header">
+          <div>
+            <span className="mobile-more__eyebrow">
+              Explore
+            </span>
+
+            <strong>
+              More festival pages
+            </strong>
+          </div>
+
+          <button
+            type="button"
+            className="mobile-more__close"
+            onClick={closeMore}
+            aria-label="Close more navigation"
+          >
+            <X
+              size={20}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+
+        <div className="mobile-more__grid">
+          {experiencePageEnabled && (
+            <NavLink
+              to="/experience"
+              onClick={closeMore}
+              className="mobile-more__link"
+            >
+              <Sparkles
+                size={21}
+                aria-hidden="true"
+              />
+
+              <span>Experience</span>
+            </NavLink>
+          )}
+
+          {galleryPageEnabled && (
+            <NavLink
+              to="/gallery"
+              onClick={closeMore}
+              className="mobile-more__link"
+            >
+              <Images
+                size={21}
+                aria-hidden="true"
+              />
+
+              <span>Gallery</span>
+            </NavLink>
+          )}
+
+          <NavLink
+            to="/venue"
+            onClick={closeMore}
+            className="mobile-more__link"
+          >
+            <MapPin
+              size={21}
+              aria-hidden="true"
+            />
+
+            <span>Venue</span>
+          </NavLink>
+
+          {faqPageEnabled && (
+            <NavLink
+              to="/faq"
+              onClick={closeMore}
+              className="mobile-more__link"
+            >
+              <Info
+                size={21}
+                aria-hidden="true"
+              />
+
+              <span>FAQ</span>
+            </NavLink>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile bottom navigation */}
       <nav
         className="mobile-bottom-nav"
         aria-label="Mobile navigation"
@@ -306,6 +463,7 @@ export default function Navbar() {
         <NavLink
           to="/"
           end
+          onClick={closeMore}
           className="mobile-bottom-nav__item"
         >
           <Home
@@ -319,6 +477,7 @@ export default function Navbar() {
         {eventsPageEnabled && (
           <NavLink
             to="/events"
+            onClick={closeMore}
             className="mobile-bottom-nav__item"
           >
             <CalendarDays
@@ -333,6 +492,7 @@ export default function Navbar() {
         {ticketsPageEnabled && (
           <NavLink
             to="/tickets"
+            onClick={closeMore}
             className="mobile-bottom-nav__item mobile-bottom-nav__item--tickets"
           >
             <span className="mobile-bottom-nav__ticket-icon">
@@ -348,6 +508,7 @@ export default function Navbar() {
 
         <NavLink
           to="/contact"
+          onClick={closeMore}
           className="mobile-bottom-nav__item"
         >
           <Mail
@@ -357,6 +518,25 @@ export default function Navbar() {
 
           <span>Contact</span>
         </NavLink>
+
+        <button
+          type="button"
+          className={`mobile-bottom-nav__item mobile-bottom-nav__more ${
+            moreOpen
+              ? "mobile-bottom-nav__more--active"
+              : ""
+          }`}
+          onClick={toggleMore}
+          aria-label="Open more pages"
+          aria-expanded={moreOpen}
+        >
+          <Menu
+            size={20}
+            aria-hidden="true"
+          />
+
+          <span>More</span>
+        </button>
       </nav>
     </>
   );
