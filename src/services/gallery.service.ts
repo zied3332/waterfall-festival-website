@@ -1,100 +1,102 @@
-export type GalleryStatus =
-  | "DRAFT"
-  | "PUBLISHED"
-  | "ARCHIVED";
+import { api } from "./api.service";
 
-export type GalleryMediaType =
-  | "IMAGE"
-  | "VIDEO";
+import type {
+  CreateGalleryImageInput,
+  GalleryImage,
+  GalleryStatus,
+  UpdateGalleryImageInput,
+} from "../types/gallery";
 
-export interface GalleryEventSummary {
-  id: number;
+export type UploadGalleryImagesInput = {
+  files: File[];
   title: string;
-  slug: string;
-}
-
-export interface GalleryImage {
-  id: number;
-
-  mediaType: GalleryMediaType;
-
-  title: string;
-  description: string | null;
-
-  imageUrl: string;
-  publicId: string | null;
-
-  thumbnailUrl: string | null;
-
-  duration: number | null;
-
-  width: number | null;
-  height: number | null;
-
-  altText: string | null;
-
+  description?: string;
+  altText?: string;
   status: GalleryStatus;
-
   isFeatured: boolean;
   sortOrder: number;
-
-  showOnHomepage: boolean;
-  homepageSortOrder: number;
-
-  eventId: number | null;
-
-  event: GalleryEventSummary | null;
-
-  createdAt: string;
-  updatedAt: string;
-
-  /*
-   * Frontend-only presentation metadata.
-   * These are not returned by the backend.
-   */
-  category?: string;
-
-  type?: "photo" | "video";
-
-  size?:
-    | "standard"
-    | "wide"
-    | "tall"
-    | "large";
-}
-
-export interface CreateGalleryImageInput {
-  mediaType?: GalleryMediaType;
-
-  title: string;
-
-  description?: string;
-
-  imageUrl: string;
-
-  publicId?: string;
-
-  thumbnailUrl?: string;
-
-  duration?: number;
-
-  width?: number;
-  height?: number;
-
-  altText?: string;
-
-  status?: GalleryStatus;
-
-  isFeatured?: boolean;
-
-  sortOrder?: number;
-
-  showOnHomepage?: boolean;
-
-  homepageSortOrder?: number;
-
   eventId?: number;
+};
+
+export type UploadGalleryImagesResponse = {
+  success: boolean;
+  count: number;
+  images: GalleryImage[];
+};
+
+export function getGallery() {
+  return api.get<GalleryImage[]>("/gallery");
 }
 
-export interface UpdateGalleryImageInput
-  extends Partial<CreateGalleryImageInput> {}
+export function getAdminGallery() {
+  return api.get<GalleryImage[]>("/admin/gallery");
+}
+
+export function getGalleryImage(id: number) {
+  return api.get<GalleryImage>(
+    `/admin/gallery/${id}`,
+  );
+}
+
+export function createGalleryImage(
+  data: CreateGalleryImageInput,
+) {
+  return api.post<GalleryImage>(
+    "/admin/gallery",
+    data,
+  );
+}
+
+export function uploadGalleryImages(
+  data: UploadGalleryImagesInput,
+) {
+  const formData = new FormData();
+
+  data.files.forEach((file) => {
+    formData.append("images", file);
+  });
+
+  formData.append("title", data.title);
+  formData.append(
+    "description",
+    data.description ?? "",
+  );
+  formData.append("altText", data.altText ?? "");
+  formData.append("status", data.status);
+  formData.append(
+    "isFeatured",
+    String(data.isFeatured),
+  );
+  formData.append(
+    "sortOrder",
+    String(data.sortOrder),
+  );
+
+  if (data.eventId !== undefined) {
+    formData.append(
+      "eventId",
+      String(data.eventId),
+    );
+  }
+
+  return api.post<UploadGalleryImagesResponse>(
+    "/admin/gallery/upload",
+    formData,
+  );
+}
+
+export function updateGalleryImage(
+  id: number,
+  data: UpdateGalleryImageInput,
+) {
+  return api.patch<GalleryImage>(
+    `/admin/gallery/${id}`,
+    data,
+  );
+}
+
+export function deleteGalleryImage(id: number) {
+  return api.delete<void>(
+    `/admin/gallery/${id}`,
+  );
+}
