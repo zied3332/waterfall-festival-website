@@ -248,20 +248,20 @@ function Home() {
 
   const hasHomepageSections =
     eventsEnabled ||
+    galleryEnabled ||
     ticketsEnabled ||
     experienceEnabled ||
-    galleryEnabled ||
     faqEnabled;
 
   const firstSectionId =
     eventsEnabled
       ? "upcoming-events"
-      : ticketsEnabled
-        ? "tickets-preview"
-        : experienceEnabled
-          ? "experience-preview"
-          : galleryEnabled
-            ? "gallery-preview"
+      : galleryEnabled
+        ? "festival-reels"
+        : ticketsEnabled
+          ? "tickets-preview"
+          : experienceEnabled
+            ? "experience-preview"
             : faqEnabled
               ? "faq-preview"
               : null;
@@ -489,6 +489,12 @@ function Home() {
         </div>
       )}
 
+      {galleryEnabled && (
+        <div id="festival-reels">
+          <FestivalReelsSection />
+        </div>
+      )}
+
       {ticketsEnabled && (
         <div id="tickets-preview">
           <TicketsPreviewSection />
@@ -498,12 +504,6 @@ function Home() {
       {experienceEnabled && (
         <div id="experience-preview">
           <ExperiencePreviewSection />
-        </div>
-      )}
-
-      {galleryEnabled && (
-        <div id="festival-reels">
-          <FestivalReelsSection />
         </div>
       )}
 
