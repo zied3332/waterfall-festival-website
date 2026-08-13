@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -19,14 +20,124 @@ type FestivalReelCardProps = {
 export default function FestivalReelCard({
   video,
 }: FestivalReelCardProps) {
+  const cardRef =
+    useRef<HTMLElement | null>(null);
+
   const videoRef =
     useRef<HTMLVideoElement | null>(null);
+
+  const isVisibleRef =
+    useRef(false);
 
   const [isPlaying, setIsPlaying] =
     useState(false);
 
   const [isMuted, setIsMuted] =
     useState(true);
+
+  useEffect(() => {
+    const cardElement =
+      cardRef.current;
+
+    const videoElement =
+      videoRef.current;
+
+    if (
+      !cardElement ||
+      !videoElement
+    ) {
+      return;
+    }
+
+    /*
+     * Keep autoplay compatible with
+     * Safari/iPhone and other mobile
+     * browsers.
+     */
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+
+    const observer =
+      new IntersectionObserver(
+        (entries) => {
+          const entry =
+            entries[0];
+
+          if (!entry) {
+            return;
+          }
+
+          const isVisible =
+            entry.isIntersecting &&
+            entry.intersectionRatio >=
+              0.55;
+
+          isVisibleRef.current =
+            isVisible;
+
+          if (isVisible) {
+            void videoElement
+              .play()
+              .catch(() => {
+                setIsPlaying(false);
+              });
+
+            return;
+          }
+
+          videoElement.pause();
+        },
+        {
+          threshold: [
+            0,
+            0.25,
+            0.55,
+            0.75,
+            1,
+          ],
+        },
+      );
+
+    observer.observe(
+      cardElement,
+    );
+
+    function handleVisibilityChange() {
+      if (
+        document.visibilityState ===
+        "hidden"
+      ) {
+        videoElement.pause();
+        return;
+      }
+
+      if (
+        isVisibleRef.current
+      ) {
+        void videoElement
+          .play()
+          .catch(() => {
+            setIsPlaying(false);
+          });
+      }
+    }
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange,
+    );
+
+    return () => {
+      observer.disconnect();
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange,
+      );
+
+      videoElement.pause();
+    };
+  }, []);
 
   async function togglePlayback() {
     const videoElement =
@@ -42,9 +153,10 @@ export default function FestivalReelCard({
         videoElement.ended
       ) {
         await videoElement.play();
-      } else {
-        videoElement.pause();
+        return;
       }
+
+      videoElement.pause();
     } catch {
       setIsPlaying(false);
     }
@@ -68,7 +180,10 @@ export default function FestivalReelCard({
   }
 
   return (
-    <article className="festival-reel-card">
+    <article
+      ref={cardRef}
+      className="festival-reel-card"
+    >
       <div className="festival-reel-card__media">
         <video
           ref={videoRef}
@@ -80,16 +195,18 @@ export default function FestivalReelCard({
           }
           muted={isMuted}
           playsInline
+          loop
           preload="metadata"
-          onPlay={() =>
-            setIsPlaying(true)
-          }
-          onPause={() =>
-            setIsPlaying(false)
-          }
-          onEnded={() =>
-            setIsPlaying(false)
-          }
+          onClick={togglePlayback}
+          onPlay={() => {
+            setIsPlaying(true);
+          }}
+          onPause={() => {
+            setIsPlaying(false);
+          }}
+          onEnded={() => {
+            setIsPlaying(false);
+          }}
           aria-label={
             video.altText ??
             video.title
@@ -98,7 +215,11 @@ export default function FestivalReelCard({
 
         <button
           type="button"
-          className="festival-reel-card__play"
+          className={`festival-reel-card__play ${
+            isPlaying
+              ? "festival-reel-card__play--playing"
+              : ""
+          }`}
           onClick={togglePlayback}
           aria-label={
             isPlaying
@@ -108,7 +229,7 @@ export default function FestivalReelCard({
         >
           {isPlaying ? (
             <Pause
-              size={24}
+              size={22}
               aria-hidden="true"
             />
           ) : (
