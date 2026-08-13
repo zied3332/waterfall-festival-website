@@ -50,15 +50,27 @@ export default function FestivalReelsSection() {
           return;
         }
 
+        const homepageVideos =
+          response
+            .filter(
+              (video) =>
+                video.mediaType ===
+                  "VIDEO" &&
+                video.status ===
+                  "PUBLISHED" &&
+                video.showOnHomepage,
+            )
+            .sort(
+              (
+                firstVideo,
+                secondVideo,
+              ) =>
+                firstVideo.homepageSortOrder -
+                secondVideo.homepageSortOrder,
+            );
+
         setVideos(
-          response.filter(
-            (video) =>
-              video.mediaType ===
-                "VIDEO" &&
-              video.status ===
-                "PUBLISHED" &&
-              video.showOnHomepage,
-          ),
+          homepageVideos,
         );
       } catch {
         if (!isMounted) {
@@ -108,7 +120,9 @@ export default function FestivalReelsSection() {
         direction === "right"
           ? cardWidth + gap
           : -(cardWidth + gap),
-      behavior: "smooth",
+
+      behavior:
+        "smooth",
     });
   }
 
@@ -131,7 +145,10 @@ export default function FestivalReelsSection() {
             </div>
           </div>
 
-          <div className="festival-reels__loading">
+          <div
+            className="festival-reels__loading"
+            aria-hidden="true"
+          >
             <div />
             <div />
             <div />
@@ -181,38 +198,41 @@ export default function FestivalReelsSection() {
             </p>
           </div>
 
-          <div className="festival-reels__controls">
-            <button
-              type="button"
-              onClick={() =>
-                scrollReels("left")
-              }
-              aria-label="Previous festival reels"
-            >
-              <ArrowLeft
-                size={19}
-                aria-hidden="true"
-              />
-            </button>
+          {videos.length > 1 && (
+            <div className="festival-reels__controls">
+              <button
+                type="button"
+                onClick={() =>
+                  scrollReels("left")
+                }
+                aria-label="Previous festival reels"
+              >
+                <ArrowLeft
+                  size={19}
+                  aria-hidden="true"
+                />
+              </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                scrollReels("right")
-              }
-              aria-label="Next festival reels"
-            >
-              <ArrowRight
-                size={19}
-                aria-hidden="true"
-              />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() =>
+                  scrollReels("right")
+                }
+                aria-label="Next festival reels"
+              >
+                <ArrowRight
+                  size={19}
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+          )}
         </div>
 
         <div
           ref={scrollContainerRef}
           className="festival-reels__track"
+          aria-label="Festival video reels"
         >
           {videos.map(
             (video) => (
@@ -225,12 +245,19 @@ export default function FestivalReelsSection() {
         </div>
 
         <div className="festival-reels__footer">
-          <span>
-            Swipe to explore more
-          </span>
+          {videos.length > 1 ? (
+            <span>
+              Swipe to watch more
+            </span>
+          ) : (
+            <span>
+              Festival moments
+            </span>
+          )}
 
           <Link to="/gallery">
             View Gallery
+
             <ArrowRight
               size={16}
               aria-hidden="true"
