@@ -14,6 +14,7 @@ import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
 import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
 import TicketsPreviewSection from "../components/tickets/TicketsPreviewSection";
 import ExperiencePreviewSection from "../components/experience/ExperiencePreviewSection";
+import FestivalReelsSection from "../components/home/FestivalReelsSection";
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 
@@ -35,12 +36,15 @@ function formatFestivalDate(
     return null;
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    },
+  ).format(date);
 }
 
 function formatFestivalDateRange(
@@ -102,24 +106,31 @@ function getFestivalTitleParts(
 
   if (words.length === 0) {
     return {
-      firstLine: "Waterfall Festival",
-      secondLine: "Koh Phangan",
+      firstLine:
+        "Waterfall Festival",
+      secondLine:
+        "Koh Phangan",
     };
   }
 
   if (words.length === 1) {
     return {
-      firstLine: words[0],
-      secondLine: "Festival",
+      firstLine:
+        words[0],
+      secondLine:
+        "Festival",
     };
   }
 
-  const normalizedName = words
-    .join(" ")
-    .toLowerCase();
+  const normalizedName =
+    words
+      .join(" ")
+      .toLowerCase();
 
   if (
-    normalizedName.endsWith("koh phangan")
+    normalizedName.endsWith(
+      "koh phangan",
+    )
   ) {
     const firstLineWords =
       words.slice(0, -2);
@@ -128,9 +139,11 @@ function getFestivalTitleParts(
       firstLine:
         firstLineWords.join(" ") ||
         "Waterfall Festival",
-      secondLine: words
-        .slice(-2)
-        .join(" "),
+
+      secondLine:
+        words
+          .slice(-2)
+          .join(" "),
     };
   }
 
@@ -139,22 +152,34 @@ function getFestivalTitleParts(
     "waterfall festival"
   ) {
     return {
-      firstLine: "Waterfall",
-      secondLine: "Festival",
+      firstLine:
+        "Waterfall",
+
+      secondLine:
+        "Festival",
     };
   }
 
-  const splitIndex = Math.ceil(
-    words.length / 2,
-  );
+  const splitIndex =
+    Math.ceil(
+      words.length / 2,
+    );
 
   return {
-    firstLine: words
-      .slice(0, splitIndex)
-      .join(" "),
-    secondLine: words
-      .slice(splitIndex)
-      .join(" "),
+    firstLine:
+      words
+        .slice(
+          0,
+          splitIndex,
+        )
+        .join(" "),
+
+    secondLine:
+      words
+        .slice(
+          splitIndex,
+        )
+        .join(" "),
   };
 }
 
@@ -175,7 +200,8 @@ function Home() {
     "Koh Phangan, Thailand";
 
   const venue =
-    settings?.venue?.trim() || "";
+    settings?.venue?.trim() ||
+    "";
 
   const displayedLocation =
     venue &&
@@ -196,22 +222,29 @@ function Home() {
     );
 
   const titleParts =
-    getFestivalTitleParts(festivalName);
+    getFestivalTitleParts(
+      festivalName,
+    );
 
   const eventsEnabled =
-    settings?.eventsPageEnabled ?? true;
+    settings?.eventsPageEnabled ??
+    true;
 
   const ticketsEnabled =
-    settings?.ticketsPageEnabled ?? true;
+    settings?.ticketsPageEnabled ??
+    true;
 
   const experienceEnabled =
-    settings?.experiencePageEnabled ?? true;
+    settings?.experiencePageEnabled ??
+    true;
 
   const galleryEnabled =
-    settings?.galleryPageEnabled ?? true;
+    settings?.galleryPageEnabled ??
+    true;
 
   const faqEnabled =
-    settings?.faqPageEnabled ?? true;
+    settings?.faqPageEnabled ??
+    true;
 
   const hasHomepageSections =
     eventsEnabled ||
@@ -220,20 +253,22 @@ function Home() {
     galleryEnabled ||
     faqEnabled;
 
-  const firstSectionId = eventsEnabled
-    ? "upcoming-events"
-    : ticketsEnabled
-      ? "tickets-preview"
-      : experienceEnabled
-        ? "experience-preview"
-        : galleryEnabled
-          ? "gallery-preview"
-          : faqEnabled
-            ? "faq-preview"
-            : null;
+  const firstSectionId =
+    eventsEnabled
+      ? "upcoming-events"
+      : ticketsEnabled
+        ? "tickets-preview"
+        : experienceEnabled
+          ? "experience-preview"
+          : galleryEnabled
+            ? "gallery-preview"
+            : faqEnabled
+              ? "faq-preview"
+              : null;
 
   const heroStyle = {
-    "--home-hero-image": `url(${homepageImage})`,
+    "--home-hero-image":
+      `url(${homepageImage})`,
   } as CSSProperties;
 
   return (
@@ -282,7 +317,9 @@ function Home() {
                 aria-hidden="true"
               />
 
-              <span>{tagline}</span>
+              <span>
+                {tagline}
+              </span>
 
               <Sparkles
                 size={14}
@@ -299,24 +336,31 @@ function Home() {
               id="home-hero-title"
               className="home-hero__title"
             >
-              {titleParts.firstLine}
+              {
+                titleParts.firstLine
+              }
 
               {titleParts.secondLine && (
                 <span>
-                  {titleParts.secondLine}
+                  {
+                    titleParts.secondLine
+                  }
                 </span>
               )}
             </h1>
 
             <p className="home-hero__description">
               Electronic music, fire
-              performances and tropical energy
-              beneath the waterfalls of{" "}
+              performances and tropical
+              energy beneath the
+              waterfalls of{" "}
               {location}.
             </p>
 
-            {(ticketsEnabled ||
-              eventsEnabled) && (
+            {(
+              ticketsEnabled ||
+              eventsEnabled
+            ) && (
               <div className="home-hero__actions">
                 {ticketsEnabled && (
                   <Link
@@ -348,12 +392,18 @@ function Home() {
                 </div>
 
                 <div>
-                  <span>Location</span>
+                  <span>
+                    Location
+                  </span>
 
                   <strong
-                    title={displayedLocation}
+                    title={
+                      displayedLocation
+                    }
                   >
-                    {displayedLocation}
+                    {
+                      displayedLocation
+                    }
                   </strong>
                 </div>
               </div>
@@ -367,12 +417,18 @@ function Home() {
                 </div>
 
                 <div>
-                  <span>Festival Dates</span>
+                  <span>
+                    Festival Dates
+                  </span>
 
                   <strong
-                    title={festivalDates}
+                    title={
+                      festivalDates
+                    }
                   >
-                    {festivalDates}
+                    {
+                      festivalDates
+                    }
                   </strong>
                 </div>
               </div>
@@ -386,12 +442,18 @@ function Home() {
                 </div>
 
                 <div>
-                  <span>Status</span>
+                  <span>
+                    Status
+                  </span>
 
                   <strong
-                    title={festivalStatus}
+                    title={
+                      festivalStatus
+                    }
                   >
-                    {festivalStatus}
+                    {
+                      festivalStatus
+                    }
                   </strong>
                 </div>
               </div>
@@ -406,10 +468,16 @@ function Home() {
               className="home-hero__scroll"
               aria-label="Continue to homepage content"
             >
-              <span>Discover More</span>
+              <span>
+                Discover More
+              </span>
 
-              <div aria-hidden="true">
-                <ArrowDown size={17} />
+              <div
+                aria-hidden="true"
+              >
+                <ArrowDown
+                  size={17}
+                />
               </div>
             </a>
           )}
@@ -430,6 +498,12 @@ function Home() {
       {experienceEnabled && (
         <div id="experience-preview">
           <ExperiencePreviewSection />
+        </div>
+      )}
+
+      {galleryEnabled && (
+        <div id="festival-reels">
+          <FestivalReelsSection />
         </div>
       )}
 
