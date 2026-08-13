@@ -39,21 +39,19 @@ export default function FestivalReelCard({
     const cardElement =
       cardRef.current;
 
-    const videoElement =
+    const currentVideoElement =
       videoRef.current;
 
     if (
       !cardElement ||
-      !videoElement
+      !currentVideoElement
     ) {
       return;
     }
 
-    /*
-     * Keep autoplay compatible with
-     * Safari/iPhone and other mobile
-     * browsers.
-     */
+    const videoElement =
+      currentVideoElement;
+
     videoElement.muted = true;
     videoElement.playsInline = true;
 
