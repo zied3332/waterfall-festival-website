@@ -1,0 +1,729 @@
+/* =========================
+   Festival reels section
+========================= */
+
+.festival-reels {
+  position: relative;
+
+  overflow: hidden;
+
+  padding:
+    clamp(62px, 8vw, 110px)
+    0;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(124, 58, 237, 0.12),
+      transparent 38%
+    ),
+    #060710;
+
+  color: #ffffff;
+}
+
+.festival-reels__container {
+  width: min(
+    calc(100% - 40px),
+    1320px
+  );
+
+  margin: 0 auto;
+}
+
+
+/* =========================
+   Header
+========================= */
+
+.festival-reels__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 28px;
+
+  margin-bottom:
+    clamp(26px, 4vw, 42px);
+}
+
+.festival-reels__heading {
+  max-width: 620px;
+}
+
+.festival-reels__eyebrow {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 10px;
+
+  color: #c084fc;
+
+  font-size: 0.7rem;
+  font-weight: 850;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
+}
+
+.festival-reels__eyebrow svg {
+  color: #22d3ee;
+}
+
+.festival-reels__header h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: clamp(
+    2rem,
+    4vw,
+    3.5rem
+  );
+
+  font-weight: 950;
+
+  line-height: 0.96;
+
+  letter-spacing: -0.045em;
+
+  text-transform: uppercase;
+}
+
+.festival-reels__header p {
+  max-width: 540px;
+
+  margin:
+    14px
+    0
+    0;
+
+  color:
+    rgba(255, 255, 255, 0.62);
+
+  font-size: 0.92rem;
+
+  line-height: 1.6;
+}
+
+
+/* =========================
+   Controls
+========================= */
+
+.festival-reels__controls {
+  display: flex;
+
+  gap: 9px;
+}
+
+.festival-reels__controls button {
+  width: 44px;
+  height: 44px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.12);
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, 0.045);
+
+  color:
+    rgba(255, 255, 255, 0.82);
+
+  cursor: pointer;
+
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.festival-reels__controls button:hover {
+  border-color:
+    rgba(192, 132, 252, 0.45);
+
+  background:
+    rgba(168, 85, 247, 0.1);
+
+  transform:
+    translateY(-2px);
+}
+
+
+/* =========================
+   Reels track
+========================= */
+
+.festival-reels__track {
+  display: grid;
+
+  grid-auto-flow: column;
+
+  grid-auto-columns:
+    calc(
+      (
+        100% - 36px
+      ) / 3
+    );
+
+  gap: 18px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  padding:
+    2px
+    2px
+    16px;
+
+  scroll-behavior: smooth;
+
+  scroll-snap-type:
+    x mandatory;
+
+  scrollbar-width: none;
+
+  overscroll-behavior-x:
+    contain;
+
+  -webkit-overflow-scrolling:
+    touch;
+}
+
+.festival-reels__track::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* =========================
+   Reel card
+========================= */
+
+.festival-reel-card {
+  min-width: 0;
+
+  scroll-snap-align: start;
+}
+
+.festival-reel-card__media {
+  position: relative;
+
+  overflow: hidden;
+
+  aspect-ratio: 9 / 16;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.09);
+
+  border-radius: 20px;
+
+  background: #02030a;
+
+  box-shadow:
+    0 22px 58px
+    rgba(0, 0, 0, 0.32);
+}
+
+.festival-reel-card__video {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+
+/* =========================
+   Card overlays
+========================= */
+
+.festival-reel-card__gradient {
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.04)
+        28%,
+      rgba(0, 0, 0, 0.2)
+        52%,
+      rgba(0, 0, 0, 0.86)
+        100%
+    );
+
+  pointer-events: none;
+}
+
+.festival-reel-card__play {
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  z-index: 3;
+
+  width: 58px;
+  height: 58px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.2);
+
+  border-radius: 50%;
+
+  background:
+    rgba(5, 6, 15, 0.54);
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  backdrop-filter:
+    blur(14px);
+
+  -webkit-backdrop-filter:
+    blur(14px);
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.festival-reel-card__play:hover {
+  background:
+    rgba(124, 58, 237, 0.78);
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    )
+    scale(1.05);
+}
+
+.festival-reel-card__sound {
+  position: absolute;
+
+  z-index: 4;
+
+  top: 14px;
+  right: 14px;
+
+  width: 36px;
+  height: 36px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.14);
+
+  border-radius: 50%;
+
+  background:
+    rgba(3, 4, 10, 0.5);
+
+  color:
+    rgba(255, 255, 255, 0.9);
+
+  cursor: pointer;
+
+  backdrop-filter:
+    blur(10px);
+
+  -webkit-backdrop-filter:
+    blur(10px);
+}
+
+
+/* =========================
+   Card content
+========================= */
+
+.festival-reel-card__content {
+  position: absolute;
+
+  z-index: 2;
+
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+}
+
+.festival-reel-card__badge {
+  display: inline-block;
+
+  margin-bottom: 7px;
+
+  color: #c084fc;
+
+  font-size: 0.56rem;
+  font-weight: 850;
+
+  letter-spacing: 0.11em;
+
+  text-transform: uppercase;
+}
+
+.festival-reel-card__content h3 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: clamp(
+    1rem,
+    1.5vw,
+    1.35rem
+  );
+
+  font-weight: 850;
+
+  line-height: 1.1;
+}
+
+.festival-reel-card__content p {
+  display: -webkit-box;
+
+  overflow: hidden;
+
+  margin:
+    7px
+    0
+    0;
+
+  color:
+    rgba(255, 255, 255, 0.68);
+
+  font-size: 0.75rem;
+
+  line-height: 1.45;
+
+  -webkit-box-orient:
+    vertical;
+
+  -webkit-line-clamp: 2;
+}
+
+
+/* =========================
+   Footer
+========================= */
+
+.festival-reels__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-top: 12px;
+}
+
+.festival-reels__footer > span {
+  color:
+    rgba(255, 255, 255, 0.36);
+
+  font-size: 0.68rem;
+
+  letter-spacing: 0.05em;
+}
+
+.festival-reels__footer a {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color:
+    rgba(255, 255, 255, 0.82);
+
+  font-size: 0.72rem;
+  font-weight: 800;
+
+  text-decoration: none;
+
+  text-transform: uppercase;
+}
+
+
+/* =========================
+   Loading
+========================= */
+
+.festival-reels__loading {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 18px;
+}
+
+.festival-reels__loading div {
+  aspect-ratio: 9 / 16;
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      110deg,
+      rgba(255, 255, 255, 0.04)
+        8%,
+      rgba(255, 255, 255, 0.08)
+        18%,
+      rgba(255, 255, 255, 0.04)
+        33%
+    );
+
+  background-size:
+    200% 100%;
+
+  animation:
+    festival-reels-loading
+    1.3s linear
+    infinite;
+}
+
+@keyframes festival-reels-loading {
+  to {
+    background-position-x:
+      -200%;
+  }
+}
+
+
+/* =========================
+   Tablet
+========================= */
+
+@media (max-width: 900px) {
+  .festival-reels__container {
+    width:
+      min(
+        calc(100% - 30px),
+        760px
+      );
+  }
+
+  .festival-reels__track {
+    grid-auto-columns:
+      calc(
+        (
+          100% - 18px
+        ) / 2
+      );
+  }
+
+  .festival-reels__loading {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .festival-reels__loading div:last-child {
+    display: none;
+  }
+}
+
+
+/* =========================
+   Phones
+========================= */
+
+@media (max-width: 640px) {
+  .festival-reels {
+    padding:
+      54px
+      0
+      58px;
+  }
+
+  .festival-reels__container {
+    width: 100%;
+  }
+
+  .festival-reels__header {
+    align-items: flex-start;
+
+    padding:
+      0
+      18px;
+
+    margin-bottom: 22px;
+  }
+
+  .festival-reels__header h2 {
+    font-size:
+      clamp(
+        1.85rem,
+        9vw,
+        2.8rem
+      );
+  }
+
+  .festival-reels__header p {
+    max-width: 350px;
+
+    font-size: 0.78rem;
+  }
+
+  .festival-reels__controls {
+    display: none;
+  }
+
+  .festival-reels__track {
+    grid-auto-columns:
+      min(
+        78vw,
+        330px
+      );
+
+    gap: 12px;
+
+    padding:
+      2px
+      18px
+      14px;
+
+    scroll-padding-left:
+      18px;
+  }
+
+  .festival-reel-card__media {
+    border-radius: 18px;
+  }
+
+  .festival-reel-card__content {
+    right: 14px;
+    bottom: 15px;
+    left: 14px;
+  }
+
+  .festival-reel-card__play {
+    width: 52px;
+    height: 52px;
+  }
+
+  .festival-reels__footer {
+    padding:
+      0
+      18px;
+
+    margin-top: 8px;
+  }
+
+  .festival-reels__footer > span {
+    font-size: 0.61rem;
+  }
+
+  .festival-reels__footer a {
+    font-size: 0.65rem;
+  }
+
+  .festival-reels__loading {
+    grid-template-columns:
+      min(78vw, 330px)
+      min(78vw, 330px);
+
+    overflow: hidden;
+
+    gap: 12px;
+
+    padding:
+      0
+      18px;
+  }
+}
+
+
+/* =========================
+   Small phones
+========================= */
+
+@media (max-width: 390px) {
+  .festival-reels__track {
+    grid-auto-columns:
+      min(
+        82vw,
+        315px
+      );
+  }
+
+  .festival-reels__header {
+    padding:
+      0
+      15px;
+  }
+
+  .festival-reels__track {
+    padding-left: 15px;
+    padding-right: 15px;
+
+    scroll-padding-left:
+      15px;
+  }
+
+  .festival-reels__footer {
+    padding:
+      0
+      15px;
+  }
+}
+
+
+/* =========================
+   Touch devices
+========================= */
+
+@media (hover: none) {
+  .festival-reel-card__play:hover,
+  .festival-reels__controls button:hover {
+    transform: none;
+  }
+}
+
+
+/* =========================
+   Reduced motion
+========================= */
+
+@media (
+  prefers-reduced-motion: reduce
+) {
+  .festival-reels__track {
+    scroll-behavior: auto;
+  }
+
+  .festival-reels__loading div {
+    animation: none;
+  }
+
+  .festival-reel-card__play,
+  .festival-reels__controls button {
+    transition: none;
+  }
+}
