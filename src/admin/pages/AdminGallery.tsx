@@ -7,7 +7,7 @@ import {
   Images,
   Pencil,
   Play,
-  Plus,
+  
   Search,
   Sparkles,
   Trash2,
