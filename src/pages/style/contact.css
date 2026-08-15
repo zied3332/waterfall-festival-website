@@ -13,18 +13,7 @@
   min-height: 230px;
   overflow: hidden;
 
-  background-image:
-    linear-gradient(
-      90deg,
-      rgba(5, 5, 13, 0.97) 0%,
-      rgba(5, 5, 13, 0.88) 45%,
-      rgba(5, 5, 13, 0.38) 100%
-    ),
-    url("/images/contact-waterfall.webp");
 
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
 }
 
 .contact-hero-overlay {
