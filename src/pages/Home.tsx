@@ -1,7 +1,5 @@
 import type { CSSProperties } from "react";
 
-import { Link } from "react-router-dom";
-
 import {
   ArrowDown,
   CalendarDays,
@@ -22,6 +20,9 @@ import logo from "./logo1.png";
 import homepageImage from "../../assets/homepage1.jpg";
 
 import "./style/home.css";
+
+const EVENTPOP_URL =
+  "https://www.eventpop.me/e/166443";
 
 function formatFestivalDate(
   value: string | null | undefined,
@@ -363,21 +364,25 @@ function Home() {
             ) && (
               <div className="home-hero__actions">
                 {ticketsEnabled && (
-                  <Link
-                    to="/tickets"
+                  <a
+                    href={EVENTPOP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="home-hero__button home-hero__button--primary"
                   >
                     Get Tickets
-                  </Link>
+                  </a>
                 )}
 
                 {eventsEnabled && (
-                  <Link
-                    to="/events"
+                  <a
+                    href={EVENTPOP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="home-hero__button home-hero__button--secondary"
                   >
                     Explore Events
-                  </Link>
+                  </a>
                 )}
               </div>
             )}
