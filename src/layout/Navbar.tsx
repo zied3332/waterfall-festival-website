@@ -38,6 +38,7 @@ type NavigationLink = {
   label: string;
   to: string;
   isVisible: boolean;
+  external?: boolean;
 };
 
 type SocialLink = {
@@ -49,6 +50,9 @@ type SocialLink = {
   }>;
   size: number;
 };
+
+const TICKETS_URL =
+  "https://www.eventpop.me/e/166443";
 
 function resolveImageUrl(
   configuredUrl: string | null | undefined,
@@ -116,8 +120,9 @@ export default function Navbar() {
     },
     {
       label: "Tickets",
-      to: "/tickets",
+      to: TICKETS_URL,
       isVisible: ticketsPageEnabled,
+      external: true,
     },
     {
       label: "Experience",
@@ -261,17 +266,26 @@ export default function Navbar() {
                 (navigationLink) =>
                   navigationLink.isVisible,
               )
-              .map((navigationLink) => (
-                <NavLink
-                  key={navigationLink.to}
-                  to={navigationLink.to}
-                  end={
-                    navigationLink.to === "/"
-                  }
-                >
-                  {navigationLink.label}
-                </NavLink>
-              ))}
+              .map((navigationLink) =>
+                navigationLink.external ? (
+                  <a
+                    key={navigationLink.to}
+                    href={navigationLink.to}
+                  >
+                    {navigationLink.label}
+                  </a>
+                ) : (
+                  <NavLink
+                    key={navigationLink.to}
+                    to={navigationLink.to}
+                    end={
+                      navigationLink.to === "/"
+                    }
+                  >
+                    {navigationLink.label}
+                  </NavLink>
+                ),
+              )}
           </div>
 
           <div className="navbar__right">
@@ -335,8 +349,8 @@ export default function Navbar() {
             </select>
 
             {ticketsPageEnabled && (
-              <Link
-                to="/tickets"
+              <a
+                href={TICKETS_URL}
                 className="navbar__button"
               >
                 <Ticket
@@ -345,7 +359,7 @@ export default function Navbar() {
                 />
 
                 Get Tickets
-              </Link>
+              </a>
             )}
           </div>
         </nav>
@@ -490,8 +504,8 @@ export default function Navbar() {
         )}
 
         {ticketsPageEnabled && (
-          <NavLink
-            to="/tickets"
+          <a
+            href={TICKETS_URL}
             onClick={closeMore}
             className="mobile-bottom-nav__item mobile-bottom-nav__item--tickets"
           >
@@ -503,7 +517,7 @@ export default function Navbar() {
             </span>
 
             <span>Tickets</span>
-          </NavLink>
+          </a>
         )}
 
         <NavLink
