@@ -4,8 +4,6 @@ import {
   useState,
 } from "react";
 
-import { Link } from "react-router-dom";
-
 import {
   ArrowRight,
   CalendarDays,
@@ -20,7 +18,6 @@ import {
 import { Navigation } from "swiper/modules";
 
 import EventCard from "./EventCard";
-import EventDetailsModal from "./EventDetailsModal";
 
 import { getPublicEvents } from "../../services/events.service";
 import type { Event } from "../../types/event";
@@ -31,12 +28,12 @@ import "./Events.css";
 
 const EVENT_SKELETON_COUNT = 3;
 
+const EVENTPOP_URL =
+  "https://www.eventpop.me/e/166443";
+
 function UpcomingEventsSection() {
   const [events, setEvents] =
     useState<Event[]>([]);
-
-  const [selectedEvent, setSelectedEvent] =
-    useState<Event | null>(null);
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -67,14 +64,12 @@ function UpcomingEventsSection() {
     void loadEvents();
   }, [loadEvents]);
 
-  function handleOpenEvent(
-    event: Event,
-  ): void {
-    setSelectedEvent(event);
-  }
-
-  function handleCloseEvent(): void {
-    setSelectedEvent(null);
+  function handleOpenEvent(): void {
+    window.open(
+      EVENTPOP_URL,
+      "_blank",
+      "noopener,noreferrer",
+    );
   }
 
   return (
@@ -101,9 +96,11 @@ function UpcomingEventsSection() {
             {!isLoading &&
               !error &&
               events.length > 0 && (
-                <Link
+                <a
                   className="events-section__view-all"
-                  to="/events"
+                  href={EVENTPOP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   View all events
 
@@ -111,7 +108,7 @@ function UpcomingEventsSection() {
                     size={18}
                     aria-hidden="true"
                   />
-                </Link>
+                </a>
               )}
           </div>
 
@@ -237,9 +234,11 @@ function UpcomingEventsSection() {
           {!isLoading &&
             !error &&
             events.length > 0 && (
-              <Link
+              <a
                 className="events-section__mobile-view-all"
-                to="/events"
+                href={EVENTPOP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 View all events
 
@@ -247,16 +246,10 @@ function UpcomingEventsSection() {
                   size={18}
                   aria-hidden="true"
                 />
-              </Link>
+              </a>
             )}
         </div>
       </section>
-
-      <EventDetailsModal
-        event={selectedEvent}
-        isOpen={selectedEvent !== null}
-        onClose={handleCloseEvent}
-      />
     </>
   );
 }

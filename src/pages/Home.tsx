@@ -1,10 +1,6 @@
-import type { CSSProperties } from "react";
-
 import {
   ArrowDown,
-  CalendarDays,
-  MapPin,
-  Sparkles,
+  ExternalLink,
 } from "lucide-react";
 
 import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
@@ -16,173 +12,12 @@ import FestivalReelsSection from "../components/home/FestivalReelsSection";
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 
-import logo from "./logo1.png";
-import homepageImage from "../../assets/homepage1.jpg";
+import eventPoster from "../../assets/water19.png";
 
 import "./style/home.css";
 
 const EVENTPOP_URL =
   "https://www.eventpop.me/e/166443";
-
-function formatFestivalDate(
-  value: string | null | undefined,
-): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat(
-    "en-GB",
-    {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      timeZone: "UTC",
-    },
-  ).format(date);
-}
-
-function formatFestivalDateRange(
-  startDate: string | null | undefined,
-  endDate: string | null | undefined,
-): string {
-  const formattedStartDate =
-    formatFestivalDate(startDate);
-
-  const formattedEndDate =
-    formatFestivalDate(endDate);
-
-  if (
-    formattedStartDate &&
-    formattedEndDate
-  ) {
-    return `${formattedStartDate} – ${formattedEndDate}`;
-  }
-
-  if (formattedStartDate) {
-    return formattedStartDate;
-  }
-
-  if (formattedEndDate) {
-    return formattedEndDate;
-  }
-
-  return "Dates coming soon";
-}
-
-function formatFestivalStatus(
-  status: string | null | undefined,
-): string {
-  switch (status) {
-    case "LIVE":
-      return "Festival Live Now";
-
-    case "FINISHED":
-      return "Festival Memories";
-
-    case "UPCOMING":
-      return "Upcoming Festival";
-
-    default:
-      return "Updates Coming Soon";
-  }
-}
-
-function getFestivalTitleParts(
-  festivalName: string,
-): {
-  firstLine: string;
-  secondLine: string;
-} {
-  const words = festivalName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (words.length === 0) {
-    return {
-      firstLine:
-        "Waterfall Festival",
-      secondLine:
-        "Koh Phangan",
-    };
-  }
-
-  if (words.length === 1) {
-    return {
-      firstLine:
-        words[0],
-      secondLine:
-        "Festival",
-    };
-  }
-
-  const normalizedName =
-    words
-      .join(" ")
-      .toLowerCase();
-
-  if (
-    normalizedName.endsWith(
-      "koh phangan",
-    )
-  ) {
-    const firstLineWords =
-      words.slice(0, -2);
-
-    return {
-      firstLine:
-        firstLineWords.join(" ") ||
-        "Waterfall Festival",
-
-      secondLine:
-        words
-          .slice(-2)
-          .join(" "),
-    };
-  }
-
-  if (
-    normalizedName ===
-    "waterfall festival"
-  ) {
-    return {
-      firstLine:
-        "Waterfall",
-
-      secondLine:
-        "Festival",
-    };
-  }
-
-  const splitIndex =
-    Math.ceil(
-      words.length / 2,
-    );
-
-  return {
-    firstLine:
-      words
-        .slice(
-          0,
-          splitIndex,
-        )
-        .join(" "),
-
-    secondLine:
-      words
-        .slice(
-          splitIndex,
-        )
-        .join(" "),
-  };
-}
 
 function Home() {
   const { settings } =
@@ -191,41 +26,6 @@ function Home() {
   const festivalName =
     settings?.festivalName?.trim() ||
     "Waterfall Festival Koh Phangan";
-
-  const tagline =
-    settings?.tagline?.trim() ||
-    "Thailand’s Tropical Music Experience";
-
-  const location =
-    settings?.location?.trim() ||
-    "Koh Phangan, Thailand";
-
-  const venue =
-    settings?.venue?.trim() ||
-    "";
-
-  const displayedLocation =
-    venue &&
-    venue.toLowerCase() !==
-      location.toLowerCase()
-      ? `${venue}, ${location}`
-      : location;
-
-  const festivalDates =
-    formatFestivalDateRange(
-      settings?.startDate,
-      settings?.endDate,
-    );
-
-  const festivalStatus =
-    formatFestivalStatus(
-      settings?.festivalStatus,
-    );
-
-  const titleParts =
-    getFestivalTitleParts(
-      festivalName,
-    );
 
   const eventsEnabled =
     settings?.eventsPageEnabled ??
@@ -267,27 +67,24 @@ function Home() {
               ? "faq-preview"
               : null;
 
-  const heroStyle = {
-    "--home-hero-image":
-      `url(${homepageImage})`,
-  } as CSSProperties;
-
   return (
     <>
       <section
         className="home-hero"
-        style={heroStyle}
-        aria-labelledby="home-hero-title"
+        aria-label={`${festivalName} upcoming event`}
       >
         <div
-          className="home-hero__background"
+          className="home-hero__ambient"
           aria-hidden="true"
-        />
+        >
+          <img
+            src={eventPoster}
+            alt=""
+            className="home-hero__ambient-image"
+          />
 
-        <div
-          className="home-hero__overlay"
-          aria-hidden="true"
-        />
+          <div className="home-hero__ambient-overlay" />
+        </div>
 
         <div
           className="home-hero__glow home-hero__glow--purple"
@@ -300,169 +97,36 @@ function Home() {
         />
 
         <div className="home-hero__container">
-          <div className="home-hero__content">
-            <img
-              src={logo}
-              alt={`${festivalName} logo`}
-              className="home-hero__logo"
-            />
-
-            <div className="home-hero__eyebrow">
-              <span
-                className="home-hero__eyebrow-line"
-                aria-hidden="true"
-              />
-
-              <Sparkles
-                size={14}
-                aria-hidden="true"
-              />
-
-              <span>
-                {tagline}
-              </span>
-
-              <Sparkles
-                size={14}
-                aria-hidden="true"
-              />
-
-              <span
-                className="home-hero__eyebrow-line"
-                aria-hidden="true"
-              />
-            </div>
-
-            <h1
-              id="home-hero-title"
-              className="home-hero__title"
+          <div className="home-hero__poster-wrapper">
+            <a
+              href={EVENTPOP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="home-hero__poster-link"
+              aria-label="View Waterfall Festival event and tickets on Eventpop"
             >
-              {
-                titleParts.firstLine
-              }
+              <img
+                src={eventPoster}
+                alt="Waterfall Festival, Wednesday 19 August 2026, Koh Phangan"
+                className="home-hero__poster"
+              />
 
-              {titleParts.secondLine && (
+              <span className="home-hero__poster-action">
                 <span>
-                  {
-                    titleParts.secondLine
-                  }
+                  View Event & Tickets
                 </span>
-              )}
-            </h1>
 
-            <p className="home-hero__description">
-              Electronic music, fire
-              performances and tropical
-              energy beneath the
-              waterfalls of{" "}
-              {location}.
+                <ExternalLink
+                  size={16}
+                  aria-hidden="true"
+                />
+              </span>
+            </a>
+
+            <p className="home-hero__poster-hint">
+              Tap the poster to view the
+              official event and tickets
             </p>
-
-            {(
-              ticketsEnabled ||
-              eventsEnabled
-            ) && (
-              <div className="home-hero__actions">
-                {ticketsEnabled && (
-                  <a
-                    href={EVENTPOP_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="home-hero__button home-hero__button--primary"
-                  >
-                    Get Tickets
-                  </a>
-                )}
-
-                {eventsEnabled && (
-                  <a
-                    href={EVENTPOP_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="home-hero__button home-hero__button--secondary"
-                  >
-                    Explore Events
-                  </a>
-                )}
-              </div>
-            )}
-
-            <div className="home-hero__details">
-              <div className="home-hero__detail">
-                <div className="home-hero__detail-icon">
-                  <MapPin
-                    size={18}
-                    aria-hidden="true"
-                  />
-                </div>
-
-                <div>
-                  <span>
-                    Location
-                  </span>
-
-                  <strong
-                    title={
-                      displayedLocation
-                    }
-                  >
-                    {
-                      displayedLocation
-                    }
-                  </strong>
-                </div>
-              </div>
-
-              <div className="home-hero__detail">
-                <div className="home-hero__detail-icon">
-                  <CalendarDays
-                    size={18}
-                    aria-hidden="true"
-                  />
-                </div>
-
-                <div>
-                  <span>
-                    Festival Dates
-                  </span>
-
-                  <strong
-                    title={
-                      festivalDates
-                    }
-                  >
-                    {
-                      festivalDates
-                    }
-                  </strong>
-                </div>
-              </div>
-
-              <div className="home-hero__detail">
-                <div className="home-hero__detail-icon">
-                  <Sparkles
-                    size={18}
-                    aria-hidden="true"
-                  />
-                </div>
-
-                <div>
-                  <span>
-                    Status
-                  </span>
-
-                  <strong
-                    title={
-                      festivalStatus
-                    }
-                  >
-                    {
-                      festivalStatus
-                    }
-                  </strong>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -477,12 +141,8 @@ function Home() {
                 Discover More
               </span>
 
-              <div
-                aria-hidden="true"
-              >
-                <ArrowDown
-                  size={17}
-                />
+              <div aria-hidden="true">
+                <ArrowDown size={17} />
               </div>
             </a>
           )}
