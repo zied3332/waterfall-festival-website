@@ -1182,3 +1182,650 @@ gallery-preview-loading {
     animation: none;
   }
 }
+/* =========================
+   Gallery card button reset
+========================= */
+
+button.gallery-preview-card {
+  padding: 0;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
+
+  font: inherit;
+
+  text-align: left;
+
+  cursor: zoom-in;
+
+  appearance: none;
+}
+
+
+/* =========================
+   Zoom indicator
+========================= */
+
+.gallery-preview-card__zoom {
+  position: absolute;
+
+  z-index: 3;
+
+  top: 8px;
+  right: 8px;
+
+  width: 29px;
+  height: 29px;
+
+  display: grid;
+
+  place-items: center;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.16
+    );
+
+  border-radius: 50%;
+
+  background:
+    rgba(
+      3,
+      3,
+      10,
+      0.58
+    );
+
+  color: #ffffff;
+
+  opacity: 0;
+
+  backdrop-filter:
+    blur(8px);
+
+  transform:
+    scale(0.88);
+
+  transition:
+    opacity
+      180ms ease,
+    transform
+      180ms ease;
+}
+
+.gallery-preview-card:hover
+.gallery-preview-card__zoom {
+  opacity: 1;
+
+  transform:
+    scale(1);
+}
+
+
+/* =========================
+   Full-screen lightbox
+========================= */
+
+.gallery-preview-lightbox {
+  position: fixed;
+
+  z-index: 99999;
+
+  inset: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding:
+    72px
+    82px
+    48px;
+
+  background:
+    rgba(
+      2,
+      3,
+      9,
+      0.96
+    );
+
+  backdrop-filter:
+    blur(16px);
+
+  animation:
+    gallery-lightbox-fade
+    180ms ease;
+}
+
+@keyframes
+gallery-lightbox-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+
+/* =========================
+   Top controls
+========================= */
+
+.gallery-preview-lightbox__top {
+  position: absolute;
+
+  z-index: 5;
+
+  top: 18px;
+  right: 20px;
+  left: 20px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  pointer-events: none;
+}
+
+.gallery-preview-lightbox__counter {
+  min-height: 36px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  padding:
+    0
+    12px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.1
+    );
+
+  border-radius: 999px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.05
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.65
+    );
+
+  font-size: 0.7rem;
+  font-weight: 800;
+
+  pointer-events: auto;
+}
+
+.gallery-preview-lightbox__counter
+span:first-child {
+  color: #ffffff;
+}
+
+.gallery-preview-lightbox__close {
+  width: 40px;
+  height: 40px;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 0;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.11
+    );
+
+  border-radius: 50%;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.06
+    );
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  pointer-events: auto;
+
+  transition:
+    background-color
+      170ms ease,
+    transform
+      170ms ease;
+}
+
+.gallery-preview-lightbox__close:hover {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.14
+    );
+
+  transform:
+    rotate(5deg);
+}
+
+
+/* =========================
+   Viewer
+========================= */
+
+.gallery-preview-lightbox__viewer {
+  position: relative;
+
+  max-width:
+    min(
+      1200px,
+      100%
+    );
+
+  max-height: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-direction: column;
+
+  touch-action:
+    pan-y;
+
+  user-select: none;
+}
+
+.gallery-preview-lightbox__image {
+  display: block;
+
+  max-width: 100%;
+
+  max-height:
+    calc(
+      100vh - 160px
+    );
+
+  width: auto;
+  height: auto;
+
+  object-fit: contain;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 30px 80px
+    rgba(
+      0,
+      0,
+      0,
+      0.55
+    );
+
+  animation:
+    gallery-lightbox-image
+    200ms ease;
+}
+
+@keyframes
+gallery-lightbox-image {
+  from {
+    opacity: 0;
+
+    transform:
+      scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      scale(1);
+  }
+}
+
+
+/* =========================
+   Image details
+========================= */
+
+.gallery-preview-lightbox__details {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-top: 12px;
+}
+
+.gallery-preview-lightbox__details
+span {
+  color: #c084fc;
+
+  font-size: 0.55rem;
+  font-weight: 850;
+
+  letter-spacing:
+    0.08em;
+
+  text-transform:
+    uppercase;
+}
+
+.gallery-preview-lightbox__details
+h3 {
+  margin:
+    3px
+    0
+    0;
+
+  color: #ffffff;
+
+  font-size:
+    clamp(
+      0.9rem,
+      2vw,
+      1.15rem
+    );
+
+  font-weight: 850;
+}
+
+
+/* =========================
+   Swipe hint
+========================= */
+
+.gallery-preview-lightbox__swipe {
+  display: none;
+
+  align-items: center;
+
+  gap: 5px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.42
+    );
+}
+
+.gallery-preview-lightbox__swipe
+span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.42
+    );
+
+  font-size: 0.52rem;
+
+  letter-spacing:
+    0.05em;
+}
+
+
+/* =========================
+   Navigation arrows
+========================= */
+
+.gallery-preview-lightbox__nav {
+  position: absolute;
+
+  z-index: 4;
+
+  top: 50%;
+
+  width: 48px;
+  height: 48px;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 0;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.11
+    );
+
+  border-radius: 50%;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.055
+    );
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  transform:
+    translateY(-50%);
+
+  transition:
+    background-color
+      170ms ease,
+    border-color
+      170ms ease,
+    transform
+      170ms ease;
+}
+
+.gallery-preview-lightbox__nav:hover {
+  border-color:
+    rgba(
+      192,
+      132,
+      252,
+      0.45
+    );
+
+  background:
+    rgba(
+      124,
+      58,
+      237,
+      0.2
+    );
+}
+
+.gallery-preview-lightbox__nav--previous {
+  left: 20px;
+}
+
+.gallery-preview-lightbox__nav--next {
+  right: 20px;
+}
+
+.gallery-preview-lightbox__nav--previous:hover {
+  transform:
+    translateY(-50%)
+    translateX(-2px);
+}
+
+.gallery-preview-lightbox__nav--next:hover {
+  transform:
+    translateY(-50%)
+    translateX(2px);
+}
+
+
+/* =========================
+   Mobile lightbox
+========================= */
+
+@media (
+  max-width: 700px
+) {
+  .gallery-preview-card__zoom {
+    display: none;
+  }
+
+  .gallery-preview-lightbox {
+    padding:
+      66px
+      10px
+      24px;
+  }
+
+  .gallery-preview-lightbox__top {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+  }
+
+  .gallery-preview-lightbox__close {
+    width: 38px;
+    height: 38px;
+  }
+
+  .gallery-preview-lightbox__counter {
+    min-height: 34px;
+  }
+
+  .gallery-preview-lightbox__viewer {
+    width: 100%;
+  }
+
+  .gallery-preview-lightbox__image {
+    max-width: 100%;
+
+    max-height:
+      calc(
+        100vh - 145px
+      );
+
+    border-radius: 7px;
+  }
+
+  /*
+   * Mobile uses swipe,
+   * so arrows stay out
+   * of the image.
+   */
+  .gallery-preview-lightbox__nav {
+    display: none;
+  }
+
+  .gallery-preview-lightbox__details {
+    padding:
+      10px
+      4px
+      0;
+  }
+
+  .gallery-preview-lightbox__details
+  h3 {
+    max-width: 230px;
+
+    overflow: hidden;
+
+    font-size: 0.82rem;
+
+    text-overflow:
+      ellipsis;
+
+    white-space: nowrap;
+  }
+
+  .gallery-preview-lightbox__swipe {
+    display: flex;
+  }
+}
+
+
+/* =========================
+   Very small phones
+========================= */
+
+@media (
+  max-width: 380px
+) {
+  .gallery-preview-lightbox {
+    padding-inline: 6px;
+  }
+
+  .gallery-preview-lightbox__details
+  h3 {
+    max-width: 190px;
+  }
+}
+
+
+/* =========================
+   Reduced motion
+========================= */
+
+@media (
+  prefers-reduced-motion:
+    reduce
+) {
+  .gallery-preview-lightbox,
+  .gallery-preview-lightbox__image {
+    animation: none;
+  }
+
+  .gallery-preview-lightbox__close,
+  .gallery-preview-lightbox__nav,
+  .gallery-preview-card__zoom {
+    transition: none;
+  }
+}
