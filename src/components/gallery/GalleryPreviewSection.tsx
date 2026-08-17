@@ -1,187 +1,386 @@
 import {
+  useCallback,
+  useEffect,
+  useMemo,
   useState,
-  type CSSProperties,
 } from "react";
 
 import { Link } from "react-router-dom";
-import { Camera } from "lucide-react";
 
-import gallery1 from "../../../assets/gallery-1.jpg";
-import gallery2 from "../../../assets/gallery-2.jpg";
-import gallery3 from "../../../assets/gallery-3.jpg";
-import gallery4 from "../../../assets/gallery-4.jpg";
-import gallery5 from "../../../assets/gallery-5.jpg";
+import {
+  ArrowRight,
+  Camera,
+  Images,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
+
+import {
+  getGallery,
+} from "../../services/gallery.service";
+
+import type {
+  GalleryImage,
+} from "../../types/gallery";
 
 import "./gallery-preview.css";
 
-type GalleryMemory = {
-  image: string;
-  className: string;
-  alt: string;
-  pin?: boolean;
-  tape?: boolean;
-};
-
-const memories: GalleryMemory[] = [
-  {
-    image: gallery1,
-    className: "memory-1",
-    alt: "Waterfall Festival crowd and DJ performance",
-    pin: true,
-  },
-  {
-    image: gallery2,
-    className: "memory-2",
-    alt: "Waterfall Festival fire performance",
-    tape: true,
-  },
-  {
-    image: gallery3,
-    className: "memory-3",
-    alt: "Friends enjoying Waterfall Festival",
-    pin: true,
-  },
-  {
-    image: gallery4,
-    className: "memory-4",
-    alt: "DJ performing at Waterfall Festival",
-    tape: true,
-  },
-  {
-    image: gallery5,
-    className: "memory-5",
-    alt: "Waterfall Festival tropical atmosphere",
-    pin: true,
-  },
-];
-
-type StackStyle = CSSProperties & {
-  "--stack-index": number;
-  "--stack-z": number;
-};
+const PREVIEW_LIMIT = 10;
+const SKELETON_COUNT = 10;
 
 function GalleryPreviewSection() {
-  const [activeMemory, setActiveMemory] =
-    useState(0);
+  const [
+    galleryItems,
+    setGalleryItems,
+  ] = useState<GalleryImage[]>([]);
 
-  function showNextMemory(): void {
-    setActiveMemory(
-      (current) =>
-        (current + 1) % memories.length,
-    );
-  }
+  const [
+    isLoading,
+    setIsLoading,
+  ] = useState(true);
+
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(
+    null,
+  );
+
+  const loadGallery =
+    useCallback(async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const data =
+          await getGallery();
+
+        setGalleryItems(data);
+      } catch (requestError) {
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to load gallery images.";
+
+        setError(message);
+      } finally {
+        setIsLoading(false);
+      }
+    }, []);
+
+  useEffect(() => {
+    void loadGallery();
+  }, [loadGallery]);
+
+  const previewItems =
+    useMemo(() => {
+      return [...galleryItems]
+        .sort(
+          (
+            firstItem,
+            secondItem,
+          ) => {
+            if (
+              firstItem.isFeatured ===
+              secondItem.isFeatured
+            ) {
+              return 0;
+            }
+
+            return firstItem.isFeatured
+              ? -1
+              : 1;
+          },
+        )
+        .slice(
+          0,
+          PREVIEW_LIMIT,
+        );
+    }, [galleryItems]);
 
   return (
     <section
       className="gallery-preview"
       aria-labelledby="gallery-preview-title"
     >
+      <div className="gallery-preview__glow gallery-preview__glow--left" />
+
+      <div className="gallery-preview__glow gallery-preview__glow--right" />
+
       <div className="gallery-preview-container">
+        {/* =========================
+            Header
+        ========================= */}
+
         <header className="gallery-preview-header">
-          <p className="gallery-preview-label">
-            Gallery
-          </p>
+          <div className="gallery-preview-heading">
+            <div className="gallery-preview-heading__icon">
+              <Camera
+                size={20}
+                aria-hidden="true"
+              />
+            </div>
 
-          <h2
-            id="gallery-preview-title"
-            className="gallery-preview-title"
-          >
-            Experience the atmosphere
-          </h2>
+            <div>
+              <p className="gallery-preview-label">
+                Festival Gallery
+              </p>
 
-          <p className="gallery-preview-description">
-            A glimpse of unforgettable nights,
-            incredible performances and magical
-            moments from Waterfall Festival.
-          </p>
-        </header>
-
-        <div className="gallery-memory-wall">
-          {memories.map((item, index) => {
-            const stackIndex =
-              (index -
-                activeMemory +
-                memories.length) %
-              memories.length;
-
-            const stackStyle: StackStyle = {
-              "--stack-index": stackIndex,
-              "--stack-z":
-                memories.length - stackIndex,
-            };
-
-            return (
-              <button
-                key={item.className}
-                type="button"
-                className={[
-                  "memory-card",
-                  "memory-photo",
-                  item.className,
-                  stackIndex === 0
-                    ? "is-active"
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                style={stackStyle}
-                onClick={showNextMemory}
-                aria-label={`Show next gallery memory. Currently showing ${item.alt}.`}
+              <h2
+                id="gallery-preview-title"
+                className="gallery-preview-title"
               >
-                {item.pin && (
-                  <span
-                    className="memory-pin"
-                    aria-hidden="true"
-                  />
-                )}
-
-                {item.tape && (
-                  <span
-                    className="memory-tape"
-                    aria-hidden="true"
-                  />
-                )}
-
-                <img
-                  src={item.image}
-                  alt={item.alt}
-                  loading="lazy"
-                />
-              </button>
-            );
-          })}
+                Experience the atmosphere
+              </h2>
+            </div>
+          </div>
 
           <Link
             to="/gallery"
-            className="memory-card memory-cta"
-            aria-label="Explore the complete Waterfall Festival gallery"
+            className="gallery-preview-header-link"
           >
-            <Camera
-              className="memory-cta-icon"
-              size={36}
-              strokeWidth={1.8}
+            View Gallery
+
+            <ArrowRight
+              size={17}
               aria-hidden="true"
             />
-
-            <strong>1,500+</strong>
-
-            <small>Festival memories</small>
-
-            <span className="memory-cta-link">
-              Explore gallery
-              <span aria-hidden="true">→</span>
-            </span>
           </Link>
-        </div>
+        </header>
 
-        <div
-          className="gallery-preview-wave"
-          aria-hidden="true"
-        >
-          <span />
-          <b>≋</b>
-          <span />
-        </div>
+        <p className="gallery-preview-description">
+          A glimpse of unforgettable
+          Waterfall Festival nights,
+          performances and moments.
+        </p>
+
+        {/* =========================
+            Loading
+        ========================= */}
+
+        {isLoading && (
+          <div
+            className="gallery-preview-grid gallery-preview-grid--loading"
+            aria-label="Loading festival gallery"
+          >
+            {Array.from({
+              length:
+                SKELETON_COUNT,
+            }).map(
+              (_, index) => (
+                <div
+                  key={index}
+                  className="gallery-preview-skeleton"
+                  aria-hidden="true"
+                />
+              ),
+            )}
+          </div>
+        )}
+
+        {/* =========================
+            Error
+        ========================= */}
+
+        {!isLoading &&
+          error && (
+            <div className="gallery-preview-message gallery-preview-message--error">
+              <div className="gallery-preview-message__content">
+                <Images
+                  size={24}
+                  aria-hidden="true"
+                />
+
+                <div>
+                  <strong>
+                    Gallery unavailable
+                  </strong>
+
+                  <span>
+                    We couldn’t load
+                    the festival photos.
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="gallery-preview-retry"
+                onClick={() =>
+                  void loadGallery()
+                }
+              >
+                <RotateCcw
+                  size={15}
+                  aria-hidden="true"
+                />
+
+                Retry
+              </button>
+            </div>
+          )}
+
+        {/* =========================
+            Empty
+        ========================= */}
+
+        {!isLoading &&
+          !error &&
+          previewItems.length ===
+            0 && (
+            <div className="gallery-preview-message">
+              <div className="gallery-preview-message__content">
+                <Images
+                  size={24}
+                  aria-hidden="true"
+                />
+
+                <div>
+                  <strong>
+                    Photos coming soon
+                  </strong>
+
+                  <span>
+                    Published festival
+                    images will appear
+                    here automatically.
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* =========================
+            Backend gallery
+        ========================= */}
+
+        {!isLoading &&
+          !error &&
+          previewItems.length >
+            0 && (
+            <>
+              <div className="gallery-preview-grid">
+                {previewItems.map(
+                  (
+                    item,
+                    index,
+                  ) => {
+                    const eventName =
+                      item.event
+                        ?.title ??
+                      "Waterfall Festival";
+
+                    return (
+                      <Link
+                        to="/gallery"
+                        key={item.id}
+                        className={[
+                          "gallery-preview-card",
+                          item.isFeatured
+                            ? "gallery-preview-card--featured"
+                            : "",
+                          index === 0
+                            ? "gallery-preview-card--lead"
+                            : "",
+                        ]
+                          .filter(
+                            Boolean,
+                          )
+                          .join(
+                            " ",
+                          )}
+                        aria-label={`Open gallery and view ${item.title}`}
+                      >
+                        <img
+                          src={
+                            item.imageUrl
+                          }
+                          alt={
+                            item.altText ??
+                            item.title
+                          }
+                          loading="lazy"
+                          decoding="async"
+                          className="gallery-preview-card__image"
+                        />
+
+                        <span
+                          className="gallery-preview-card__overlay"
+                          aria-hidden="true"
+                        />
+
+                        {item.isFeatured && (
+                          <span className="gallery-preview-card__featured">
+                            <Sparkles
+                              size={11}
+                              aria-hidden="true"
+                            />
+
+                            Featured
+                          </span>
+                        )}
+
+                        <span className="gallery-preview-card__content">
+                          <small>
+                            {
+                              eventName
+                            }
+                          </small>
+
+                          <strong>
+                            {
+                              item.title
+                            }
+                          </strong>
+                        </span>
+                      </Link>
+                    );
+                  },
+                )}
+              </div>
+
+              {/* =========================
+                  Bottom CTA
+              ========================= */}
+
+              <div className="gallery-preview-footer">
+                <div>
+                  <span className="gallery-preview-footer__count">
+                    {
+                      galleryItems.length
+                    }{" "}
+                    {galleryItems.length ===
+                    1
+                      ? "festival memory"
+                      : "festival memories"}
+                  </span>
+
+                  <p>
+                    Discover more moments
+                    from Waterfall
+                    Festival.
+                  </p>
+                </div>
+
+                <Link
+                  to="/gallery"
+                  className="gallery-preview-cta"
+                >
+                  <Camera
+                    size={17}
+                    aria-hidden="true"
+                  />
+
+                  Explore Full Gallery
+
+                  <ArrowRight
+                    size={16}
+                    aria-hidden="true"
+                  />
+                </Link>
+              </div>
+            </>
+          )}
       </div>
     </section>
   );

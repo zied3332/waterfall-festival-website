@@ -4,20 +4,34 @@
 
 .gallery-preview {
   position: relative;
+
   overflow: hidden;
 
-  padding: 84px 24px 72px;
+  padding:
+    clamp(48px, 6vw, 78px)
+    clamp(10px, 2vw, 24px)
+    clamp(50px, 6vw, 76px);
 
   background:
     radial-gradient(
-      circle at 82% 88%,
-      rgba(124, 58, 237, 0.24),
-      transparent 32%
+      circle at 85% 80%,
+      rgba(
+        124,
+        58,
+        237,
+        0.2
+      ),
+      transparent 30%
     ),
     radial-gradient(
-      circle at 18% 38%,
-      rgba(59, 130, 246, 0.09),
-      transparent 30%
+      circle at 12% 22%,
+      rgba(
+        34,
+        211,
+        238,
+        0.07
+      ),
+      transparent 28%
     ),
     linear-gradient(
       180deg,
@@ -28,20 +42,115 @@
   color: #ffffff;
 }
 
+.gallery-preview__glow {
+  position: absolute;
+
+  border-radius: 50%;
+
+  filter: blur(100px);
+
+  pointer-events: none;
+}
+
+.gallery-preview__glow--left {
+  top: 10%;
+  left: -180px;
+
+  width: 350px;
+  height: 350px;
+
+  background:
+    rgba(
+      124,
+      58,
+      237,
+      0.11
+    );
+}
+
+.gallery-preview__glow--right {
+  right: -180px;
+  bottom: 5%;
+
+  width: 360px;
+  height: 360px;
+
+  background:
+    rgba(
+      34,
+      211,
+      238,
+      0.06
+    );
+}
+
 .gallery-preview-container {
-  width: min(100%, 1240px);
+  position: relative;
+  z-index: 2;
+
+  width: min(
+    100%,
+    1450px
+  );
+
   margin: 0 auto;
 }
+
 
 /* =========================
    Header
 ========================= */
 
 .gallery-preview-header {
-  max-width: 760px;
-  margin: 0 auto;
+  display: flex;
 
-  text-align: center;
+  align-items: flex-end;
+
+  justify-content:
+    space-between;
+
+  gap: 20px;
+}
+
+.gallery-preview-heading {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+}
+
+.gallery-preview-heading__icon {
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 auto;
+
+  display: grid;
+
+  place-items: center;
+
+  border:
+    1px solid
+    rgba(
+      168,
+      85,
+      247,
+      0.25
+    );
+
+  border-radius: 12px;
+
+  background:
+    rgba(
+      124,
+      58,
+      237,
+      0.12
+    );
+
+  color: #c084fc;
 }
 
 .gallery-preview-label {
@@ -49,610 +158,1005 @@
 
   color: #a855f7;
 
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-weight: 900;
-  letter-spacing: 0.22em;
+
+  letter-spacing: 0.17em;
+
   text-transform: uppercase;
 }
 
 .gallery-preview-title {
-  margin: 14px 0 0;
+  margin: 5px 0 0;
 
   color: #ffffff;
 
-  font-size: clamp(
-    2.5rem,
-    5vw,
-    4.5rem
-  );
+  font-size:
+    clamp(
+      1.9rem,
+      4vw,
+      3.2rem
+    );
+
   font-weight: 950;
-  line-height: 1.02;
-  letter-spacing: -0.045em;
-  text-transform: none;
+
+  line-height: 1;
+
+  letter-spacing:
+    -0.04em;
+}
+
+.gallery-preview-header-link {
+  flex: 0 0 auto;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  min-height: 40px;
+
+  padding:
+    0
+    13px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.11
+    );
+
+  border-radius: 10px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.045
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.76
+    );
+
+  font-size: 0.7rem;
+  font-weight: 800;
+
+  text-decoration: none;
+
+  transition:
+    background-color
+      170ms ease,
+    border-color
+      170ms ease,
+    color
+      170ms ease,
+    transform
+      170ms ease;
+}
+
+.gallery-preview-header-link:hover {
+  border-color:
+    rgba(
+      192,
+      132,
+      252,
+      0.42
+    );
+
+  background:
+    rgba(
+      124,
+      58,
+      237,
+      0.1
+    );
+
+  color: #ffffff;
+
+  transform:
+    translateY(-2px);
 }
 
 .gallery-preview-description {
-  max-width: 650px;
-  margin: 18px auto 0;
+  max-width: 620px;
+
+  margin:
+    13px
+    0
+    0;
 
   color:
-    rgba(226, 232, 240, 0.76);
+    rgba(
+      226,
+      232,
+      240,
+      0.62
+    );
 
-  font-size: 1rem;
-  line-height: 1.75;
+  font-size: 0.82rem;
+
+  line-height: 1.6;
 }
 
+
 /* =========================
-   Memory wall
+   Dense preview grid
 ========================= */
 
-.gallery-memory-wall {
+.gallery-preview-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  grid-auto-flow: dense;
+
+  gap: 7px;
+
+  margin-top:
+    clamp(
+      24px,
+      4vw,
+      40px
+    );
+}
+
+.gallery-preview-card {
   position: relative;
 
-  min-height: 560px;
-  margin-top: 66px;
-}
-
-/* =========================
-   Memory cards
-========================= */
-
-.memory-card {
-  position: absolute;
+  min-width: 0;
 
   overflow: hidden;
 
-  border-radius: 8px;
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
+
+  border-radius: 10px;
+
+  background: #0b0b13;
+
+  color: #ffffff;
+
+  aspect-ratio:
+    1 / 1;
+
+  text-decoration: none;
 
   box-shadow:
-    0 24px 62px
-    rgba(0, 0, 0, 0.48);
+    0 10px 30px
+    rgba(
+      0,
+      0,
+      0,
+      0.25
+    );
 
   transition:
-    box-shadow 260ms ease,
-    transform 260ms ease;
+    transform
+      190ms ease,
+    border-color
+      190ms ease,
+    box-shadow
+      190ms ease;
 }
 
-.memory-photo {
-  padding: 11px 11px 42px;
-
-  border: 0;
-
-  background: #ffffff;
-
-  cursor: pointer;
-
-  font: inherit;
+.gallery-preview-card:nth-child(
+  4n + 2
+) {
+  aspect-ratio:
+    4 / 5;
 }
 
-.memory-photo:focus-visible,
-.memory-cta:focus-visible {
-  outline: 4px solid
-    rgba(168, 85, 247, 0.52);
-  outline-offset: 5px;
+.gallery-preview-card:nth-child(
+  5n + 4
+) {
+  aspect-ratio:
+    3 / 4;
 }
 
-.memory-card:hover {
-  z-index: 30;
+.gallery-preview-card--featured,
+.gallery-preview-card--lead {
+  grid-column:
+    span 2;
+
+  aspect-ratio:
+    16 / 9;
+}
+
+.gallery-preview-card:hover {
+  z-index: 5;
+
+  border-color:
+    rgba(
+      192,
+      132,
+      252,
+      0.5
+    );
 
   box-shadow:
-    0 30px 78px
-    rgba(0, 0, 0, 0.58);
+    0 18px 42px
+    rgba(
+      0,
+      0,
+      0,
+      0.4
+    );
 
   transform:
-    translateY(-10px)
-    rotate(0deg)
-    scale(1.025);
+    translateY(-3px);
 }
 
-.memory-card img {
-  display: block;
+.gallery-preview-card:focus-visible {
+  outline:
+    3px solid
+    rgba(
+      192,
+      132,
+      252,
+      0.5
+    );
+
+  outline-offset: 4px;
+}
+
+.gallery-preview-card__image {
+  position: absolute;
+
+  inset: 0;
 
   width: 100%;
   height: 100%;
 
-  border-radius: 3px;
+  display: block;
 
   object-fit: cover;
+
+  transition:
+    transform
+      350ms ease,
+    filter
+      350ms ease;
 }
 
-/* =========================
-   Decorative pin and tape
-========================= */
-
-.memory-pin {
-  position: absolute;
-  top: -14px;
-  left: 50%;
-  z-index: 5;
-
-  width: 21px;
-  height: 21px;
-
-  border-radius: 50%;
-
-  background:
-    linear-gradient(
-      135deg,
-      #a855f7,
-      #7c3aed
-    );
-
-  box-shadow:
-    0 7px 14px
-    rgba(124, 58, 237, 0.46);
-
-  transform: translateX(-50%);
-}
-
-.memory-pin::after {
-  position: absolute;
-  inset: 5px;
-
-  border-radius: 50%;
-
-  background:
-    rgba(255, 255, 255, 0.28);
-
-  content: "";
-}
-
-.memory-tape {
-  position: absolute;
-  top: -21px;
-  left: 50%;
-  z-index: 5;
-
-  width: 88px;
-  height: 30px;
-
-  background:
-    rgba(210, 190, 155, 0.64);
-
-  box-shadow:
-    0 8px 18px
-    rgba(0, 0, 0, 0.24);
+.gallery-preview-card:hover
+.gallery-preview-card__image {
+  filter:
+    saturate(1.08);
 
   transform:
-    translateX(-50%)
-    rotate(-1deg);
+    scale(1.04);
 }
 
-/* =========================
-   Desktop card placement
-========================= */
+.gallery-preview-card__overlay {
+  position: absolute;
 
-.memory-1 {
-  top: 42px;
-  left: 1%;
+  z-index: 1;
 
-  width: 32%;
-  height: 292px;
-
-  transform: rotate(-3deg);
-}
-
-.memory-2 {
-  top: 0;
-  left: 36%;
-
-  width: 27%;
-  height: 288px;
-
-  transform: rotate(1.5deg);
-}
-
-.memory-3 {
-  top: 42px;
-  right: 1%;
-
-  width: 32%;
-  height: 292px;
-
-  transform: rotate(3.5deg);
-}
-
-.memory-4 {
-  bottom: 35px;
-  left: 8%;
-
-  width: 29%;
-  height: 248px;
-
-  transform: rotate(2.5deg);
-}
-
-.memory-5 {
-  bottom: 42px;
-  left: 35%;
-
-  width: 32%;
-  height: 248px;
-
-  transform: rotate(-1deg);
-}
-
-/* =========================
-   Gallery CTA card
-========================= */
-
-.memory-cta {
-  right: 1%;
-  bottom: 38px;
-
-  width: 28%;
-  height: 248px;
-  padding: 30px;
-
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  flex-direction: column;
-
-  border: 3px solid #ffffff;
+  inset: 0;
 
   background:
     linear-gradient(
-      rgba(10, 12, 35, 0.84),
-      rgba(10, 12, 35, 0.95)
-    ),
-    radial-gradient(
-      circle at 80% 20%,
-      rgba(168, 85, 247, 0.4),
-      transparent 38%
-    ),
-    linear-gradient(
-      135deg,
-      #2e1065,
-      #0f172a
+      180deg,
+      rgba(
+        3,
+        3,
+        10,
+        0.03
+      ) 35%,
+      rgba(
+        3,
+        3,
+        10,
+        0.75
+      ) 100%
+    );
+
+  pointer-events: none;
+}
+
+.gallery-preview-card__featured {
+  position: absolute;
+
+  z-index: 2;
+
+  top: 8px;
+  left: 8px;
+
+  min-height: 23px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 4px;
+
+  padding:
+    0
+    7px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.2
+    );
+
+  border-radius: 999px;
+
+  background:
+    rgba(
+      109,
+      40,
+      217,
+      0.88
     );
 
   color: #ffffff;
-  text-decoration: none;
 
-  transform: rotate(1.5deg);
+  backdrop-filter:
+    blur(8px);
+
+  font-size: 0.48rem;
+  font-weight: 850;
+
+  letter-spacing:
+    0.04em;
+
+  text-transform:
+    uppercase;
 }
 
-.memory-cta-icon {
-  margin-bottom: 16px;
+.gallery-preview-card__content {
+  position: absolute;
 
-  color: #a855f7;
+  z-index: 2;
+
+  right: 9px;
+  bottom: 9px;
+  left: 9px;
+
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction:
+    column;
+
+  gap: 3px;
 }
 
-.memory-cta strong {
-  font-size: clamp(
-    2.8rem,
-    4.8vw,
-    4.4rem
-  );
-  font-weight: 950;
-  line-height: 0.95;
-  letter-spacing: -0.055em;
+.gallery-preview-card__content small {
+  overflow: hidden;
+
+  color: #c4b5fd;
+
+  font-size: 0.46rem;
+  font-weight: 850;
+
+  letter-spacing:
+    0.075em;
+
+  text-overflow:
+    ellipsis;
+
+  text-transform:
+    uppercase;
+
+  white-space: nowrap;
 }
 
-.memory-cta small {
-  margin-top: 9px;
+.gallery-preview-card__content strong {
+  overflow: hidden;
 
-  color: #a855f7;
+  color: #ffffff;
+
+  font-size: 0.68rem;
+  font-weight: 850;
+
+  line-height: 1.2;
+
+  text-overflow:
+    ellipsis;
+
+  white-space: nowrap;
+}
+
+
+/* =========================
+   Loading
+========================= */
+
+.gallery-preview-grid--loading {
+  pointer-events: none;
+}
+
+.gallery-preview-skeleton {
+  aspect-ratio:
+    1 / 1;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #0c0d17 25%,
+      #171827 50%,
+      #0c0d17 75%
+    );
+
+  background-size:
+    200% 100%;
+
+  animation:
+    gallery-preview-loading
+    1.3s
+    linear
+    infinite;
+}
+
+.gallery-preview-skeleton:nth-child(
+  4n + 2
+) {
+  aspect-ratio:
+    4 / 5;
+}
+
+.gallery-preview-skeleton:first-child {
+  grid-column:
+    span 2;
+
+  aspect-ratio:
+    16 / 9;
+}
+
+@keyframes
+gallery-preview-loading {
+  from {
+    background-position:
+      200% 0;
+  }
+
+  to {
+    background-position:
+      -200% 0;
+  }
+}
+
+
+/* =========================
+   Message states
+========================= */
+
+.gallery-preview-message {
+  max-width: 720px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content:
+    space-between;
+
+  gap: 16px;
+
+  margin:
+    30px
+    auto
+    0;
+
+  padding:
+    18px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
+
+  border-radius: 13px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.04
+    );
+}
+
+.gallery-preview-message__content {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  color: #c084fc;
+}
+
+.gallery-preview-message__content div {
+  display: flex;
+
+  flex-direction:
+    column;
+
+  gap: 4px;
+}
+
+.gallery-preview-message__content strong {
+  color: #ffffff;
 
   font-size: 0.85rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
-.memory-cta-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
+.gallery-preview-message__content span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.55
+    );
 
-  margin-top: 24px;
+  font-size: 0.72rem;
+}
+
+.gallery-preview-message--error {
+  border-color:
+    rgba(
+      248,
+      113,
+      113,
+      0.25
+    );
+}
+
+.gallery-preview-retry {
+  min-height: 36px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  padding:
+    0
+    12px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.12
+    );
+
+  border-radius: 8px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.05
+    );
 
   color: #ffffff;
 
-  font-size: 0.92rem;
-  font-weight: 850;
+  cursor: pointer;
+
+  font-family: inherit;
+
+  font-size: 0.68rem;
+  font-weight: 800;
 }
 
-.memory-cta-link > span {
-  transition:
-    transform 160ms ease;
-}
-
-.memory-cta:hover
-  .memory-cta-link > span {
-  transform: translateX(4px);
-}
 
 /* =========================
-   Decorative wave
+   Footer CTA
 ========================= */
 
-.gallery-preview-wave {
+.gallery-preview-footer {
   display: flex;
+
   align-items: center;
-  justify-content: center;
-  gap: 18px;
 
-  margin-top: 4px;
+  justify-content:
+    space-between;
 
-  color: #a855f7;
-}
+  gap: 20px;
 
-.gallery-preview-wave span {
-  width: 42px;
-  height: 1px;
+  margin-top: 22px;
+
+  padding:
+    17px
+    18px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
+
+  border-radius: 13px;
 
   background:
-    rgba(168, 85, 247, 0.42);
-}
-
-.gallery-preview-wave b {
-  font-size: 1.8rem;
-  font-weight: 500;
-  line-height: 1;
-}
-
-/* =========================
-   Medium desktop
-========================= */
-
-@media (max-width: 1100px) {
-  .gallery-preview-container {
-    width: min(100%, 980px);
-  }
-
-  .gallery-memory-wall {
-    min-height: 510px;
-  }
-
-  .memory-1,
-  .memory-3 {
-    height: 270px;
-  }
-
-  .memory-2 {
-    height: 266px;
-  }
-
-  .memory-4,
-  .memory-5,
-  .memory-cta {
-    height: 226px;
-  }
-
-  .memory-cta {
-    padding: 24px;
-  }
-}
-
-/* =========================
-   Tablet stack
-========================= */
-
-@media (max-width: 900px) {
-  .gallery-preview {
-    padding:
-      72px
-      18px
-      64px;
-  }
-
-  .gallery-preview-title {
-    font-size: clamp(
-      2.35rem,
-      8vw,
-      3.7rem
+    rgba(
+      255,
+      255,
+      255,
+      0.035
     );
-  }
+}
 
-  .gallery-memory-wall {
-    min-height: 510px;
-    margin-top: 48px;
-  }
+.gallery-preview-footer__count {
+  color: #c084fc;
 
-  .memory-photo,
-  .memory-1,
-  .memory-2,
-  .memory-3,
-  .memory-4,
-  .memory-5 {
-    top: 0;
-    right: auto;
-    bottom: auto;
-    left: 50%;
+  font-size: 0.68rem;
+  font-weight: 900;
 
-    width: min(82vw, 420px);
-    height: 310px;
+  letter-spacing:
+    0.06em;
 
-    opacity:
-      calc(
-        1 -
-        (
-          var(--stack-index) *
-          0.14
-        )
+  text-transform:
+    uppercase;
+}
+
+.gallery-preview-footer p {
+  margin:
+    4px
+    0
+    0;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.5
+    );
+
+  font-size: 0.72rem;
+}
+
+.gallery-preview-cta {
+  min-height: 43px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  padding:
+    0
+    16px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.15
+    );
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #6d28d9,
+      #9333ea
+    );
+
+  color: #ffffff;
+
+  font-size: 0.68rem;
+  font-weight: 900;
+
+  text-decoration: none;
+
+  text-transform:
+    uppercase;
+
+  box-shadow:
+    0 12px 28px
+    rgba(
+      109,
+      40,
+      217,
+      0.25
+    );
+
+  transition:
+    box-shadow
+      170ms ease,
+    transform
+      170ms ease;
+}
+
+.gallery-preview-cta:hover {
+  box-shadow:
+    0 17px 34px
+    rgba(
+      109,
+      40,
+      217,
+      0.38
+    );
+
+  transform:
+    translateY(-2px);
+}
+
+
+/* =========================
+   Tablet
+========================= */
+
+@media (
+  min-width: 640px
+) {
+  .gallery-preview-grid {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0, 1fr)
       );
 
-    pointer-events: none;
-
-    transform:
-      translateX(-50%)
-      translateY(
-        calc(
-          var(--stack-index) *
-          18px
-        )
-      )
-      scale(
-        calc(
-          1 -
-          (
-            var(--stack-index) *
-            0.04
-          )
-        )
-      )
-      rotate(
-        calc(
-          (
-            var(--stack-index) -
-            2
-          ) *
-          2.5deg
-        )
-      );
-
-    z-index: var(--stack-z);
+    gap: 9px;
   }
 
-  .memory-photo.is-active {
-    z-index: 20;
-
-    opacity: 1;
-
-    pointer-events: auto;
-  }
-
-  .memory-photo.is-active:hover {
-    transform:
-      translateX(-50%)
-      translateY(-7px)
-      scale(1.015)
-      rotate(0deg);
-  }
-
-  .memory-pin,
-  .memory-tape {
-    display: none;
-  }
-
-  .memory-cta {
-    position: relative;
-    inset: auto;
-
-    width: min(82vw, 420px);
-    height: 205px;
-    margin: 372px auto 0;
-
-    transform: none;
+  .gallery-preview-card--featured,
+  .gallery-preview-card--lead {
+    grid-column:
+      span 2;
   }
 }
+
+
+/* =========================
+   Desktop
+========================= */
+
+@media (
+  min-width: 960px
+) {
+  .gallery-preview-grid {
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(0, 1fr)
+      );
+
+    gap: 10px;
+  }
+}
+
+
+/* =========================
+   Wide desktop
+========================= */
+
+@media (
+  min-width: 1280px
+) {
+  .gallery-preview-grid {
+    grid-template-columns:
+      repeat(
+        5,
+        minmax(0, 1fr)
+      );
+  }
+}
+
 
 /* =========================
    Phones
 ========================= */
 
-@media (max-width: 600px) {
+@media (
+  max-width: 639px
+) {
   .gallery-preview {
     padding:
-      62px
-      14px
-      54px;
+      42px
+      7px
+      44px;
+  }
+
+  .gallery-preview-header {
+    align-items:
+      flex-start;
+  }
+
+  .gallery-preview-heading {
+    gap: 9px;
+  }
+
+  .gallery-preview-heading__icon {
+    width: 35px;
+    height: 35px;
   }
 
   .gallery-preview-title {
-    margin-top: 12px;
+    font-size:
+      clamp(
+        1.65rem,
+        8vw,
+        2.35rem
+      );
+  }
 
-    font-size: clamp(
-      2.1rem,
-      11vw,
-      3rem
-    );
-    letter-spacing: -0.035em;
+  .gallery-preview-header-link {
+    display: none;
   }
 
   .gallery-preview-description {
-    margin-top: 15px;
+    max-width: 360px;
 
-    font-size: 0.9rem;
-    line-height: 1.65;
-  }
+    margin-top: 10px;
 
-  .gallery-memory-wall {
-    min-height: 455px;
-    margin-top: 40px;
-  }
-
-  .memory-photo,
-  .memory-1,
-  .memory-2,
-  .memory-3,
-  .memory-4,
-  .memory-5 {
-    width: min(88vw, 350px);
-    height: 268px;
-    padding: 9px 9px 36px;
-  }
-
-  .memory-cta {
-    width: min(88vw, 350px);
-    height: 180px;
-    margin-top: 324px;
-    padding: 24px;
-  }
-
-  .memory-cta-icon {
-    width: 30px;
-    height: 30px;
-    margin-bottom: 12px;
-  }
-
-  .memory-cta strong {
-    font-size: 2.75rem;
-  }
-
-  .memory-cta small {
     font-size: 0.75rem;
   }
 
-  .memory-cta-link {
-    margin-top: 17px;
+  .gallery-preview-grid {
+    gap: 5px;
 
-    font-size: 0.84rem;
+    margin-top: 22px;
   }
 
-  .gallery-preview-wave {
-    margin-top: 0;
+  .gallery-preview-card {
+    border-radius: 7px;
+  }
+
+  .gallery-preview-card__featured {
+    top: 5px;
+    left: 5px;
+
+    min-height: 19px;
+
+    padding-inline:
+      5px;
+
+    font-size: 0.39rem;
+  }
+
+  .gallery-preview-card__content {
+    right: 6px;
+    bottom: 6px;
+    left: 6px;
+  }
+
+  .gallery-preview-card__content small {
+    font-size: 0.37rem;
+  }
+
+  .gallery-preview-card__content strong {
+    font-size: 0.52rem;
+  }
+
+  .gallery-preview-footer {
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+
+    gap: 12px;
+
+    margin-top: 12px;
+
+    padding: 13px;
+  }
+
+  .gallery-preview-cta {
+    width: 100%;
+  }
+
+  .gallery-preview-message {
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+  }
+
+  .gallery-preview-retry {
+    width: 100%;
   }
 }
+
 
 /* =========================
    Small phones
 ========================= */
 
-@media (max-width: 380px) {
+@media (
+  max-width: 380px
+) {
   .gallery-preview {
-    padding-inline: 12px;
+    padding-inline:
+      5px;
   }
 
-  .gallery-memory-wall {
-    min-height: 430px;
+  .gallery-preview-grid {
+    gap: 4px;
   }
 
-  .memory-photo,
-  .memory-1,
-  .memory-2,
-  .memory-3,
-  .memory-4,
-  .memory-5 {
-    width: min(90vw, 320px);
-    height: 242px;
-  }
-
-  .memory-cta {
-    width: min(90vw, 320px);
-    margin-top: 296px;
+  .gallery-preview-title {
+    font-size:
+      1.6rem;
   }
 }
+
+
+/* =========================
+   Touch devices
+========================= */
+
+@media (
+  hover: none
+) {
+  .gallery-preview-card:hover,
+  .gallery-preview-header-link:hover,
+  .gallery-preview-cta:hover {
+    transform: none;
+  }
+}
+
 
 /* =========================
    Reduced motion
 ========================= */
 
-@media (prefers-reduced-motion: reduce) {
-  .memory-card,
-  .memory-cta-link > span {
+@media (
+  prefers-reduced-motion:
+    reduce
+) {
+  .gallery-preview-card,
+  .gallery-preview-card__image,
+  .gallery-preview-header-link,
+  .gallery-preview-cta {
     transition: none;
+  }
+
+  .gallery-preview-skeleton {
+    animation: none;
   }
 }
