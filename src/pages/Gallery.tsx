@@ -25,7 +25,7 @@ type GalleryFilter =
   | "featured"
   | string;
 
-const GALLERY_SKELETON_COUNT = 6;
+const GALLERY_SKELETON_COUNT = 12;
 
 function Gallery() {
   const [galleryItems, setGalleryItems] =
@@ -74,20 +74,30 @@ function Gallery() {
   }, [galleryItems]);
 
   const eventFilters = useMemo(() => {
-    const uniqueEventTitles = new Set<string>();
+    const uniqueEventTitles =
+      new Set<string>();
 
     galleryItems.forEach((item) => {
       const eventTitle =
         item.event?.title?.trim();
 
       if (eventTitle) {
-        uniqueEventTitles.add(eventTitle);
+        uniqueEventTitles.add(
+          eventTitle,
+        );
       }
     });
 
-    return Array.from(uniqueEventTitles).sort(
-      (firstEvent, secondEvent) =>
-        firstEvent.localeCompare(secondEvent),
+    return Array.from(
+      uniqueEventTitles,
+    ).sort(
+      (
+        firstEvent,
+        secondEvent,
+      ) =>
+        firstEvent.localeCompare(
+          secondEvent,
+        ),
     );
   }, [galleryItems]);
 
@@ -96,7 +106,10 @@ function Gallery() {
       return galleryItems;
     }
 
-    if (selectedFilter === "featured") {
+    if (
+      selectedFilter ===
+      "featured"
+    ) {
       return galleryItems.filter(
         (item) => item.isFeatured,
       );
@@ -104,13 +117,19 @@ function Gallery() {
 
     return galleryItems.filter(
       (item) =>
-        item.event?.title === selectedFilter,
+        item.event?.title ===
+        selectedFilter,
     );
-  }, [galleryItems, selectedFilter]);
+  }, [
+    galleryItems,
+    selectedFilter,
+  ]);
 
   const selectedItem =
     selectedIndex !== null
-      ? filteredItems[selectedIndex] ?? null
+      ? filteredItems[
+          selectedIndex
+        ] ?? null
       : null;
 
   function handleFilterChange(
@@ -133,54 +152,72 @@ function Gallery() {
 
   const showPreviousItem =
     useCallback((): void => {
-      setSelectedIndex((currentIndex) => {
-        if (
-          currentIndex === null ||
-          filteredItems.length === 0
-        ) {
-          return null;
-        }
+      setSelectedIndex(
+        (currentIndex) => {
+          if (
+            currentIndex === null ||
+            filteredItems.length ===
+              0
+          ) {
+            return null;
+          }
 
-        return currentIndex === 0
-          ? filteredItems.length - 1
-          : currentIndex - 1;
-      });
+          return currentIndex === 0
+            ? filteredItems.length -
+                1
+            : currentIndex - 1;
+        },
+      );
     }, [filteredItems.length]);
 
   const showNextItem =
     useCallback((): void => {
-      setSelectedIndex((currentIndex) => {
-        if (
-          currentIndex === null ||
-          filteredItems.length === 0
-        ) {
-          return null;
-        }
+      setSelectedIndex(
+        (currentIndex) => {
+          if (
+            currentIndex === null ||
+            filteredItems.length ===
+              0
+          ) {
+            return null;
+          }
 
-        return currentIndex ===
-          filteredItems.length - 1
-          ? 0
-          : currentIndex + 1;
-      });
+          return currentIndex ===
+            filteredItems.length -
+              1
+            ? 0
+            : currentIndex + 1;
+        },
+      );
     }, [filteredItems.length]);
 
   useEffect(() => {
     function handleKeyboardNavigation(
       event: KeyboardEvent,
     ): void {
-      if (selectedIndex === null) {
+      if (
+        selectedIndex === null
+      ) {
         return;
       }
 
-      if (event.key === "Escape") {
+      if (
+        event.key === "Escape"
+      ) {
         closeGalleryItem();
       }
 
-      if (event.key === "ArrowLeft") {
+      if (
+        event.key ===
+        "ArrowLeft"
+      ) {
         showPreviousItem();
       }
 
-      if (event.key === "ArrowRight") {
+      if (
+        event.key ===
+        "ArrowRight"
+      ) {
         showNextItem();
       }
     }
@@ -204,25 +241,34 @@ function Gallery() {
   ]);
 
   useEffect(() => {
-    if (selectedIndex === null) {
-      document.body.style.overflow = "";
+    if (
+      selectedIndex === null
+    ) {
+      document.body.style.overflow =
+        "";
 
       return;
     }
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+      "hidden";
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow =
+        "";
     };
   }, [selectedIndex]);
 
   return (
     <main className="gallery-page">
+      {/* =========================
+          Hero
+      ========================= */}
+
       <section className="gallery-hero">
         <div className="gallery-hero__content">
           <p className="gallery-hero__label">
-            Gallery
+            Waterfall Festival Gallery
           </p>
 
           <h1 className="gallery-hero__title">
@@ -230,13 +276,16 @@ function Gallery() {
           </h1>
 
           <p className="gallery-hero__description">
-            Explore unforgettable Waterfall
-            Festival performances, crowds,
-            tropical landscapes, and island
-            nights.
+            Explore the latest photos
+            published from Waterfall
+            Festival.
           </p>
         </div>
       </section>
+
+      {/* =========================
+          Gallery
+      ========================= */}
 
       <section className="gallery-content">
         <div className="gallery-container">
@@ -246,58 +295,76 @@ function Gallery() {
                 className="gallery-toolbar__icon"
                 aria-hidden="true"
               >
-                <Camera size={20} />
+                <Camera
+                  size={19}
+                />
               </span>
 
               <div>
                 <p className="gallery-toolbar__label">
-                  Waterfall Festival
+                  Explore
                 </p>
 
-                <h2>Festival gallery</h2>
+                <h2>
+                  Festival Gallery
+                </h2>
               </div>
             </div>
 
-            {!isLoading && !error && (
-              <span className="gallery-photo-count">
-                {galleryItems.length}{" "}
-                {galleryItems.length === 1
-                  ? "photo"
-                  : "photos"}
-              </span>
-            )}
+            {!isLoading &&
+              !error && (
+                <span className="gallery-photo-count">
+                  {
+                    galleryItems.length
+                  }{" "}
+                  {galleryItems.length ===
+                  1
+                    ? "photo"
+                    : "photos"}
+                </span>
+              )}
           </header>
+
+          {/* =========================
+              Filters
+          ========================= */}
 
           {!isLoading &&
             !error &&
-            galleryItems.length > 0 && (
+            galleryItems.length >
+              0 && (
               <div
                 className="gallery-filters"
                 aria-label="Filter gallery images"
               >
                 <button
                   className={`gallery-filter${
-                    selectedFilter === "all"
+                    selectedFilter ===
+                    "all"
                       ? " gallery-filter--active"
                       : ""
                   }`}
                   type="button"
                   onClick={() =>
-                    handleFilterChange("all")
+                    handleFilterChange(
+                      "all",
+                    )
                   }
                   aria-pressed={
-                    selectedFilter === "all"
+                    selectedFilter ===
+                    "all"
                   }
                 >
                   <Images
-                    size={16}
+                    size={15}
                     aria-hidden="true"
                   />
 
                   All
                 </button>
 
-                {featuredCount > 0 && (
+                {featuredCount >
+                  0 && (
                   <button
                     className={`gallery-filter${
                       selectedFilter ===
@@ -317,7 +384,7 @@ function Gallery() {
                     }
                   >
                     <Star
-                      size={16}
+                      size={15}
                       aria-hidden="true"
                     />
 
@@ -335,7 +402,9 @@ function Gallery() {
                           : ""
                       }`}
                       type="button"
-                      key={eventTitle}
+                      key={
+                        eventTitle
+                      }
                       onClick={() =>
                         handleFilterChange(
                           eventTitle,
@@ -353,85 +422,102 @@ function Gallery() {
               </div>
             )}
 
+          {/* =========================
+              Loading
+          ========================= */}
+
           {isLoading && (
             <div
               className="gallery-skeleton-grid"
               aria-label="Loading gallery photos"
             >
               {Array.from({
-                length: GALLERY_SKELETON_COUNT,
-              }).map((_, index) => (
-                <div
-                  className="gallery-skeleton"
-                  key={index}
-                  aria-hidden="true"
-                >
-                  <div className="gallery-skeleton__image" />
+                length:
+                  GALLERY_SKELETON_COUNT,
+              }).map(
+                (_, index) => (
+                  <div
+                    className="gallery-skeleton"
+                    key={index}
+                    aria-hidden="true"
+                  />
+                ),
+              )}
+            </div>
+          )}
 
-                  <div className="gallery-skeleton__content">
-                    <div className="gallery-skeleton__line gallery-skeleton__line--label" />
+          {/* =========================
+              Error
+          ========================= */}
 
-                    <div className="gallery-skeleton__line gallery-skeleton__line--title" />
+          {!isLoading &&
+            error && (
+              <div className="gallery-message gallery-message--error">
+                <div>
+                  <h2>
+                    We couldn’t load
+                    the gallery
+                  </h2>
 
-                    <div className="gallery-skeleton__line gallery-skeleton__line--short" />
-                  </div>
+                  <p>
+                    Something went
+                    wrong while loading
+                    the latest festival
+                    photos.
+                  </p>
+
+                  <small>
+                    {error}
+                  </small>
                 </div>
-              ))}
-            </div>
-          )}
 
-          {!isLoading && error && (
-            <div className="gallery-message gallery-message--error">
-              <div>
-                <h2>
-                  We couldn’t load the gallery
-                </h2>
+                <button
+                  className="gallery-retry-button"
+                  type="button"
+                  onClick={() =>
+                    void loadGallery()
+                  }
+                >
+                  <RotateCcw
+                    size={17}
+                    aria-hidden="true"
+                  />
 
-                <p>
-                  Something went wrong while
-                  loading the latest festival
-                  photos. Please try again.
-                </p>
-
-                <small>{error}</small>
+                  Try Again
+                </button>
               </div>
+            )}
 
-              <button
-                className="gallery-retry-button"
-                type="button"
-                onClick={() =>
-                  void loadGallery()
-                }
-              >
-                <RotateCcw
-                  size={17}
-                  aria-hidden="true"
-                />
-
-                Try Again
-              </button>
-            </div>
-          )}
+          {/* =========================
+              Empty
+          ========================= */}
 
           {!isLoading &&
             !error &&
-            galleryItems.length === 0 && (
+            galleryItems.length ===
+              0 && (
               <div className="gallery-message">
                 <span
                   className="gallery-message__icon"
                   aria-hidden="true"
                 >
-                  <Images size={24} />
+                  <Images
+                    size={24}
+                  />
                 </span>
 
                 <div>
                   <h2>
-                    No festival photos yet
+                    No festival
+                    photos yet
                   </h2>
 
                   <p>
-                    Published Waterfall Festival
-                    photos will appear here.
+                    Images published
+                    from the admin
+                    dashboard will
+                    appear here
+                    automatically.
                   </p>
                 </div>
               </div>
@@ -439,14 +525,18 @@ function Gallery() {
 
           {!isLoading &&
             !error &&
-            galleryItems.length > 0 &&
-            filteredItems.length === 0 && (
+            galleryItems.length >
+              0 &&
+            filteredItems.length ===
+              0 && (
               <div className="gallery-message">
                 <span
                   className="gallery-message__icon"
                   aria-hidden="true"
                 >
-                  <Images size={24} />
+                  <Images
+                    size={24}
+                  />
                 </span>
 
                 <div>
@@ -455,29 +545,43 @@ function Gallery() {
                   </h2>
 
                   <p>
-                    There are no published photos
-                    in this gallery category yet.
+                    There are no
+                    published photos
+                    for this category.
                   </p>
                 </div>
               </div>
             )}
 
+          {/* =========================
+              Backend images
+          ========================= */}
+
           {!isLoading &&
             !error &&
-            filteredItems.length > 0 && (
+            filteredItems.length >
+              0 && (
               <>
                 <p className="gallery-results-count">
-                  Showing {filteredItems.length}{" "}
-                  {filteredItems.length === 1
+                  Showing{" "}
+                  {
+                    filteredItems.length
+                  }{" "}
+                  {filteredItems.length ===
+                  1
                     ? "photo"
                     : "photos"}
                 </p>
 
                 <div className="gallery-grid">
                   {filteredItems.map(
-                    (item, index) => {
+                    (
+                      item,
+                      index,
+                    ) => {
                       const eventLabel =
-                        item.event?.title ??
+                        item.event
+                          ?.title ??
                         "Waterfall Festival";
 
                       return (
@@ -488,7 +592,9 @@ function Gallery() {
                               : ""
                           }`}
                           type="button"
-                          key={item.id}
+                          key={
+                            item.id
+                          }
                           onClick={() =>
                             openGalleryItem(
                               index,
@@ -496,59 +602,59 @@ function Gallery() {
                           }
                           aria-label={`Open ${item.title}`}
                         >
-                          <div className="gallery-card__image-wrapper">
-                            <img
-                              className="gallery-card__image"
-                              src={item.imageUrl}
-                              alt={
-                                item.altText ??
-                                item.title
-                              }
-                              loading="lazy"
-                              decoding="async"
-                            />
+                          <img
+                            className="gallery-card__image"
+                            src={
+                              item.imageUrl
+                            }
+                            alt={
+                              item.altText ??
+                              item.title
+                            }
+                            loading="lazy"
+                            decoding="async"
+                          />
 
-                            <div
-                              className="gallery-card__overlay"
-                              aria-hidden="true"
-                            />
+                          <span
+                            className="gallery-card__shade"
+                            aria-hidden="true"
+                          />
 
-                            {item.isFeatured && (
-                              <span className="gallery-card__featured">
-                                <Star
-                                  size={13}
-                                  aria-hidden="true"
-                                />
-
-                                Featured
-                              </span>
-                            )}
-
-                            <span className="gallery-card__open">
-                              <Camera
-                                size={17}
+                          {item.isFeatured && (
+                            <span className="gallery-card__featured">
+                              <Star
+                                size={
+                                  12
+                                }
                                 aria-hidden="true"
                               />
 
-                              View
+                              Featured
                             </span>
-                          </div>
+                          )}
 
-                          <div className="gallery-card__content">
-                            <p className="gallery-card__event">
-                              {eventLabel}
-                            </p>
+                          <span className="gallery-card__info">
+                            <span className="gallery-card__event">
+                              {
+                                eventLabel
+                              }
+                            </span>
 
-                            <h3>
-                              {item.title}
-                            </h3>
+                            <strong>
+                              {
+                                item.title
+                              }
+                            </strong>
+                          </span>
 
-                            {item.description && (
-                              <p className="gallery-card__description">
-                                {item.description}
-                              </p>
-                            )}
-                          </div>
+                          <span className="gallery-card__open">
+                            <Camera
+                              size={15}
+                              aria-hidden="true"
+                            />
+
+                            View
+                          </span>
                         </button>
                       );
                     },
@@ -559,26 +665,41 @@ function Gallery() {
         </div>
       </section>
 
+      {/* =========================
+          Lightbox
+      ========================= */}
+
       {selectedItem && (
         <div
           className="gallery-lightbox"
           role="dialog"
           aria-modal="true"
-          aria-label={selectedItem.title}
-          onClick={closeGalleryItem}
+          aria-label={
+            selectedItem.title
+          }
+          onClick={
+            closeGalleryItem
+          }
         >
           <div className="gallery-lightbox__top">
             <span className="gallery-lightbox__counter">
-              {selectedIndex !== null
-                ? selectedIndex + 1
+              {selectedIndex !==
+              null
+                ? selectedIndex +
+                  1
                 : 1}{" "}
-              / {filteredItems.length}
+              /{" "}
+              {
+                filteredItems.length
+              }
             </span>
 
             <button
               className="gallery-lightbox__close"
               type="button"
-              onClick={closeGalleryItem}
+              onClick={
+                closeGalleryItem
+              }
               aria-label="Close image viewer"
             >
               <X
@@ -588,13 +709,17 @@ function Gallery() {
             </button>
           </div>
 
-          {filteredItems.length > 1 && (
+          {filteredItems.length >
+            1 && (
             <>
               <button
                 className="gallery-lightbox__navigation gallery-lightbox__navigation--previous"
                 type="button"
-                onClick={(event) => {
+                onClick={(
+                  event,
+                ) => {
                   event.stopPropagation();
+
                   showPreviousItem();
                 }}
                 aria-label="Previous image"
@@ -608,8 +733,11 @@ function Gallery() {
               <button
                 className="gallery-lightbox__navigation gallery-lightbox__navigation--next"
                 type="button"
-                onClick={(event) => {
+                onClick={(
+                  event,
+                ) => {
                   event.stopPropagation();
+
                   showNextItem();
                 }}
                 aria-label="Next image"
@@ -631,7 +759,9 @@ function Gallery() {
             <div className="gallery-lightbox__image-wrapper">
               <img
                 className="gallery-lightbox__image"
-                src={selectedItem.imageUrl}
+                src={
+                  selectedItem.imageUrl
+                }
                 alt={
                   selectedItem.altText ??
                   selectedItem.title
@@ -655,19 +785,23 @@ function Gallery() {
                   )}
 
                   <span className="gallery-lightbox__event">
-                    {selectedItem.event
-                      ?.title ??
+                    {selectedItem
+                      .event?.title ??
                       "Waterfall Festival"}
                   </span>
                 </div>
 
                 <h2>
-                  {selectedItem.title}
+                  {
+                    selectedItem.title
+                  }
                 </h2>
 
                 {selectedItem.description && (
                   <p>
-                    {selectedItem.description}
+                    {
+                      selectedItem.description
+                    }
                   </p>
                 )}
               </div>
