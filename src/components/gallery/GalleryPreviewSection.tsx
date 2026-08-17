@@ -28,11 +28,74 @@ import "./gallery-preview.css";
 const PREVIEW_LIMIT = 10;
 const SKELETON_COUNT = 10;
 
+/*
+ * This keeps the component compatible with
+ * the older GalleryImage shape while also
+ * supporting the newer media records that
+ * may contain type / mediaType / videoUrl.
+ */
+type GalleryPreviewItem =
+  GalleryImage & {
+    type?: string | null;
+    mediaType?: string | null;
+    videoUrl?: string | null;
+  };
+
+function isImageItem(
+  item: GalleryPreviewItem,
+): boolean {
+  const mediaType =
+    item.mediaType ??
+    item.type;
+
+  /*
+   * If the backend explicitly tells us
+   * the media type, accept images/photos
+   * only.
+   */
+  if (
+    typeof mediaType ===
+      "string" &&
+    mediaType.trim()
+  ) {
+    const normalizedType =
+      mediaType
+        .trim()
+        .toUpperCase();
+
+    return (
+      normalizedType ===
+        "IMAGE" ||
+      normalizedType ===
+        "PHOTO"
+    );
+  }
+
+  /*
+   * Older records may not contain a type.
+   * A videoUrl is still enough to identify
+   * a video and exclude it.
+   */
+  if (item.videoUrl) {
+    return false;
+  }
+
+  /*
+   * Older gallery-image records only had
+   * imageUrl, so keep supporting them.
+   */
+  return Boolean(
+    item.imageUrl?.trim(),
+  );
+}
+
 function GalleryPreviewSection() {
   const [
     galleryItems,
     setGalleryItems,
-  ] = useState<GalleryImage[]>([]);
+  ] = useState<
+    GalleryPreviewItem[]
+  >([]);
 
   const [
     isLoading,
@@ -42,39 +105,62 @@ function GalleryPreviewSection() {
   const [
     error,
     setError,
-  ] = useState<string | null>(
-    null,
-  );
+  ] = useState<
+    string | null
+  >(null);
 
   const loadGallery =
-    useCallback(async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    useCallback(
+      async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
 
-        const data =
-          await getGallery();
+          const data =
+            await getGallery();
 
-        setGalleryItems(data);
-      } catch (requestError) {
-        const message =
-          requestError instanceof Error
-            ? requestError.message
-            : "Failed to load gallery images.";
+          setGalleryItems(
+            data as GalleryPreviewItem[],
+          );
+        } catch (
+          requestError
+        ) {
+          const message =
+            requestError
+              instanceof Error
+              ? requestError.message
+              : "Failed to load gallery images.";
 
-        setError(message);
-      } finally {
-        setIsLoading(false);
-      }
-    }, []);
+          setError(message);
+        } finally {
+          setIsLoading(
+            false,
+          );
+        }
+      },
+      [],
+    );
 
   useEffect(() => {
     void loadGallery();
   }, [loadGallery]);
 
+  /*
+   * Images only:
+   * 1. remove videos
+   * 2. put featured photos first
+   * 3. keep only the first 10
+   */
+  const imageItems =
+    useMemo(() => {
+      return galleryItems.filter(
+        isImageItem,
+      );
+    }, [galleryItems]);
+
   const previewItems =
     useMemo(() => {
-      return [...galleryItems]
+      return [...imageItems]
         .sort(
           (
             firstItem,
@@ -84,7 +170,10 @@ function GalleryPreviewSection() {
               firstItem.isFeatured ===
               secondItem.isFeatured
             ) {
-              return 0;
+              return (
+                firstItem.sortOrder -
+                secondItem.sortOrder
+              );
             }
 
             return firstItem.isFeatured
@@ -96,16 +185,22 @@ function GalleryPreviewSection() {
           0,
           PREVIEW_LIMIT,
         );
-    }, [galleryItems]);
+    }, [imageItems]);
 
   return (
     <section
       className="gallery-preview"
       aria-labelledby="gallery-preview-title"
     >
-      <div className="gallery-preview__glow gallery-preview__glow--left" />
+      <div
+        className="gallery-preview__glow gallery-preview__glow--left"
+        aria-hidden="true"
+      />
 
-      <div className="gallery-preview__glow gallery-preview__glow--right" />
+      <div
+        className="gallery-preview__glow gallery-preview__glow--right"
+        aria-hidden="true"
+      />
 
       <div className="gallery-preview-container">
         {/* =========================
@@ -130,7 +225,8 @@ function GalleryPreviewSection() {
                 id="gallery-preview-title"
                 className="gallery-preview-title"
               >
-                Experience the atmosphere
+                Experience the
+                atmosphere
               </h2>
             </div>
           </div>
@@ -161,7 +257,7 @@ function GalleryPreviewSection() {
         {isLoading && (
           <div
             className="gallery-preview-grid gallery-preview-grid--loading"
-            aria-label="Loading festival gallery"
+            aria-label="Loading festival photos"
           >
             {Array.from({
               length:
@@ -170,7 +266,9 @@ function GalleryPreviewSection() {
               (_, index) => (
                 <div
                   key={index}
-                  className="gallery-preview-skeleton"
+                  className={`gallery-preview-skeleton gallery-preview-skeleton--${
+                    index % 3
+                  }`}
                   aria-hidden="true"
                 />
               ),
@@ -193,12 +291,14 @@ function GalleryPreviewSection() {
 
                 <div>
                   <strong>
-                    Gallery unavailable
+                    Gallery
+                    unavailable
                   </strong>
 
                   <span>
                     We couldn’t load
-                    the festival photos.
+                    the festival
+                    photos.
                   </span>
                 </div>
               </div>
@@ -237,13 +337,14 @@ function GalleryPreviewSection() {
 
                 <div>
                   <strong>
-                    Photos coming soon
+                    Photos coming
+                    soon
                   </strong>
 
                   <span>
-                    Published festival
-                    images will appear
-                    here automatically.
+                    Published images
+                    will appear here
+                    automatically.
                   </span>
                 </div>
               </div>
@@ -251,7 +352,7 @@ function GalleryPreviewSection() {
           )}
 
         {/* =========================
-            Backend gallery
+            Image-only preview
         ========================= */}
 
         {!isLoading &&
@@ -261,10 +362,7 @@ function GalleryPreviewSection() {
             <>
               <div className="gallery-preview-grid">
                 {previewItems.map(
-                  (
-                    item,
-                    index,
-                  ) => {
+                  (item) => {
                     const eventName =
                       item.event
                         ?.title ??
@@ -274,65 +372,55 @@ function GalleryPreviewSection() {
                       <Link
                         to="/gallery"
                         key={item.id}
-                        className={[
-                          "gallery-preview-card",
-                          item.isFeatured
-                            ? "gallery-preview-card--featured"
-                            : "",
-                          index === 0
-                            ? "gallery-preview-card--lead"
-                            : "",
-                        ]
-                          .filter(
-                            Boolean,
-                          )
-                          .join(
-                            " ",
-                          )}
+                        className="gallery-preview-card"
                         aria-label={`Open gallery and view ${item.title}`}
                       >
-                        <img
-                          src={
-                            item.imageUrl
-                          }
-                          alt={
-                            item.altText ??
-                            item.title
-                          }
-                          loading="lazy"
-                          decoding="async"
-                          className="gallery-preview-card__image"
-                        />
-
-                        <span
-                          className="gallery-preview-card__overlay"
-                          aria-hidden="true"
-                        />
-
-                        {item.isFeatured && (
-                          <span className="gallery-preview-card__featured">
-                            <Sparkles
-                              size={11}
-                              aria-hidden="true"
-                            />
-
-                            Featured
-                          </span>
-                        )}
-
-                        <span className="gallery-preview-card__content">
-                          <small>
-                            {
-                              eventName
+                        <div className="gallery-preview-card__media">
+                          <img
+                            src={
+                              item.imageUrl
                             }
-                          </small>
-
-                          <strong>
-                            {
+                            alt={
+                              item.altText ??
                               item.title
                             }
-                          </strong>
-                        </span>
+                            loading="lazy"
+                            decoding="async"
+                            className="gallery-preview-card__image"
+                          />
+
+                          <span
+                            className="gallery-preview-card__overlay"
+                            aria-hidden="true"
+                          />
+
+                          {item.isFeatured && (
+                            <span className="gallery-preview-card__featured">
+                              <Sparkles
+                                size={
+                                  11
+                                }
+                                aria-hidden="true"
+                              />
+
+                              Featured
+                            </span>
+                          )}
+
+                          <span className="gallery-preview-card__content">
+                            <small>
+                              {
+                                eventName
+                              }
+                            </small>
+
+                            <strong>
+                              {
+                                item.title
+                              }
+                            </strong>
+                          </span>
+                        </div>
                       </Link>
                     );
                   },
@@ -340,25 +428,25 @@ function GalleryPreviewSection() {
               </div>
 
               {/* =========================
-                  Bottom CTA
+                  CTA
               ========================= */}
 
               <div className="gallery-preview-footer">
                 <div>
                   <span className="gallery-preview-footer__count">
                     {
-                      galleryItems.length
+                      imageItems.length
                     }{" "}
-                    {galleryItems.length ===
+                    {imageItems.length ===
                     1
-                      ? "festival memory"
-                      : "festival memories"}
+                      ? "festival photo"
+                      : "festival photos"}
                   </span>
 
                   <p>
-                    Discover more moments
-                    from Waterfall
-                    Festival.
+                    Explore more
+                    Waterfall Festival
+                    moments.
                   </p>
                 </div>
 
