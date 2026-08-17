@@ -28,11 +28,9 @@ const EVENTPOP_URL =
   "https://www.eventpop.me/e/166443";
 
 /*
- * Event:
+ * Waterfall Festival
  * 19 August 2026
  * 9:00 PM Thailand time
- *
- * Thailand is UTC+7.
  */
 const EVENT_START_TIME =
   new Date(
@@ -109,7 +107,7 @@ function Home() {
   );
 
   /*
-   * Update the countdown every second.
+   * Update countdown every second.
    */
   useEffect(() => {
     const intervalId =
@@ -127,8 +125,8 @@ function Home() {
   }, []);
 
   /*
-   * Prevent the page behind the popup
-   * from scrolling while it is open.
+   * Prevent page scrolling while
+   * the promotional popup is open.
    */
   useEffect(() => {
     if (!isEventPopupOpen) {
@@ -148,7 +146,7 @@ function Home() {
   }, [isEventPopupOpen]);
 
   /*
-   * Allow Escape to close the popup.
+   * Escape closes the popup.
    */
   useEffect(() => {
     if (!isEventPopupOpen) {
@@ -263,56 +261,69 @@ function Home() {
               />
             </button>
 
-            {/* =====================
-                Poster
-            ===================== */}
-
-            <a
-              href={EVENTPOP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="event-popup__poster-link"
-              aria-label="Buy Waterfall Festival tickets"
-            >
-              <img
-                src={eventPoster}
-                alt="Waterfall Festival, Wednesday 19 August 2026"
-                className="event-popup__poster"
-              />
-            </a>
-
-            {/* =====================
-                Information
-            ===================== */}
-
             <div className="event-popup__content">
-              <div className="event-popup__badge">
-                <Sparkles
-                  size={13}
+              {/* =====================
+                  Festival label
+              ===================== */}
+
+              <div className="event-popup__festival-label">
+                <span
+                  className="event-popup__label-line"
                   aria-hidden="true"
                 />
 
-                Special Event
+                <Sparkles
+                  size={14}
+                  aria-hidden="true"
+                />
+
+                <span>
+                  Waterfall Festival
+                </span>
+
+                <Sparkles
+                  size={14}
+                  aria-hidden="true"
+                />
+
+                <span
+                  className="event-popup__label-line"
+                  aria-hidden="true"
+                />
               </div>
 
-              <p className="event-popup__eyebrow">
-                Waterfall Festival
+              {/* =====================
+                  Next event heading
+              ===================== */}
+
+              <p className="event-popup__coming">
+                Get Ready For The
               </p>
 
               <h2
                 id="event-popup-title"
                 className="event-popup__title"
               >
-                {countdown.hasStarted
-                  ? "The Festival Is Live"
-                  : "The Countdown Is On"}
+                {countdown.hasStarted ? (
+                  <>
+                    Festival
+                    <span>
+                      Is Live
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <span>
+                      Event
+                    </span>
+                  </>
+                )}
               </h2>
 
-              <p className="event-popup__text">
-                {countdown.hasStarted
-                  ? "Waterfall Festival is happening now in Koh Phangan. Get your ticket and join us."
-                  : "4 stages. One unforgettable night. Get your ticket now and join us in Koh Phangan."}
-              </p>
+              {/* =====================
+                  Event details
+              ===================== */}
 
               <div className="event-popup__event-info">
                 <span>
@@ -321,17 +332,13 @@ function Home() {
                     aria-hidden="true"
                   />
 
-                  19 August 2026
+                  19 August
                 </span>
 
-                <span>
-                  <Clock3
-                    size={15}
-                    aria-hidden="true"
-                  />
-
-                  9 PM – Sunrise
-                </span>
+                <span
+                  className="event-popup__info-dot"
+                  aria-hidden="true"
+                />
 
                 <span>
                   <MapPin
@@ -341,6 +348,20 @@ function Home() {
 
                   Koh Phangan
                 </span>
+
+                <span
+                  className="event-popup__info-dot"
+                  aria-hidden="true"
+                />
+
+                <span>
+                  <Clock3
+                    size={15}
+                    aria-hidden="true"
+                  />
+
+                  9 PM
+                </span>
               </div>
 
               {/* =====================
@@ -348,88 +369,95 @@ function Home() {
               ===================== */}
 
               {!countdown.hasStarted ? (
-                <div className="event-popup__countdown">
-                  <div className="event-popup__countdown-item">
-                    <strong>
-                      {String(
-                        countdown.days,
-                      ).padStart(
-                        2,
-                        "0",
-                      )}
-                    </strong>
+                <>
+                  <p className="event-popup__countdown-label">
+                    The experience
+                    begins in
+                  </p>
 
-                    <span>
-                      Days
+                  <div className="event-popup__countdown">
+                    <div className="event-popup__countdown-item">
+                      <strong>
+                        {String(
+                          countdown.days,
+                        ).padStart(
+                          2,
+                          "0",
+                        )}
+                      </strong>
+
+                      <span>
+                        Days
+                      </span>
+                    </div>
+
+                    <span
+                      className="event-popup__separator"
+                      aria-hidden="true"
+                    >
+                      :
                     </span>
-                  </div>
 
-                  <span
-                    className="event-popup__separator"
-                    aria-hidden="true"
-                  >
-                    :
-                  </span>
+                    <div className="event-popup__countdown-item">
+                      <strong>
+                        {String(
+                          countdown.hours,
+                        ).padStart(
+                          2,
+                          "0",
+                        )}
+                      </strong>
 
-                  <div className="event-popup__countdown-item">
-                    <strong>
-                      {String(
-                        countdown.hours,
-                      ).padStart(
-                        2,
-                        "0",
-                      )}
-                    </strong>
+                      <span>
+                        Hours
+                      </span>
+                    </div>
 
-                    <span>
-                      Hours
+                    <span
+                      className="event-popup__separator"
+                      aria-hidden="true"
+                    >
+                      :
                     </span>
-                  </div>
 
-                  <span
-                    className="event-popup__separator"
-                    aria-hidden="true"
-                  >
-                    :
-                  </span>
+                    <div className="event-popup__countdown-item">
+                      <strong>
+                        {String(
+                          countdown.minutes,
+                        ).padStart(
+                          2,
+                          "0",
+                        )}
+                      </strong>
 
-                  <div className="event-popup__countdown-item">
-                    <strong>
-                      {String(
-                        countdown.minutes,
-                      ).padStart(
-                        2,
-                        "0",
-                      )}
-                    </strong>
+                      <span>
+                        Min
+                      </span>
+                    </div>
 
-                    <span>
-                      Min
+                    <span
+                      className="event-popup__separator"
+                      aria-hidden="true"
+                    >
+                      :
                     </span>
+
+                    <div className="event-popup__countdown-item">
+                      <strong>
+                        {String(
+                          countdown.seconds,
+                        ).padStart(
+                          2,
+                          "0",
+                        )}
+                      </strong>
+
+                      <span>
+                        Sec
+                      </span>
+                    </div>
                   </div>
-
-                  <span
-                    className="event-popup__separator"
-                    aria-hidden="true"
-                  >
-                    :
-                  </span>
-
-                  <div className="event-popup__countdown-item">
-                    <strong>
-                      {String(
-                        countdown.seconds,
-                      ).padStart(
-                        2,
-                        "0",
-                      )}
-                    </strong>
-
-                    <span>
-                      Sec
-                    </span>
-                  </div>
-                </div>
+                </>
               ) : (
                 <div className="event-popup__live">
                   <span
@@ -443,19 +471,23 @@ function Home() {
               )}
 
               {/* =====================
-                  Ticket CTA
+                  Special offer
               ===================== */}
 
-              <div className="event-popup__offer">
-                <Sparkles
-                  size={15}
+              <div className="event-popup__special-offer">
+                <span
+                  className="event-popup__offer-line"
                   aria-hidden="true"
                 />
 
                 <span>
-                  Don&apos;t miss the
-                  special event
+                  ✦ Special Event Offer ✦
                 </span>
+
+                <span
+                  className="event-popup__offer-line"
+                  aria-hidden="true"
+                />
               </div>
 
               <a
@@ -469,9 +501,12 @@ function Home() {
                   aria-hidden="true"
                 />
 
-                Buy Tickets Now
+                <span>
+                  Get Special Offer Ticket
+                </span>
 
                 <span
+                  className="event-popup__ticket-arrow"
                   aria-hidden="true"
                 >
                   →
@@ -645,7 +680,7 @@ function Home() {
           </div>
 
           {/* =========================
-              Buttons
+              Hero buttons
           ========================= */}
 
           <div className="home-event-hero__actions">
