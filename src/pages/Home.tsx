@@ -1,8 +1,15 @@
 import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
   CalendarDays,
+  Clock3,
   MapPin,
   Sparkles,
   Ticket,
+  X,
 } from "lucide-react";
 
 import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
@@ -20,9 +27,156 @@ import "./style/home.css";
 const EVENTPOP_URL =
   "https://www.eventpop.me/e/166443";
 
+/*
+ * Event:
+ * 19 August 2026
+ * 9:00 PM Thailand time
+ *
+ * Thailand is UTC+7.
+ */
+const EVENT_START_TIME =
+  new Date(
+    "2026-08-19T21:00:00+07:00",
+  ).getTime();
+
+type CountdownTime = {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  hasStarted: boolean;
+};
+
+function getCountdown(): CountdownTime {
+  const difference =
+    EVENT_START_TIME - Date.now();
+
+  if (difference <= 0) {
+    return {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      hasStarted: true,
+    };
+  }
+
+  const days = Math.floor(
+    difference /
+      (1000 * 60 * 60 * 24),
+  );
+
+  const hours = Math.floor(
+    (difference /
+      (1000 * 60 * 60)) %
+      24,
+  );
+
+  const minutes = Math.floor(
+    (difference /
+      (1000 * 60)) %
+      60,
+  );
+
+  const seconds = Math.floor(
+    (difference / 1000) %
+      60,
+  );
+
+  return {
+    days,
+    hours,
+    minutes,
+    seconds,
+    hasStarted: false,
+  };
+}
+
 function Home() {
   const { settings } =
     useWebsiteSettings();
+
+  const [
+    isEventPopupOpen,
+    setIsEventPopupOpen,
+  ] = useState(true);
+
+  const [
+    countdown,
+    setCountdown,
+  ] = useState<CountdownTime>(
+    getCountdown,
+  );
+
+  /*
+   * Update the countdown every second.
+   */
+  useEffect(() => {
+    const intervalId =
+      window.setInterval(() => {
+        setCountdown(
+          getCountdown(),
+        );
+      }, 1000);
+
+    return () => {
+      window.clearInterval(
+        intervalId,
+      );
+    };
+  }, []);
+
+  /*
+   * Prevent the page behind the popup
+   * from scrolling while it is open.
+   */
+  useEffect(() => {
+    if (!isEventPopupOpen) {
+      return;
+    }
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+    };
+  }, [isEventPopupOpen]);
+
+  /*
+   * Allow Escape to close the popup.
+   */
+  useEffect(() => {
+    if (!isEventPopupOpen) {
+      return;
+    }
+
+    const handleKeyDown = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === "Escape") {
+        setIsEventPopupOpen(
+          false,
+        );
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [isEventPopupOpen]);
 
   const festivalName =
     settings?.festivalName?.trim() ||
@@ -71,6 +225,279 @@ function Home() {
 
   return (
     <>
+      {/* =========================
+          Event countdown popup
+      ========================= */}
+
+      {isEventPopupOpen && (
+        <div
+          className="event-popup"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="event-popup-title"
+          onClick={() =>
+            setIsEventPopupOpen(
+              false,
+            )
+          }
+        >
+          <div
+            className="event-popup__card"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <button
+              type="button"
+              className="event-popup__close"
+              onClick={() =>
+                setIsEventPopupOpen(
+                  false,
+                )
+              }
+              aria-label="Close event announcement"
+            >
+              <X
+                size={20}
+                aria-hidden="true"
+              />
+            </button>
+
+            {/* =====================
+                Poster
+            ===================== */}
+
+            <a
+              href={EVENTPOP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="event-popup__poster-link"
+              aria-label="Buy Waterfall Festival tickets"
+            >
+              <img
+                src={eventPoster}
+                alt="Waterfall Festival, Wednesday 19 August 2026"
+                className="event-popup__poster"
+              />
+            </a>
+
+            {/* =====================
+                Information
+            ===================== */}
+
+            <div className="event-popup__content">
+              <div className="event-popup__badge">
+                <Sparkles
+                  size={13}
+                  aria-hidden="true"
+                />
+
+                Special Event
+              </div>
+
+              <p className="event-popup__eyebrow">
+                Waterfall Festival
+              </p>
+
+              <h2
+                id="event-popup-title"
+                className="event-popup__title"
+              >
+                {countdown.hasStarted
+                  ? "The Festival Is Live"
+                  : "The Countdown Is On"}
+              </h2>
+
+              <p className="event-popup__text">
+                {countdown.hasStarted
+                  ? "Waterfall Festival is happening now in Koh Phangan. Get your ticket and join us."
+                  : "4 stages. One unforgettable night. Get your ticket now and join us in Koh Phangan."}
+              </p>
+
+              <div className="event-popup__event-info">
+                <span>
+                  <CalendarDays
+                    size={15}
+                    aria-hidden="true"
+                  />
+
+                  19 August 2026
+                </span>
+
+                <span>
+                  <Clock3
+                    size={15}
+                    aria-hidden="true"
+                  />
+
+                  9 PM – Sunrise
+                </span>
+
+                <span>
+                  <MapPin
+                    size={15}
+                    aria-hidden="true"
+                  />
+
+                  Koh Phangan
+                </span>
+              </div>
+
+              {/* =====================
+                  Countdown
+              ===================== */}
+
+              {!countdown.hasStarted ? (
+                <div className="event-popup__countdown">
+                  <div className="event-popup__countdown-item">
+                    <strong>
+                      {String(
+                        countdown.days,
+                      ).padStart(
+                        2,
+                        "0",
+                      )}
+                    </strong>
+
+                    <span>
+                      Days
+                    </span>
+                  </div>
+
+                  <span
+                    className="event-popup__separator"
+                    aria-hidden="true"
+                  >
+                    :
+                  </span>
+
+                  <div className="event-popup__countdown-item">
+                    <strong>
+                      {String(
+                        countdown.hours,
+                      ).padStart(
+                        2,
+                        "0",
+                      )}
+                    </strong>
+
+                    <span>
+                      Hours
+                    </span>
+                  </div>
+
+                  <span
+                    className="event-popup__separator"
+                    aria-hidden="true"
+                  >
+                    :
+                  </span>
+
+                  <div className="event-popup__countdown-item">
+                    <strong>
+                      {String(
+                        countdown.minutes,
+                      ).padStart(
+                        2,
+                        "0",
+                      )}
+                    </strong>
+
+                    <span>
+                      Min
+                    </span>
+                  </div>
+
+                  <span
+                    className="event-popup__separator"
+                    aria-hidden="true"
+                  >
+                    :
+                  </span>
+
+                  <div className="event-popup__countdown-item">
+                    <strong>
+                      {String(
+                        countdown.seconds,
+                      ).padStart(
+                        2,
+                        "0",
+                      )}
+                    </strong>
+
+                    <span>
+                      Sec
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="event-popup__live">
+                  <span
+                    className="event-popup__live-dot"
+                    aria-hidden="true"
+                  />
+
+                  Waterfall Festival
+                  is live
+                </div>
+              )}
+
+              {/* =====================
+                  Ticket CTA
+              ===================== */}
+
+              <div className="event-popup__offer">
+                <Sparkles
+                  size={15}
+                  aria-hidden="true"
+                />
+
+                <span>
+                  Don&apos;t miss the
+                  special event
+                </span>
+              </div>
+
+              <a
+                href={EVENTPOP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="event-popup__ticket-button"
+              >
+                <Ticket
+                  size={18}
+                  aria-hidden="true"
+                />
+
+                Buy Tickets Now
+
+                <span
+                  aria-hidden="true"
+                >
+                  →
+                </span>
+              </a>
+
+              <button
+                type="button"
+                className="event-popup__continue"
+                onClick={() =>
+                  setIsEventPopupOpen(
+                    false,
+                  )
+                }
+              >
+                Continue to website
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================
+          Homepage hero
+      ========================= */}
+
       <section
         className="home-event-hero"
         aria-labelledby="home-event-title"
@@ -126,6 +553,7 @@ function Home() {
 
             <p className="home-event-hero__tagline">
               More Than a Festival
+
               <span>
                 A Once in a Lifetime Memory
               </span>
@@ -217,7 +645,7 @@ function Home() {
           </div>
 
           {/* =========================
-              Buttons under poster
+              Buttons
           ========================= */}
 
           <div className="home-event-hero__actions">
@@ -260,7 +688,7 @@ function Home() {
       </section>
 
       {/* =========================
-          Existing homepage sections
+          Homepage sections
       ========================= */}
 
       {eventsEnabled && (
@@ -275,15 +703,15 @@ function Home() {
         </div>
       )}
 
-      {experienceEnabled && (
-        <div id="experience-preview">
-          <ExperiencePreviewSection />
-        </div>
-      )}
-
       {galleryEnabled && (
         <div id="gallery-preview">
           <GalleryPreviewSection />
+        </div>
+      )}
+
+      {experienceEnabled && (
+        <div id="experience-preview">
+          <ExperiencePreviewSection />
         </div>
       )}
 
