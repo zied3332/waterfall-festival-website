@@ -20,7 +20,7 @@ import FestivalReelsSection from "../components/home/FestivalReelsSection";
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 
-import eventPoster from "../../assets/waterfall-august-19-2026.png";
+import eventPoster from "../../assets/waterfall-august-26-2026.png";
 
 import "./style/home.css";
 

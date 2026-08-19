@@ -14,6 +14,9 @@ type EventCardProps = {
   onOpen?: (event: Event) => void;
 };
 
+const EVENTPOP_URL =
+  "https://www.eventpop.me/e/163684";
+
 function formatEventDate(
   date: string,
 ): string {
@@ -67,10 +70,6 @@ function EventCard({
   const internalEventUrl =
     `/events/${event.slug}`;
 
-  const ticketPurchaseUrl =
-    event.ticketPurchaseUrl?.trim() ||
-    null;
-
   const cardContent = (
     <div className="event-card">
       <div className="event-card__media">
@@ -104,9 +103,7 @@ function EventCard({
           <span className="event-card__view-label">
             {onOpen
               ? "View event"
-              : ticketPurchaseUrl
-                ? "Get tickets"
-                : "View event"}
+              : "Get tickets"}
           </span>
         </div>
 
@@ -160,28 +157,16 @@ function EventCard({
     );
   }
 
-  if (ticketPurchaseUrl) {
-    return (
-      <a
-        href={ticketPurchaseUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="event-card__link"
-        aria-label={`Buy tickets for ${event.title}`}
-      >
-        {cardContent}
-      </a>
-    );
-  }
-
   return (
-    <Link
-      to={internalEventUrl}
+    <a
+      href={EVENTPOP_URL}
+      target="_blank"
+      rel="noopener noreferrer"
       className="event-card__link"
-      aria-label={`View ${event.title}`}
+      aria-label={`Buy tickets for ${event.title}`}
     >
       {cardContent}
-    </Link>
+    </a>
   );
 }
 
