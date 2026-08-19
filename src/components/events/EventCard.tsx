@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 
 import {
   CalendarDays,
@@ -67,8 +66,7 @@ function EventCard({
     event.location?.trim() ||
     "Koh Phangan, Thailand";
 
-  const internalEventUrl =
-    `/events/${event.slug}`;
+  
 
   const cardContent = (
     <div className="event-card">
