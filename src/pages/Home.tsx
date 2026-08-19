@@ -20,21 +20,21 @@ import FestivalReelsSection from "../components/home/FestivalReelsSection";
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 
-import eventPoster from "../../assets/waterfall-august-19-2026.png";
+import eventPoster from "../../assets/waterfall-august-26-2026.png";
 
 import "./style/home.css";
 
 const EVENTPOP_URL =
-  "https://www.eventpop.me/e/166443";
+  "https://www.eventpop.me/e/163684";
 
 /*
  * Waterfall Festival
- * 19 August 2026
- * 9:00 PM Thailand time
+ * 26 August 2026
+ * 9:00 AM Thailand time
  */
 const EVENT_START_TIME =
   new Date(
-    "2026-08-19T21:00:00+07:00",
+    "2026-08-26T09:00:00+07:00",
   ).getTime();
 
 type CountdownTime = {
@@ -304,21 +304,12 @@ function Home() {
                 id="event-popup-title"
                 className="event-popup__title"
               >
-                {countdown.hasStarted ? (
-                  <>
-                    Festival
-                    <span>
-                      Is Live
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Next
-                    <span>
-                      Event
-                    </span>
-                  </>
-                )}
+                <>
+                  Next
+                  <span>
+                    Event
+                  </span>
+                </>
               </h2>
 
               {/* =====================
@@ -332,7 +323,7 @@ function Home() {
                     aria-hidden="true"
                   />
 
-                  19 August
+                  26 August
                 </span>
 
                 <span
@@ -360,7 +351,7 @@ function Home() {
                     aria-hidden="true"
                   />
 
-                  9 PM
+                  9 AM
                 </span>
               </div>
 
@@ -371,7 +362,7 @@ function Home() {
               {!countdown.hasStarted ? (
                 <>
                   <p className="event-popup__countdown-label">
-                    The experience
+                    The next experience
                     begins in
                   </p>
 
@@ -460,13 +451,7 @@ function Home() {
                 </>
               ) : (
                 <div className="event-popup__live">
-                  <span
-                    className="event-popup__live-dot"
-                    aria-hidden="true"
-                  />
-
-                  Waterfall Festival
-                  is live
+                  The event has started
                 </div>
               )}
 
@@ -605,7 +590,7 @@ function Home() {
 
                 <div>
                   <strong>
-                    19 August 2026
+                    26 August 2026
                   </strong>
 
                   <span>
@@ -668,7 +653,7 @@ function Home() {
             >
               <img
                 src={eventPoster}
-                alt="Waterfall Festival event poster for Wednesday 19 August 2026"
+                alt="Waterfall Festival event poster for Wednesday 26 August 2026"
                 className="home-event-hero__poster"
               />
 
