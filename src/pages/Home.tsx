@@ -20,7 +20,7 @@ import FestivalReelsSection from "../components/home/FestivalReelsSection";
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 
-import eventPoster from "../../assets/waterfall-august-26-2026.png";
+import eventPoster from "../../assets/waterfall-august-19-2026.png";
 
 import "./style/home.css";
 
@@ -599,7 +599,17 @@ function Home() {
                 </div>
               </div>
 
-              <div className="home-event-hero__meta-item">
+              <a
+                href="https://share.google/9QxAyS1iVMSWES0X7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="home-event-hero__meta-item"
+                aria-label="Open Waterfall Festival location in Google Maps"
+                style={{
+                  color: "inherit",
+                  textDecoration: "none",
+                }}
+              >
                 <span className="home-event-hero__meta-icon">
                   <MapPin
                     size={21}
@@ -616,7 +626,7 @@ function Home() {
                     {location}
                   </span>
                 </div>
-              </div>
+              </a>
 
               <div className="home-event-hero__meta-item">
                 <span className="home-event-hero__meta-icon">
