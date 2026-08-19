@@ -52,7 +52,7 @@ type SocialLink = {
 };
 
 const TICKETS_URL =
-  "https://www.eventpop.me/e/166443";
+  "https://www.eventpop.me/e/163684";
 
 function resolveImageUrl(
   configuredUrl: string | null | undefined,

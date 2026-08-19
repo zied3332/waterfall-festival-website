@@ -29,7 +29,7 @@ import "./Events.css";
 const EVENT_SKELETON_COUNT = 3;
 
 const EVENTPOP_URL =
-  "https://www.eventpop.me/e/166443";
+  "https://www.eventpop.me/e/163684";
 
 function UpcomingEventsSection() {
   const [events, setEvents] =
