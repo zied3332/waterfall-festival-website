@@ -30,11 +30,11 @@ const EVENTPOP_URL =
 /*
  * Waterfall Festival
  * 26 August 2026
- * 9:00 AM Thailand time
+ * 9:00 PM Thailand time
  */
 const EVENT_START_TIME =
   new Date(
-    "2026-08-26T09:00:00+07:00",
+    "2026-08-26T21:00:00+07:00",
   ).getTime();
 
 type CountdownTime = {
@@ -351,7 +351,7 @@ function Home() {
                     aria-hidden="true"
                   />
 
-                  9 AM
+                  9 PM
                 </span>
               </div>
 
