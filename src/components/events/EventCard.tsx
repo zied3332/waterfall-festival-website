@@ -1,4 +1,3 @@
-
 import {
   CalendarDays,
   MapPin,
@@ -12,9 +11,6 @@ type EventCardProps = {
   event: Event;
   onOpen?: (event: Event) => void;
 };
-
-const EVENTPOP_URL =
-  "https://www.eventpop.me/e/163684";
 
 function formatEventDate(
   date: string,
@@ -66,7 +62,8 @@ function EventCard({
     event.location?.trim() ||
     "Koh Phangan, Thailand";
 
-  
+  const ticketUrl =
+    event.ticketUrl?.trim() || "";
 
   const cardContent = (
     <div className="event-card">
@@ -101,7 +98,9 @@ function EventCard({
           <span className="event-card__view-label">
             {onOpen
               ? "View event"
-              : "Get tickets"}
+              : ticketUrl
+                ? "Get tickets"
+                : "View event"}
           </span>
         </div>
 
@@ -155,16 +154,27 @@ function EventCard({
     );
   }
 
+  if (ticketUrl) {
+    return (
+      <a
+        href={ticketUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="event-card__link"
+        aria-label={`Buy tickets for ${event.title}`}
+      >
+        {cardContent}
+      </a>
+    );
+  }
+
   return (
-    <a
-      href={EVENTPOP_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       className="event-card__link"
-      aria-label={`Buy tickets for ${event.title}`}
+      aria-label={`${event.title} - tickets coming soon`}
     >
       {cardContent}
-    </a>
+    </div>
   );
 }
 
