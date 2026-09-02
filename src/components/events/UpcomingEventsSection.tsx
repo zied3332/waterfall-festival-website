@@ -5,6 +5,10 @@ import {
 } from "react";
 
 import {
+  Link,
+} from "react-router-dom";
+
+import {
   ArrowRight,
   CalendarDays,
   RotateCcw,
@@ -27,9 +31,6 @@ import "swiper/css/navigation";
 import "./Events.css";
 
 const EVENT_SKELETON_COUNT = 3;
-
-const EVENTPOP_URL =
-  "https://www.eventpop.me/e/163684";
 
 function UpcomingEventsSection() {
   const [events, setEvents] =
@@ -64,9 +65,18 @@ function UpcomingEventsSection() {
     void loadEvents();
   }, [loadEvents]);
 
-  function handleOpenEvent(): void {
+  function handleOpenEvent(
+    event: Event,
+  ): void {
+    const ticketUrl =
+      event.ticketUrl?.trim();
+
+    if (!ticketUrl) {
+      return;
+    }
+
     window.open(
-      EVENTPOP_URL,
+      ticketUrl,
       "_blank",
       "noopener,noreferrer",
     );
@@ -96,11 +106,9 @@ function UpcomingEventsSection() {
             {!isLoading &&
               !error &&
               events.length > 0 && (
-                <a
+                <Link
                   className="events-section__view-all"
-                  href={EVENTPOP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  to="/events"
                 >
                   View all events
 
@@ -108,7 +116,7 @@ function UpcomingEventsSection() {
                     size={18}
                     aria-hidden="true"
                   />
-                </a>
+                </Link>
               )}
           </div>
 
@@ -234,11 +242,9 @@ function UpcomingEventsSection() {
           {!isLoading &&
             !error &&
             events.length > 0 && (
-              <a
+              <Link
                 className="events-section__mobile-view-all"
-                href={EVENTPOP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                to="/events"
               >
                 View all events
 
@@ -246,7 +252,7 @@ function UpcomingEventsSection() {
                   size={18}
                   aria-hidden="true"
                 />
-              </a>
+              </Link>
             )}
         </div>
       </section>
