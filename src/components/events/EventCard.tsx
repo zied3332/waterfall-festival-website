@@ -63,7 +63,7 @@ function EventCard({
     "Koh Phangan, Thailand";
 
   const ticketUrl =
-    event.ticketUrl?.trim() || "";
+    event.ticketPurchaseUrl?.trim() || "";
 
   const cardContent = (
     <div className="event-card">
