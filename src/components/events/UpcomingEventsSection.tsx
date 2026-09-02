@@ -69,7 +69,7 @@ function UpcomingEventsSection() {
     event: Event,
   ): void {
     const ticketUrl =
-      event.ticketUrl?.trim();
+      event.ticketPurchaseUrl?.trim();
 
     if (!ticketUrl) {
       return;
