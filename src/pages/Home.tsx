@@ -20,21 +20,21 @@ import FestivalReelsSection from "../components/home/FestivalReelsSection";
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 
-import eventPoster from "../../assets/waterfall-august-30-2026.png";
+import eventPoster from "../../assets/waterfall-september-09-2026.png";
 
 import "./style/home.css";
 
 const EVENTPOP_URL =
-  "https://www.eventpop.me/e/163685";
+  "https://www.eventpop.me/e/169958";
 
 /*
  * Waterfall Festival
- * 30 August 2026
+ * 9 September 2026
  * 9:00 PM Thailand time
  */
 const EVENT_START_TIME =
   new Date(
-    "2026-08-30T21:00:00+07:00",
+    "2026-09-09T21:00:00+07:00",
   ).getTime();
 
 type CountdownTime = {
@@ -323,7 +323,7 @@ function Home() {
                     aria-hidden="true"
                   />
 
-                  30 August
+                  9 September
                 </span>
 
                 <span
@@ -590,11 +590,11 @@ function Home() {
 
                 <div>
                   <strong>
-                    30 August 2026
+                    9 September 2026
                   </strong>
 
                   <span>
-                    Sunday
+                    Wednesday
                   </span>
                 </div>
               </div>
@@ -638,7 +638,7 @@ function Home() {
 
                 <div>
                   <strong>
-                    4 Stages
+                    5 Stages
                   </strong>
 
                   <span>
@@ -663,7 +663,7 @@ function Home() {
             >
               <img
                 src={eventPoster}
-                alt="Waterfall Festival event poster for Sunday 30 August 2026"
+                alt="Waterfall Festival event poster for Wednesday 9 September 2026"
                 className="home-event-hero__poster"
               />
 
