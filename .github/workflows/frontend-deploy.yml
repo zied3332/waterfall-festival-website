@@ -1,0 +1,147 @@
+name: Deploy Frontend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        env:
+          VITE_API_URL: https://api.waterfallpartykohphangan.com
+        run: npm run build
+
+      - name: Package frontend
+        run: tar -czf frontend.tar.gz -C dist .
+
+      - name: Deploy to cPanel
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_HOST: ${{ secrets.CPANEL_HOST }}
+          SSH_USER: ${{ secrets.CPANEL_USERNAME }}
+          SSH_PORT: ${{ secrets.CPANEL_PORT }}
+        run: |
+          set -e
+
+          mkdir -p ~/.ssh
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          eval "$(ssh-agent -s)"
+
+          cat > "$RUNNER_TEMP/askpass.sh" <<'EOF'
+          #!/bin/sh
+          printf '%s\n' "$SSH_PASSPHRASE"
+          EOF
+
+          chmod +x "$RUNNER_TEMP/askpass.sh"
+
+          export SSH_ASKPASS="$RUNNER_TEMP/askpass.sh"
+          export SSH_ASKPASS_REQUIRE=force
+
+          setsid ssh-add ~/.ssh/deploy_key < /dev/null
+
+          # Upload new build OUTSIDE public_html first
+          scp \
+            -P "$SSH_PORT" \
+            -o StrictHostKeyChecking=accept-new \
+            frontend.tar.gz \
+            "$SSH_USER@$SSH_HOST:~/waterfall-frontend-deploy.tar.gz"
+
+          # Prepare release, backup current frontend, then deploy
+          ssh \
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=accept-new \
+            "$SSH_USER@$SSH_HOST" \
+            'bash -s' <<'REMOTE_SCRIPT'
+
+          set -e
+
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+          WEBROOT="$HOME/public_html"
+          RELEASE="$HOME/waterfall-releases/frontend-$TIMESTAMP"
+          BACKUP="$HOME/waterfall-backups/frontend-$TIMESTAMP"
+
+          echo "Creating release directory..."
+          mkdir -p "$RELEASE"
+
+          echo "Extracting new frontend..."
+          tar -xzf "$HOME/waterfall-frontend-deploy.tar.gz" -C "$RELEASE"
+          rm -f "$HOME/waterfall-frontend-deploy.tar.gz"
+
+          echo "Creating backup..."
+          mkdir -p "$BACKUP"
+
+          if [ -f "$WEBROOT/index.html" ]; then
+            cp -a "$WEBROOT/index.html" "$BACKUP/"
+          fi
+
+          if [ -d "$WEBROOT/assets" ]; then
+            cp -a "$WEBROOT/assets" "$BACKUP/"
+          fi
+
+          if [ -f "$WEBROOT/favicon.svg" ]; then
+            cp -a "$WEBROOT/favicon.svg" "$BACKUP/"
+          fi
+
+          if [ -f "$WEBROOT/icons.svg" ]; then
+            cp -a "$WEBROOT/icons.svg" "$BACKUP/"
+          fi
+
+          echo "Deploying assets..."
+
+          mkdir -p "$WEBROOT/assets"
+
+          if [ -d "$RELEASE/assets" ]; then
+            cp -a "$RELEASE/assets/." "$WEBROOT/assets/"
+          fi
+
+          # Deploy other public files, but preserve .htaccess
+          find "$RELEASE" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            ! -name "index.html" \
+            ! -name "assets" \
+            ! -name ".htaccess" \
+            -exec cp -a {} "$WEBROOT/" \;
+
+          # Replace index.html LAST
+          # This avoids the browser receiving an index that points
+          # to assets which have not been uploaded yet.
+          cp "$RELEASE/index.html" "$WEBROOT/index.html.new"
+          mv -f "$WEBROOT/index.html.new" "$WEBROOT/index.html"
+
+          echo "Deployment completed."
+          echo "Release: $RELEASE"
+          echo "Backup:  $BACKUP"
+
+          REMOTE_SCRIPT
+
+      - name: Verify production website
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            https://waterfallpartykohphangan.com/ \
+            > /dev/null
+
+          echo "Production website responded successfully."
