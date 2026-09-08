@@ -1,0 +1,42 @@
+name: Test cPanel SSH
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-ssh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test SSH connection
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_HOST: ${{ secrets.CPANEL_HOST }}
+          SSH_USER: ${{ secrets.CPANEL_USERNAME }}
+          SSH_PORT: ${{ secrets.CPANEL_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          eval "$(ssh-agent -s)"
+
+          cat > "$RUNNER_TEMP/askpass.sh" <<'EOF'
+          #!/bin/sh
+          printf '%s\n' "$SSH_PASSPHRASE"
+          EOF
+
+          chmod +x "$RUNNER_TEMP/askpass.sh"
+
+          export SSH_ASKPASS="$RUNNER_TEMP/askpass.sh"
+          export SSH_ASKPASS_REQUIRE=force
+
+          setsid ssh-add ~/.ssh/deploy_key < /dev/null
+
+          ssh \
+            -o StrictHostKeyChecking=accept-new \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'echo "SSH CONNECTION SUCCESSFUL"; whoami; pwd'
