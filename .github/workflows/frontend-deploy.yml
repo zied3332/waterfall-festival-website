@@ -1,13 +1,20 @@
 name: Deploy Frontend
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - Frontend CI
+    types:
+      - completed
+
   workflow_dispatch:
 
 jobs:
   deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
     runs-on: ubuntu-latest
 
     steps:
@@ -60,7 +67,7 @@ jobs:
 
           setsid ssh-add ~/.ssh/deploy_key < /dev/null
 
-          # Upload new build OUTSIDE public_html first
+          # Upload new build outside public_html first
           scp \
             -P "$SSH_PORT" \
             -o StrictHostKeyChecking=accept-new \
@@ -125,9 +132,7 @@ jobs:
             ! -name ".htaccess" \
             -exec cp -a {} "$WEBROOT/" \;
 
-          # Replace index.html LAST
-          # This avoids the browser receiving an index that points
-          # to assets which have not been uploaded yet.
+          # Replace index.html last
           cp "$RELEASE/index.html" "$WEBROOT/index.html.new"
           mv -f "$WEBROOT/index.html.new" "$WEBROOT/index.html"
 
