@@ -12,6 +12,17 @@ type EventCardProps = {
   onOpen?: (event: Event) => void;
 };
 
+const LOCAL_EVENT_POSTERS: Record<string, string> = {
+  "waterfall-festival-september-16-2026":
+    "/images/events/waterfall-september-16-2026.png",
+
+  "september-24th-2026-waterfall-festival-2-days-before-full-moon-party":
+    "/images/events/waterfall-september-24-2026.png",
+
+  "september-28th-2026-waterfall-festival-2-days-after-full-moon-party":
+    "/images/events/waterfall-september-28-2026.png",
+};
+
 function formatEventDate(
   date: string,
 ): string {
@@ -54,6 +65,19 @@ function getEventBadge(
     : "Past event";
 }
 
+function getEventPoster(
+  event: Event,
+): string {
+  const localPoster =
+    LOCAL_EVENT_POSTERS[event.slug];
+
+  if (localPoster) {
+    return localPoster;
+  }
+
+  return event.heroImageUrl?.trim() || "";
+}
+
 function EventCard({
   event,
   onOpen,
@@ -65,12 +89,15 @@ function EventCard({
   const ticketUrl =
     event.ticketPurchaseUrl?.trim() || "";
 
+  const posterUrl =
+    getEventPoster(event);
+
   const cardContent = (
     <div className="event-card">
       <div className="event-card__media">
-        {event.heroImageUrl ? (
+        {posterUrl ? (
           <img
-            src={event.heroImageUrl}
+            src={posterUrl}
             alt={`${event.title} event poster`}
             className="event-card__poster"
             loading="lazy"
