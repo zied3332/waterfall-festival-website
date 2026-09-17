@@ -4,6 +4,10 @@ import {
 } from "react";
 
 import {
+  Link,
+} from "react-router-dom";
+
+import {
   CalendarDays,
   Clock3,
   MapPin,
@@ -12,7 +16,9 @@ import {
   X,
 } from "lucide-react";
 
-import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
+import {
+  useWebsiteSettings,
+} from "../context/WebsiteSettingsContext";
 
 import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
 import ExperiencePreviewSection from "../components/experience/ExperiencePreviewSection";
@@ -36,6 +42,24 @@ const EVENT_START_TIME =
   new Date(
     "2026-09-24T21:00:00+07:00",
   ).getTime();
+
+/*
+ * Birthday promotion month.
+ *
+ * This uses Thailand time instead of
+ * the visitor's local timezone.
+ *
+ * September -> October -> November...
+ * automatically.
+ */
+const BIRTHDAY_MONTH =
+  new Intl.DateTimeFormat(
+    "en-US",
+    {
+      month: "long",
+      timeZone: "Asia/Bangkok",
+    },
+  ).format(new Date());
 
 type CountdownTime = {
   days: number;
@@ -306,6 +330,7 @@ function Home() {
               >
                 <>
                   Next
+
                   <span>
                     Event
                   </span>
@@ -456,7 +481,7 @@ function Home() {
               )}
 
               {/* =====================
-                  Special offer
+                  Ticket offer
               ===================== */}
 
               <div className="event-popup__special-offer">
@@ -497,6 +522,42 @@ function Home() {
                   →
                 </span>
               </a>
+
+              {/* =====================
+                  Birthday offer
+              ===================== */}
+
+              <Link
+                to="/birthday-free-entry"
+                className="event-popup__birthday-button"
+                onClick={() =>
+                  setIsEventPopupOpen(
+                    false,
+                  )
+                }
+              >
+                <span className="event-popup__birthday-icon">
+                  🎂
+                </span>
+
+                <span className="event-popup__birthday-copy">
+                  <small>
+                    Born in{" "}
+                    {BIRTHDAY_MONTH}?
+                  </small>
+
+                  <strong>
+                    Get Free Entry
+                  </strong>
+                </span>
+
+                <span
+                  className="event-popup__birthday-arrow"
+                  aria-hidden="true"
+                >
+                  →
+                </span>
+              </Link>
 
               <button
                 type="button"
