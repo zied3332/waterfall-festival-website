@@ -23,6 +23,7 @@ import {
 import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
 import ExperiencePreviewSection from "../components/experience/ExperiencePreviewSection";
 import FestivalReelsSection from "../components/home/FestivalReelsSection";
+import PremiumExperiencesSection from "../components/home/PremiumExperiencesSection";
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 
@@ -777,6 +778,12 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* =========================
+          Premium Experiences
+      ========================= */}
+
+      <PremiumExperiencesSection />
 
       {/* =========================
           Homepage sections
