@@ -12,36 +12,60 @@ import {
 } from "react-router-dom";
 
 import AdminLayout from "./admin/AdminLayout";
+
 import ProtectedRoute from "./admin/components/ProtectedRoute";
 
 import AdminCalendar from "./admin/pages/AdminCalendar";
+
 import AdminEventCreate from "./admin/pages/AdminEventCreate";
+
 import AdminEventEdit from "./admin/pages/AdminEventEdit";
+
 import AdminEvents from "./admin/pages/AdminEvents";
+
 import AdminExperience from "./admin/pages/AdminExperience";
+
 import AdminFAQ from "./admin/pages/AdminFAQ";
+
 import AdminGallery from "./admin/pages/AdminGallery";
+
 import AdminLogin from "./admin/pages/AdminLogin";
+
 import AdminMessages from "./admin/pages/AdminMessages";
+
 import AdminSettings from "./admin/pages/AdminSettings";
+
 import AdminTickets from "./admin/pages/AdminTickets";
+
 import Dashboard from "./admin/pages/Dashboard";
 
 import FloatingChat from "./components/chat/FloatingChat";
 
+import ScrollToTop from "./components/common/ScrollToTop";
 import Footer from "./layout/Footer";
+
 import Navbar from "./layout/Navbar";
 
 import BirthdayFreeEntry from "./pages/BirthdayFreeEntry";
+
 import Calendar from "./pages/Calendar";
+
 import Contact from "./pages/Contact";
+
 import EventDetails from "./pages/EventDetails";
+
 import Events from "./pages/Events";
+
 import Experience from "./pages/Experience";
+
 import Faq from "./pages/Faq";
+
 import Gallery from "./pages/Gallery";
+
 import Home from "./pages/Home";
+
 import Tickets from "./pages/Tickets";
+
 import Venue from "./pages/Venue";
 
 import {
@@ -51,15 +75,24 @@ import {
   saveAuthenticatedUser,
 } from "./services/auth.service";
 
+/* =========================================================
+   APP CONTENT
+========================================================= */
+
 function AppContent() {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location =
+    useLocation();
+
+  const navigate =
+    useNavigate();
 
   const [
     isSessionChecking,
     setIsSessionChecking,
   ] = useState(
-    Boolean(getAccessToken()),
+    Boolean(
+      getAccessToken(),
+    ),
   );
 
   const isAdminPage =
@@ -67,16 +100,24 @@ function AppContent() {
       "/admin",
     );
 
+  /* =========================================================
+     RESTORE ADMIN SESSION
+  ========================================================= */
+
   useEffect(() => {
     const accessToken =
       getAccessToken();
 
     if (!accessToken) {
-      setIsSessionChecking(false);
+      setIsSessionChecking(
+        false,
+      );
+
       return;
     }
 
-    let isCancelled = false;
+    let isCancelled =
+      false;
 
     async function restoreSession(): Promise<void> {
       try {
@@ -108,6 +149,7 @@ function AppContent() {
             "/admin/login",
             {
               replace: true,
+
               state: {
                 from:
                   location.pathname,
@@ -127,12 +169,17 @@ function AppContent() {
     void restoreSession();
 
     return () => {
-      isCancelled = true;
+      isCancelled =
+        true;
     };
   }, [
     location.pathname,
     navigate,
   ]);
+
+  /* =========================================================
+     ADMIN SESSION LOADING
+  ========================================================= */
 
   if (
     isSessionChecking &&
@@ -145,12 +192,19 @@ function AppContent() {
     );
   }
 
+  /* =========================================================
+     APPLICATION
+  ========================================================= */
+
   return (
     <>
-      {!isAdminPage && <Navbar />}
+      {!isAdminPage && (
+        <Navbar />
+      )}
 
       <main>
         <Routes>
+
           {/* =========================
               Public routes
           ========================= */}
@@ -179,7 +233,9 @@ function AppContent() {
 
           <Route
             path="/events/:slug"
-            element={<EventDetails />}
+            element={
+              <EventDetails />
+            }
           />
 
           <Route
@@ -189,7 +245,9 @@ function AppContent() {
 
           <Route
             path="/experience"
-            element={<Experience />}
+            element={
+              <Experience />
+            }
           />
 
           <Route
@@ -218,7 +276,9 @@ function AppContent() {
 
           <Route
             path="/admin/login"
-            element={<AdminLogin />}
+            element={
+              <AdminLogin />
+            }
           />
 
           {/* =========================
@@ -233,14 +293,19 @@ function AppContent() {
               </ProtectedRoute>
             }
           >
+
             <Route
               index
-              element={<Dashboard />}
+              element={
+                <Dashboard />
+              }
             />
 
             <Route
               path="events"
-              element={<AdminEvents />}
+              element={
+                <AdminEvents />
+              }
             />
 
             <Route
@@ -301,7 +366,9 @@ function AppContent() {
 
             <Route
               path="faq"
-              element={<AdminFAQ />}
+              element={
+                <AdminFAQ />
+              }
             />
 
             <Route
@@ -310,11 +377,15 @@ function AppContent() {
                 <AdminSettings />
               }
             />
+
           </Route>
+
         </Routes>
       </main>
 
-      {!isAdminPage && <Footer />}
+      {!isAdminPage && (
+        <Footer />
+      )}
 
       {!isAdminPage && (
         <FloatingChat />
@@ -323,10 +394,23 @@ function AppContent() {
   );
 }
 
+/* =========================================================
+   ROOT APP
+========================================================= */
+
 function App() {
   return (
     <BrowserRouter>
+
+      {/*
+       * Every time the pathname changes,
+       * reset the browser to the top.
+       */}
+
+      <ScrollToTop />
+
       <AppContent />
+
     </BrowserRouter>
   );
 }
