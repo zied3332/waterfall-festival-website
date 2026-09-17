@@ -32,6 +32,8 @@ import FloatingChat from "./components/chat/FloatingChat";
 import Footer from "./layout/Footer";
 import Navbar from "./layout/Navbar";
 
+import BirthdayFreeEntry from "./pages/BirthdayFreeEntry";
+import Calendar from "./pages/Calendar";
 import Contact from "./pages/Contact";
 import EventDetails from "./pages/EventDetails";
 import Events from "./pages/Events";
@@ -41,7 +43,7 @@ import Gallery from "./pages/Gallery";
 import Home from "./pages/Home";
 import Tickets from "./pages/Tickets";
 import Venue from "./pages/Venue";
-import Calendar from "./pages/Calendar";
+
 import {
   clearAuthSession,
   getAccessToken,
@@ -53,14 +55,21 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [isSessionChecking, setIsSessionChecking] =
-    useState(Boolean(getAccessToken()));
+  const [
+    isSessionChecking,
+    setIsSessionChecking,
+  ] = useState(
+    Boolean(getAccessToken()),
+  );
 
   const isAdminPage =
-    location.pathname.startsWith("/admin");
+    location.pathname.startsWith(
+      "/admin",
+    );
 
   useEffect(() => {
-    const accessToken = getAccessToken();
+    const accessToken =
+      getAccessToken();
 
     if (!accessToken) {
       setIsSessionChecking(false);
@@ -78,7 +87,9 @@ function AppContent() {
           return;
         }
 
-        saveAuthenticatedUser(currentUser);
+        saveAuthenticatedUser(
+          currentUser,
+        );
       } catch {
         if (isCancelled) {
           return;
@@ -93,16 +104,22 @@ function AppContent() {
           location.pathname !==
             "/admin/login"
         ) {
-          navigate("/admin/login", {
-            replace: true,
-            state: {
-              from: location.pathname,
+          navigate(
+            "/admin/login",
+            {
+              replace: true,
+              state: {
+                from:
+                  location.pathname,
+              },
             },
-          });
+          );
         }
       } finally {
         if (!isCancelled) {
-          setIsSessionChecking(false);
+          setIsSessionChecking(
+            false,
+          );
         }
       }
     }
@@ -112,7 +129,10 @@ function AppContent() {
     return () => {
       isCancelled = true;
     };
-  }, [location.pathname, navigate]);
+  }, [
+    location.pathname,
+    navigate,
+  ]);
 
   if (
     isSessionChecking &&
@@ -131,6 +151,10 @@ function AppContent() {
 
       <main>
         <Routes>
+          {/* =========================
+              Public routes
+          ========================= */}
+
           <Route
             path="/"
             element={<Home />}
@@ -140,10 +164,19 @@ function AppContent() {
             path="/events"
             element={<Events />}
           />
-<Route
-  path="/calendar"
-  element={<Calendar />}
-/>
+
+          <Route
+            path="/calendar"
+            element={<Calendar />}
+          />
+
+          <Route
+            path="/birthday-free-entry"
+            element={
+              <BirthdayFreeEntry />
+            }
+          />
+
           <Route
             path="/events/:slug"
             element={<EventDetails />}
@@ -179,10 +212,18 @@ function AppContent() {
             element={<Contact />}
           />
 
+          {/* =========================
+              Admin login
+          ========================= */}
+
           <Route
             path="/admin/login"
             element={<AdminLogin />}
           />
+
+          {/* =========================
+              Protected admin routes
+          ========================= */}
 
           <Route
             path="/admin"
@@ -211,37 +252,51 @@ function AppContent() {
 
             <Route
               path="events/:id/edit"
-              element={<AdminEventEdit />}
+              element={
+                <AdminEventEdit />
+              }
             />
 
             <Route
               path="calendar"
-              element={<AdminCalendar />}
+              element={
+                <AdminCalendar />
+              }
             />
 
             <Route
               path="tickets"
-              element={<AdminTickets />}
+              element={
+                <AdminTickets />
+              }
             />
 
             <Route
               path="gallery"
-              element={<AdminGallery />}
+              element={
+                <AdminGallery />
+              }
             />
 
             <Route
               path="experience"
-              element={<AdminExperience />}
+              element={
+                <AdminExperience />
+              }
             />
 
             <Route
               path="messages"
-              element={<AdminMessages />}
+              element={
+                <AdminMessages />
+              }
             />
 
             <Route
               path="messages/:messageId"
-              element={<AdminMessages />}
+              element={
+                <AdminMessages />
+              }
             />
 
             <Route
@@ -251,14 +306,19 @@ function AppContent() {
 
             <Route
               path="settings"
-              element={<AdminSettings />}
+              element={
+                <AdminSettings />
+              }
             />
           </Route>
         </Routes>
       </main>
 
       {!isAdminPage && <Footer />}
-      {!isAdminPage && <FloatingChat />}
+
+      {!isAdminPage && (
+        <FloatingChat />
+      )}
     </>
   );
 }
