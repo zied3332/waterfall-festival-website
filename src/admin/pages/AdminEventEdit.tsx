@@ -75,26 +75,83 @@ function getErrorMessage(
 
   return fallbackMessage;
 }
-
 function formatDateForInput(
   date: string,
 ): string {
-  const parsedDate = new Date(date);
+  const parsedDate =
+    new Date(date);
 
-  if (Number.isNaN(parsedDate.getTime())) {
+  if (
+    Number.isNaN(
+      parsedDate.getTime(),
+    )
+  ) {
     return "";
   }
 
-  const timezoneOffset =
-    parsedDate.getTimezoneOffset() *
-    60_000;
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-GB",
+      {
+        timeZone:
+          "Asia/Bangkok",
 
-  return new Date(
-    parsedDate.getTime() -
-      timezoneOffset,
-  )
-    .toISOString()
-    .slice(0, 16);
+        year:
+          "numeric",
+
+        month:
+          "2-digit",
+
+        day:
+          "2-digit",
+
+        hour:
+          "2-digit",
+
+        minute:
+          "2-digit",
+
+        hourCycle:
+          "h23",
+      },
+    ).formatToParts(
+      parsedDate,
+    );
+
+  const getPart = (
+    type: Intl.DateTimeFormatPartTypes,
+  ): string =>
+    parts.find(
+      (part) =>
+        part.type === type,
+    )?.value ?? "";
+
+  const year =
+    getPart("year");
+
+  const month =
+    getPart("month");
+
+  const day =
+    getPart("day");
+
+  const hour =
+    getPart("hour");
+
+  const minute =
+    getPart("minute");
+
+  if (
+    !year ||
+    !month ||
+    !day ||
+    !hour ||
+    !minute
+  ) {
+    return "";
+  }
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
 function AdminEventEdit() {

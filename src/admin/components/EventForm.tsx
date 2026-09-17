@@ -32,7 +32,41 @@ const MAX_IMAGE_SIZE =
 
 const FESTIVAL_TIME_ZONE =
   "Asia/Bangkok";
+/**
+ * Converts the value entered in the admin datetime-local
+ * field from Thailand time (UTC+7) into a real UTC ISO
+ * timestamp for the API/database.
+ *
+ * Example:
+ * 2026-09-28T21:00 Thailand
+ * ->
+ * 2026-09-28T14:00:00.000Z
+ *
+ * Thailand does not use daylight-saving time, so its
+ * UTC offset is always +07:00.
+ */
+function thailandDateTimeToIso(
+  localDateTime: string,
+): string {
+  if (!localDateTime) {
+    return "";
+  }
 
+  const thailandDate =
+    new Date(
+      `${localDateTime}:00+07:00`,
+    );
+
+  if (
+    Number.isNaN(
+      thailandDate.getTime(),
+    )
+  ) {
+    return "";
+  }
+
+  return thailandDate.toISOString();
+}
 const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -604,22 +638,47 @@ function EventForm({
     const ticketPurchaseUrl =
       values.ticketPurchaseUrl.trim();
 
-    const eventData: CreateEventInput = {
-      title: values.title.trim(),
-      description:
-        values.description.trim(),
-      date: values.date,
-      location: values.location.trim(),
-      status: values.status,
-      ticketPurchaseUrl:
-        ticketPurchaseUrl || null,
-      ...(capacity !== undefined && {
-        capacity,
-      }),
-      ...(remainingTickets !== undefined && {
-        remainingTickets,
-      }),
-    };
+ const eventDateIso =
+  thailandDateTimeToIso(
+    values.date,
+  );
+
+if (!eventDateIso) {
+  setErrors((currentErrors) => ({
+    ...currentErrors,
+    date:
+      "Enter a valid event date and time.",
+  }));
+
+  return;
+}
+
+const eventData: CreateEventInput = {
+  title: values.title.trim(),
+
+  description:
+    values.description.trim(),
+
+  date: eventDateIso,
+
+  location:
+    values.location.trim(),
+
+  status:
+    values.status,
+
+  ticketPurchaseUrl:
+    ticketPurchaseUrl || null,
+
+  ...(capacity !== undefined && {
+    capacity,
+  }),
+
+  ...(remainingTickets !==
+    undefined && {
+    remainingTickets,
+  }),
+};
 
     await onSubmit(
       eventData,
