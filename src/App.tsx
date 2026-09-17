@@ -16,56 +16,36 @@ import AdminLayout from "./admin/AdminLayout";
 import ProtectedRoute from "./admin/components/ProtectedRoute";
 
 import AdminCalendar from "./admin/pages/AdminCalendar";
-
 import AdminEventCreate from "./admin/pages/AdminEventCreate";
-
 import AdminEventEdit from "./admin/pages/AdminEventEdit";
-
 import AdminEvents from "./admin/pages/AdminEvents";
-
 import AdminExperience from "./admin/pages/AdminExperience";
-
 import AdminFAQ from "./admin/pages/AdminFAQ";
-
 import AdminGallery from "./admin/pages/AdminGallery";
-
 import AdminLogin from "./admin/pages/AdminLogin";
-
+import AdminMainEvent from "./admin/pages/AdminMainEvent";
 import AdminMessages from "./admin/pages/AdminMessages";
-
 import AdminSettings from "./admin/pages/AdminSettings";
-
 import AdminTickets from "./admin/pages/AdminTickets";
-
 import Dashboard from "./admin/pages/Dashboard";
 
 import FloatingChat from "./components/chat/FloatingChat";
 
 import ScrollToTop from "./components/common/ScrollToTop";
-import Footer from "./layout/Footer";
 
+import Footer from "./layout/Footer";
 import Navbar from "./layout/Navbar";
 
 import BirthdayFreeEntry from "./pages/BirthdayFreeEntry";
-
 import Calendar from "./pages/Calendar";
-
 import Contact from "./pages/Contact";
-
 import EventDetails from "./pages/EventDetails";
-
 import Events from "./pages/Events";
-
 import Experience from "./pages/Experience";
-
 import Faq from "./pages/Faq";
-
 import Gallery from "./pages/Gallery";
-
 import Home from "./pages/Home";
-
 import Tickets from "./pages/Tickets";
-
 import Venue from "./pages/Venue";
 
 import {
@@ -204,24 +184,29 @@ function AppContent() {
 
       <main>
         <Routes>
-
           {/* =========================
               Public routes
           ========================= */}
 
           <Route
             path="/"
-            element={<Home />}
+            element={
+              <Home />
+            }
           />
 
           <Route
             path="/events"
-            element={<Events />}
+            element={
+              <Events />
+            }
           />
 
           <Route
             path="/calendar"
-            element={<Calendar />}
+            element={
+              <Calendar />
+            }
           />
 
           <Route
@@ -240,7 +225,9 @@ function AppContent() {
 
           <Route
             path="/tickets"
-            element={<Tickets />}
+            element={
+              <Tickets />
+            }
           />
 
           <Route
@@ -252,22 +239,30 @@ function AppContent() {
 
           <Route
             path="/gallery"
-            element={<Gallery />}
+            element={
+              <Gallery />
+            }
           />
 
           <Route
             path="/venue"
-            element={<Venue />}
+            element={
+              <Venue />
+            }
           />
 
           <Route
             path="/faq"
-            element={<Faq />}
+            element={
+              <Faq />
+            }
           />
 
           <Route
             path="/contact"
-            element={<Contact />}
+            element={
+              <Contact />
+            }
           />
 
           {/* =========================
@@ -293,7 +288,6 @@ function AppContent() {
               </ProtectedRoute>
             }
           >
-
             <Route
               index
               element={
@@ -319,6 +313,17 @@ function AppContent() {
               path="events/:id/edit"
               element={
                 <AdminEventEdit />
+              }
+            />
+
+            {/* =========================
+                Main homepage event
+            ========================= */}
+
+            <Route
+              path="main-event"
+              element={
+                <AdminMainEvent />
               }
             />
 
@@ -377,9 +382,7 @@ function AppContent() {
                 <AdminSettings />
               }
             />
-
           </Route>
-
         </Routes>
       </main>
 
@@ -401,16 +404,13 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-
       {/*
        * Every time the pathname changes,
        * reset the browser to the top.
        */}
-
       <ScrollToTop />
 
       <AppContent />
-
     </BrowserRouter>
   );
 }

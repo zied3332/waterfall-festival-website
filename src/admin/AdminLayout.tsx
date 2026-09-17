@@ -17,6 +17,7 @@ import {
   Moon,
   Settings,
   Sparkles,
+  Star,
   Sun,
   Ticket,
   UserRound,
@@ -44,7 +45,9 @@ import {
 
 import "./style/admin.css";
 
-type AdminTheme = "light" | "dark";
+type AdminTheme =
+  | "light"
+  | "dark";
 
 type PageDetails = {
   title: string;
@@ -63,46 +66,61 @@ const pageDetailsByPath: Record<
     description:
       "Overview of the Waterfall Festival website.",
   },
+
   "/admin/events": {
     title: "Events",
     description:
       "Create, edit and manage festival events.",
   },
+
   "/admin/events/create": {
     title: "Create event",
     description:
       "Add a new event to the festival website.",
   },
+
+  "/admin/main-event": {
+    title: "Main Event",
+    description:
+      "Control which event is featured on the homepage.",
+  },
+
   "/admin/calendar": {
     title: "Calendar",
     description:
       "View and schedule festival events by date.",
   },
+
   "/admin/tickets": {
     title: "Tickets",
     description:
       "Manage ticket categories, prices and availability.",
   },
+
   "/admin/gallery": {
     title: "Gallery",
     description:
       "Upload and organize festival gallery content.",
   },
+
   "/admin/experience": {
     title: "Experience",
     description:
       "Manage the public festival experience page.",
   },
+
   "/admin/faq": {
     title: "FAQ",
     description:
       "Manage frequently asked questions and answers.",
   },
+
   "/admin/messages": {
     title: "Messages",
     description:
       "Review and respond to visitor inquiries.",
   },
+
   "/admin/settings": {
     title: "Settings",
     description:
@@ -111,9 +129,10 @@ const pageDetailsByPath: Record<
 };
 
 function getInitialTheme(): AdminTheme {
-  const storedTheme = localStorage.getItem(
-    ADMIN_THEME_STORAGE_KEY,
-  );
+  const storedTheme =
+    localStorage.getItem(
+      ADMIN_THEME_STORAGE_KEY,
+    );
 
   if (
     storedTheme === "light" ||
@@ -133,7 +152,9 @@ function getPageDetails(
   pathname: string,
 ): PageDetails {
   if (
-    pathname.startsWith("/admin/events/") &&
+    pathname.startsWith(
+      "/admin/events/",
+    ) &&
     pathname.endsWith("/edit")
   ) {
     return {
@@ -153,61 +174,86 @@ function getPageDetails(
 }
 
 function AdminLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate =
+    useNavigate();
 
-  const [theme, setTheme] =
-    useState<AdminTheme>(getInitialTheme);
+  const location =
+    useLocation();
 
-  const [isSidebarOpen, setIsSidebarOpen] =
-    useState(false);
+  const [
+    theme,
+    setTheme,
+  ] = useState<AdminTheme>(
+    getInitialTheme,
+  );
 
-  const [isProfileMenuOpen, setIsProfileMenuOpen] =
-    useState(false);
+  const [
+    isSidebarOpen,
+    setIsSidebarOpen,
+  ] = useState(false);
 
-  const currentUser = getAuthenticatedUser();
+  const [
+    isProfileMenuOpen,
+    setIsProfileMenuOpen,
+  ] = useState(false);
+
+  const currentUser =
+    getAuthenticatedUser();
 
   const adminName =
-    [currentUser?.firstName, currentUser?.lastName]
+    [
+      currentUser?.firstName,
+      currentUser?.lastName,
+    ]
       .filter(Boolean)
       .join(" ") ||
     currentUser?.email ||
     "Admin";
 
-  const adminInitials = useMemo(() => {
-    const firstInitial =
-      currentUser?.firstName?.trim().charAt(0);
+  const adminInitials =
+    useMemo(() => {
+      const firstInitial =
+        currentUser?.firstName
+          ?.trim()
+          .charAt(0);
 
-    const lastInitial =
-      currentUser?.lastName?.trim().charAt(0);
+      const lastInitial =
+        currentUser?.lastName
+          ?.trim()
+          .charAt(0);
 
-    const initials = `${firstInitial ?? ""}${
-      lastInitial ?? ""
-    }`.toUpperCase();
+      const initials =
+        `${firstInitial ?? ""}${
+          lastInitial ?? ""
+        }`.toUpperCase();
 
-    if (initials) {
-      return initials;
-    }
+      if (initials) {
+        return initials;
+      }
 
-    return adminName
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part.charAt(0))
-      .join("")
-      .toUpperCase();
-  }, [
-    adminName,
-    currentUser?.firstName,
-    currentUser?.lastName,
-  ]);
+      return adminName
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) =>
+          part.charAt(0),
+        )
+        .join("")
+        .toUpperCase();
+    }, [
+      adminName,
+      currentUser?.firstName,
+      currentUser?.lastName,
+    ]);
 
-  const pageDetails = getPageDetails(
-    location.pathname,
-  );
+  const pageDetails =
+    getPageDetails(
+      location.pathname,
+    );
 
   useEffect(() => {
-    document.documentElement.dataset.adminTheme =
+    document.documentElement
+      .dataset.adminTheme =
       theme;
 
     localStorage.setItem(
@@ -222,26 +268,33 @@ function AdminLayout() {
   }, [location.pathname]);
 
   function handleThemeToggle(): void {
-    setTheme((currentTheme) =>
-      currentTheme === "light"
-        ? "dark"
-        : "light",
+    setTheme(
+      (currentTheme) =>
+        currentTheme === "light"
+          ? "dark"
+          : "light",
     );
   }
 
   function handleLogout(): void {
     clearAuthSession();
 
-    navigate("/admin/login", {
-      replace: true,
-    });
+    navigate(
+      "/admin/login",
+      {
+        replace: true,
+      },
+    );
   }
 
   function handleNotificationClick(
-    notification: AdminNotification,
+    notification:
+      AdminNotification,
   ): void {
     if (notification.link) {
-      navigate(notification.link);
+      navigate(
+        notification.link,
+      );
     }
   }
 
@@ -283,8 +336,13 @@ function AdminLayout() {
             </div>
 
             <span className="admin-brand-copy">
-              <strong>Waterfall</strong>
-              <small>Admin panel</small>
+              <strong>
+                Waterfall
+              </strong>
+
+              <small>
+                Admin panel
+              </small>
             </span>
           </NavLink>
 
@@ -293,7 +351,9 @@ function AdminLayout() {
             type="button"
             aria-label="Close navigation"
             onClick={() =>
-              setIsSidebarOpen(false)
+              setIsSidebarOpen(
+                false,
+              )
             }
           >
             <X size={19} />
@@ -309,44 +369,113 @@ function AdminLayout() {
             className="admin-nav"
             aria-label="Admin navigation"
           >
-            <NavLink to="/admin" end>
-              <LayoutDashboard size={18} />
-              <span>Dashboard</span>
+            <NavLink
+              to="/admin"
+              end
+            >
+              <LayoutDashboard
+                size={18}
+              />
+
+              <span>
+                Dashboard
+              </span>
             </NavLink>
 
-            <NavLink to="/admin/events">
-              <CalendarDays size={18} />
-              <span>Events</span>
+            <NavLink
+              to="/admin/events"
+            >
+              <CalendarDays
+                size={18}
+              />
+
+              <span>
+                Events
+              </span>
             </NavLink>
 
-            <NavLink to="/admin/calendar">
-              <CalendarRange size={18} />
-              <span>Calendar</span>
+            <NavLink
+              to="/admin/main-event"
+            >
+              <Star
+                size={18}
+              />
+
+              <span>
+                Main Event
+              </span>
             </NavLink>
 
-            <NavLink to="/admin/tickets">
-              <Ticket size={18} />
-              <span>Tickets</span>
+            <NavLink
+              to="/admin/calendar"
+            >
+              <CalendarRange
+                size={18}
+              />
+
+              <span>
+                Calendar
+              </span>
             </NavLink>
 
-            <NavLink to="/admin/gallery">
-              <Images size={18} />
-              <span>Gallery</span>
+            <NavLink
+              to="/admin/tickets"
+            >
+              <Ticket
+                size={18}
+              />
+
+              <span>
+                Tickets
+              </span>
             </NavLink>
 
-            <NavLink to="/admin/experience">
-              <Sparkles size={18} />
-              <span>Experience</span>
+            <NavLink
+              to="/admin/gallery"
+            >
+              <Images
+                size={18}
+              />
+
+              <span>
+                Gallery
+              </span>
             </NavLink>
 
-            <NavLink to="/admin/faq">
-              <CircleHelp size={18} />
-              <span>FAQ</span>
+            <NavLink
+              to="/admin/experience"
+            >
+              <Sparkles
+                size={18}
+              />
+
+              <span>
+                Experience
+              </span>
             </NavLink>
 
-            <NavLink to="/admin/messages">
-              <MessageSquare size={18} />
-              <span>Messages</span>
+            <NavLink
+              to="/admin/faq"
+            >
+              <CircleHelp
+                size={18}
+              />
+
+              <span>
+                FAQ
+              </span>
+            </NavLink>
+
+            <NavLink
+              to="/admin/messages"
+            >
+              <MessageSquare
+                size={18}
+              />
+
+              <span>
+                Messages
+              </span>
             </NavLink>
           </nav>
         </div>
@@ -356,8 +485,13 @@ function AdminLayout() {
             className="admin-sidebar-settings"
             to="/admin/settings"
           >
-            <Settings size={18} />
-            <span>Settings</span>
+            <Settings
+              size={18}
+            />
+
+            <span>
+              Settings
+            </span>
           </NavLink>
 
           <div className="admin-sidebar-profile">
@@ -366,13 +500,20 @@ function AdminLayout() {
               aria-hidden="true"
             >
               {adminInitials || (
-                <UserRound size={18} />
+                <UserRound
+                  size={18}
+                />
               )}
             </span>
 
             <div className="admin-sidebar-profile-copy">
-              <strong>{adminName}</strong>
-              <span>Administrator</span>
+              <strong>
+                {adminName}
+              </strong>
+
+              <span>
+                Administrator
+              </span>
             </div>
           </div>
         </div>
@@ -385,24 +526,42 @@ function AdminLayout() {
               className="admin-mobile-menu-button"
               type="button"
               aria-label="Open navigation"
-              aria-expanded={isSidebarOpen}
+              aria-expanded={
+                isSidebarOpen
+              }
               onClick={() =>
-                setIsSidebarOpen(true)
+                setIsSidebarOpen(
+                  true,
+                )
               }
             >
-              <Menu size={20} />
+              <Menu
+                size={20}
+              />
             </button>
 
             <div className="admin-topbar-heading">
               <span className="admin-breadcrumb">
                 Admin
-                <span aria-hidden="true">/</span>
+
+                <span
+                  aria-hidden="true"
+                >
+                  /
+                </span>
+
                 {pageDetails.title}
               </span>
 
-              <h1>{pageDetails.title}</h1>
+              <h1>
+                {pageDetails.title}
+              </h1>
 
-              <p>{pageDetails.description}</p>
+              <p>
+                {
+                  pageDetails.description
+                }
+              </p>
             </div>
           </div>
 
@@ -420,12 +579,19 @@ function AdminLayout() {
                   ? "Dark mode"
                   : "Light mode"
               }
-              onClick={handleThemeToggle}
+              onClick={
+                handleThemeToggle
+              }
             >
-              {theme === "light" ? (
-                <Moon size={19} />
+              {theme ===
+              "light" ? (
+                <Moon
+                  size={19}
+                />
               ) : (
-                <Sun size={19} />
+                <Sun
+                  size={19}
+                />
               )}
             </button>
 
@@ -445,7 +611,9 @@ function AdminLayout() {
                 }
                 onClick={() =>
                   setIsProfileMenuOpen(
-                    (currentValue) =>
+                    (
+                      currentValue,
+                    ) =>
                       !currentValue,
                   )
                 }
@@ -455,7 +623,9 @@ function AdminLayout() {
                   aria-hidden="true"
                 >
                   {adminInitials || (
-                    <UserRound size={18} />
+                    <UserRound
+                      size={18}
+                    />
                   )}
                 </span>
 
@@ -481,10 +651,13 @@ function AdminLayout() {
                   role="menu"
                 >
                   <div className="admin-profile-dropdown-header">
-                    <strong>{adminName}</strong>
+                    <strong>
+                      {adminName}
+                    </strong>
 
                     <span>
-                      {currentUser?.email ??
+                      {currentUser
+                        ?.email ??
                         "Administrator"}
                     </span>
                   </div>
@@ -493,16 +666,24 @@ function AdminLayout() {
                     to="/admin/settings"
                     role="menuitem"
                   >
-                    <Settings size={17} />
+                    <Settings
+                      size={17}
+                    />
+
                     Account settings
                   </NavLink>
 
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={handleLogout}
+                    onClick={
+                      handleLogout
+                    }
                   >
-                    <LogOut size={17} />
+                    <LogOut
+                      size={17}
+                    />
+
                     Sign out
                   </button>
                 </div>
