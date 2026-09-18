@@ -12,7 +12,9 @@ import {
   Ticket,
   Users,
 } from "lucide-react";
-
+import {
+  getApiMediaUrl,
+} from "../../services/api.service";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -686,10 +688,11 @@ const eventData: CreateEventInput = {
     );
   }
 
-  const displayedImageUrl =
-    localPreviewUrl ??
-    currentImageUrl ??
-    null;
+const displayedImageUrl =
+  localPreviewUrl ??
+  getApiMediaUrl(
+    currentImageUrl,
+  );
 
   const validationErrorCount =
     Object.values(errors).filter(

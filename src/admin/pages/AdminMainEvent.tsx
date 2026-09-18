@@ -25,6 +25,13 @@ import {
 
 import {
   getAdminEvents,
+  getAdminHomepageEventSettings,
+  updateAdminHomepageEventSettings,
+} from "../../services/events.service";
+
+import type {
+  AdminHomepageEventSettings,
+  HomepageEventMode,
 } from "../../services/events.service";
 
 import type {
@@ -33,14 +40,9 @@ import type {
 
 import "../style/admin-main-event.css";
 
-type MainEventMode =
-  | "AUTOMATIC"
-  | "MANUAL";
-
 type MainEventFormState = {
-  mode: MainEventMode;
+  mode: HomepageEventMode;
   manualEventId: number | null;
-  autoSwitchHours: number;
 };
 
 type Feedback = {
@@ -51,13 +53,9 @@ type Feedback = {
 const FESTIVAL_TIME_ZONE =
   "Asia/Bangkok";
 
-const DEFAULT_SWITCH_HOURS = 8;
-
 const initialSettings: MainEventFormState = {
-  mode: "AUTOMATIC",
+  mode: "AUTO",
   manualEventId: null,
-  autoSwitchHours:
-    DEFAULT_SWITCH_HOURS,
 };
 
 function getErrorMessage(
@@ -77,7 +75,8 @@ function getErrorMessage(
 function getEventDate(
   value: string,
 ): Date | null {
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
   if (
     Number.isNaN(
@@ -105,10 +104,18 @@ function formatEventDate(
     {
       timeZone:
         FESTIVAL_TIME_ZONE,
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+
+      weekday:
+        "short",
+
+      month:
+        "short",
+
+      day:
+        "numeric",
+
+      year:
+        "numeric",
     },
   ).format(date);
 }
@@ -128,27 +135,56 @@ function formatEventTime(
     {
       timeZone:
         FESTIVAL_TIME_ZONE,
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
+
+      hour:
+        "numeric",
+
+      minute:
+        "2-digit",
+
+      hour12:
+        true,
     },
   ).format(date);
 }
 
 function formatDateTime(
-  date: Date,
+  value: string,
 ): string {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return "Date unavailable";
+  }
+
   return new Intl.DateTimeFormat(
     "en-US",
     {
       timeZone:
         FESTIVAL_TIME_ZONE,
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
+
+      month:
+        "short",
+
+      day:
+        "numeric",
+
+      year:
+        "numeric",
+
+      hour:
+        "numeric",
+
+      minute:
+        "2-digit",
+
+      hour12:
+        true,
     },
   ).format(date);
 }
@@ -169,11 +205,26 @@ function getStatusLabel(
   );
 }
 
+function createFormState(
+  response: AdminHomepageEventSettings,
+  fallbackEventId: number | null,
+): MainEventFormState {
+  return {
+    mode:
+      response.homepageEventMode,
+
+    manualEventId:
+      response.homepageManualEventId ??
+      fallbackEventId,
+  };
+}
+
 function AdminMainEvent() {
   const [
     events,
     setEvents,
-  ] = useState<Event[]>([]);
+  ] =
+    useState<Event[]>([]);
 
   const [
     settings,
@@ -192,21 +243,32 @@ function AdminMainEvent() {
     );
 
   const [
+    serverSettings,
+    setServerSettings,
+  ] =
+    useState<
+      AdminHomepageEventSettings | null
+    >(null);
+
+  const [
     isLoading,
     setIsLoading,
-  ] = useState(true);
+  ] =
+    useState(true);
 
   const [
     isSaving,
     setIsSaving,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     loadError,
     setLoadError,
-  ] = useState<string | null>(
-    null,
-  );
+  ] =
+    useState<string | null>(
+      null,
+    );
 
   const [
     feedback,
@@ -215,6 +277,12 @@ function AdminMainEvent() {
     useState<Feedback | null>(
       null,
     );
+
+  /*
+   * ============================================================
+   * PUBLISHED EVENTS
+   * ============================================================
+   */
 
   const publishedEvents =
     useMemo(
@@ -240,43 +308,10 @@ function AdminMainEvent() {
       [events],
     );
 
-  const automaticEvent =
-    useMemo(() => {
-      const now =
-        Date.now();
-
-      const switchDelay =
-        settings.autoSwitchHours *
-        60 *
-        60 *
-        1000;
-
-      return (
-        publishedEvents.find(
-          (event) => {
-            const eventTime =
-              new Date(
-                event.date,
-              ).getTime();
-
-            return (
-              eventTime +
-                switchDelay >
-              now
-            );
-          },
-        ) ??
-        publishedEvents[
-          publishedEvents.length -
-            1
-        ] ??
-        null
-      );
-    }, [
-      publishedEvents,
-      settings.autoSwitchHours,
-    ]);
-
+  /*
+   * The selected manual event shown while
+   * editing the form.
+   */
   const manualEvent =
     useMemo(
       () =>
@@ -291,16 +326,42 @@ function AdminMainEvent() {
       ],
     );
 
+  /*
+   * The backend is the source of truth for AUTO.
+   *
+   * When the form has no unsaved changes, use
+   * resolvedEvent directly.
+   *
+   * While the administrator is editing MANUAL
+   * mode, preview the selected manual event.
+   */
   const displayedEvent =
     settings.mode === "MANUAL"
       ? manualEvent
-      : automaticEvent;
+      : serverSettings?.resolvedEvent ??
+        null;
+
+  /*
+   * Find the event after the currently resolved
+   * AUTO event. This is only for the visual
+   * "Current -> Next" explanation.
+   */
+  const automaticEvent =
+    serverSettings?.resolvedMode ===
+      "AUTO"
+      ? serverSettings.resolvedEvent
+      : null;
 
   const nextEvent =
     useMemo(() => {
-      if (!displayedEvent) {
+      if (!automaticEvent) {
         return null;
       }
+
+      const automaticEventTime =
+        new Date(
+          automaticEvent.date,
+        ).getTime();
 
       return (
         publishedEvents.find(
@@ -308,44 +369,19 @@ function AdminMainEvent() {
             new Date(
               event.date,
             ).getTime() >
-            new Date(
-              displayedEvent.date,
-            ).getTime(),
+            automaticEventTime,
         ) ?? null
       );
     }, [
-      displayedEvent,
+      automaticEvent,
       publishedEvents,
     ]);
 
-  const automaticSwitchDate =
-    useMemo(() => {
-      if (
-        !automaticEvent
-      ) {
-        return null;
-      }
-
-      const date =
-        getEventDate(
-          automaticEvent.date,
-        );
-
-      if (!date) {
-        return null;
-      }
-
-      return new Date(
-        date.getTime() +
-          settings.autoSwitchHours *
-            60 *
-            60 *
-            1000,
-      );
-    }, [
-      automaticEvent,
-      settings.autoSwitchHours,
-    ]);
+  /*
+   * ============================================================
+   * UNSAVED CHANGES
+   * ============================================================
+   */
 
   const hasUnsavedChanges =
     useMemo(
@@ -362,19 +398,37 @@ function AdminMainEvent() {
       ],
     );
 
-  async function loadEvents() {
+  /*
+   * ============================================================
+   * LOAD
+   * ============================================================
+   */
+
+  async function loadData() {
     try {
       setIsLoading(true);
       setLoadError(null);
       setFeedback(null);
 
-      const response =
-        await getAdminEvents();
+      const [
+        eventsResponse,
+        settingsResponse,
+      ] =
+        await Promise.all([
+          getAdminEvents(),
+          getAdminHomepageEventSettings(),
+        ]);
 
-      setEvents(response);
+      setEvents(
+        eventsResponse,
+      );
+
+      setServerSettings(
+        settingsResponse,
+      );
 
       const published =
-        response
+        eventsResponse
           .filter(
             (event) =>
               event.status ===
@@ -393,35 +447,28 @@ function AdminMainEvent() {
               ).getTime(),
           );
 
-      if (
-        published.length > 0
-      ) {
-        const firstEvent =
-          published[0];
+      const fallbackEventId =
+        published[0]?.id ??
+        null;
 
-        setSettings(
-          (current) => ({
-            ...current,
-            manualEventId:
-              current.manualEventId ??
-              firstEvent.id,
-          }),
+      const loadedFormState =
+        createFormState(
+          settingsResponse,
+          fallbackEventId,
         );
 
-        setSavedSettings(
-          (current) => ({
-            ...current,
-            manualEventId:
-              current.manualEventId ??
-              firstEvent.id,
-          }),
-        );
-      }
+      setSettings(
+        loadedFormState,
+      );
+
+      setSavedSettings(
+        loadedFormState,
+      );
     } catch (error) {
       setLoadError(
         getErrorMessage(
           error,
-          "Could not load festival events.",
+          "Could not load the main event configuration.",
         ),
       );
     } finally {
@@ -430,11 +477,17 @@ function AdminMainEvent() {
   }
 
   useEffect(() => {
-    void loadEvents();
+    void loadData();
   }, []);
 
+  /*
+   * ============================================================
+   * FORM
+   * ============================================================
+   */
+
   function selectMode(
-    mode: MainEventMode,
+    mode: HomepageEventMode,
   ) {
     setSettings(
       (current) => ({
@@ -449,12 +502,27 @@ function AdminMainEvent() {
   function handleManualEventChange(
     eventId: string,
   ) {
+    if (!eventId) {
+      setSettings(
+        (current) => ({
+          ...current,
+          manualEventId:
+            null,
+        }),
+      );
+
+      setFeedback(null);
+
+      return;
+    }
+
     const parsedId =
       Number(eventId);
 
     setSettings(
       (current) => ({
         ...current,
+
         manualEventId:
           Number.isFinite(
             parsedId,
@@ -467,43 +535,19 @@ function AdminMainEvent() {
     setFeedback(null);
   }
 
-  function handleSwitchHoursChange(
-    value: string,
-  ) {
-    const parsedValue =
-      Number(value);
-
-    const safeValue =
-      Number.isFinite(
-        parsedValue,
-      )
-        ? Math.min(
-            48,
-            Math.max(
-              0,
-              parsedValue,
-            ),
-          )
-        : 0;
-
-    setSettings(
-      (current) => ({
-        ...current,
-        autoSwitchHours:
-          safeValue,
-      }),
-    );
-
-    setFeedback(null);
-  }
-
   function handleDiscard() {
-    setSettings(
-      savedSettings,
-    );
+    setSettings({
+      ...savedSettings,
+    });
 
     setFeedback(null);
   }
+
+  /*
+   * ============================================================
+   * SAVE
+   * ============================================================
+   */
 
   async function handleSave() {
     if (
@@ -519,7 +563,9 @@ function AdminMainEvent() {
       !settings.manualEventId
     ) {
       setFeedback({
-        type: "error",
+        type:
+          "error",
+
         message:
           "Choose an event before enabling Manual mode.",
       });
@@ -531,29 +577,58 @@ function AdminMainEvent() {
     setFeedback(null);
 
     try {
-      /*
-       * FRONTEND PHASE ONLY.
-       *
-       * We will replace this with the
-       * backend settings request after
-       * the Main Event backend API is
-       * connected.
-       */
+      const response =
+        await updateAdminHomepageEventSettings({
+          homepageEventMode:
+            settings.mode,
 
-      await Promise.resolve();
+          /*
+           * Keep the selected manual event in
+           * the database even when AUTO is used.
+           *
+           * This means switching back to MANUAL
+           * remembers the previous selection.
+           */
+          homepageManualEventId:
+            settings.manualEventId,
+        });
 
-      setSavedSettings({
-        ...settings,
-      });
+      setServerSettings(
+        response,
+      );
+
+      const updatedFormState:
+        MainEventFormState = {
+          mode:
+            response.homepageEventMode,
+
+          manualEventId:
+            response.homepageManualEventId,
+        };
+
+      setSettings(
+        updatedFormState,
+      );
+
+      setSavedSettings(
+        updatedFormState,
+      );
 
       setFeedback({
-        type: "success",
+        type:
+          "success",
+
         message:
-          "Main event configuration saved locally. Backend connection will be added next.",
+          response.homepageEventMode ===
+          "MANUAL"
+            ? "Main event saved. The selected event is now pinned to the homepage."
+            : "Main event saved. Automatic homepage selection is now active.",
       });
     } catch (error) {
       setFeedback({
-        type: "error",
+        type:
+          "error",
+
         message:
           getErrorMessage(
             error,
@@ -564,6 +639,12 @@ function AdminMainEvent() {
       setIsSaving(false);
     }
   }
+
+  /*
+   * ============================================================
+   * LOADING
+   * ============================================================
+   */
 
   if (isLoading) {
     return (
@@ -579,13 +660,20 @@ function AdminMainEvent() {
           </strong>
 
           <span>
-            Getting published
+            Getting homepage
+            configuration and published
             festival events...
           </span>
         </div>
       </section>
     );
   }
+
+  /*
+   * ============================================================
+   * LOAD ERROR
+   * ============================================================
+   */
 
   if (loadError) {
     return (
@@ -602,7 +690,7 @@ function AdminMainEvent() {
           <button
             type="button"
             onClick={() =>
-              void loadEvents()
+              void loadData()
             }
           >
             <RefreshCw
@@ -618,13 +706,21 @@ function AdminMainEvent() {
 
   return (
     <section className="admin-main-event">
+      {/*
+       * ========================================================
+       * HEADER
+       * ========================================================
+       */}
+
       <header className="admin-main-event__header">
         <div className="admin-main-event__heading">
           <span
             className="admin-main-event__heading-icon"
             aria-hidden="true"
           >
-            <Star size={21} />
+            <Star
+              size={21}
+            />
           </span>
 
           <div>
@@ -661,7 +757,7 @@ function AdminMainEvent() {
 
               <span>
                 {settings.mode ===
-                "AUTOMATIC"
+                "AUTO"
                   ? "Automatic mode"
                   : "Manual mode"}
               </span>
@@ -715,6 +811,12 @@ function AdminMainEvent() {
         </div>
       </header>
 
+      {/*
+       * ========================================================
+       * FEEDBACK
+       * ========================================================
+       */}
+
       {feedback && (
         <div
           className={`admin-main-event__feedback admin-main-event__feedback--${feedback.type}`}
@@ -742,6 +844,12 @@ function AdminMainEvent() {
         </div>
       )}
 
+      {/*
+       * ========================================================
+       * CURRENTLY DISPLAYED / PREVIEW
+       * ========================================================
+       */}
+
       <div className="admin-main-event__section">
         <div className="admin-main-event__section-header">
           <span className="admin-main-event__section-icon">
@@ -757,9 +865,9 @@ function AdminMainEvent() {
 
             <p>
               This is the event that
-              would currently be
-              featured on the
-              homepage.
+              will be featured on the
+              homepage with the current
+              selection.
             </p>
           </div>
 
@@ -798,8 +906,7 @@ function AdminMainEvent() {
                 <div className="admin-main-event__event-top">
                   <div>
                     <span className="admin-main-event__event-label">
-                      Featured
-                      event
+                      Featured event
                     </span>
 
                     <h3>
@@ -812,11 +919,9 @@ function AdminMainEvent() {
                   <span
                     className={`admin-main-event__status admin-main-event__status--${displayedEvent.status.toLowerCase()}`}
                   >
-                    {
-                      getStatusLabel(
-                        displayedEvent.status,
-                      )
-                    }
+                    {getStatusLabel(
+                      displayedEvent.status,
+                    )}
                   </span>
                 </div>
 
@@ -838,9 +943,7 @@ function AdminMainEvent() {
 
                     {formatEventTime(
                       displayedEvent.date,
-                    )}
-
-                    {" "}
+                    )}{" "}
                     Thailand
                   </span>
 
@@ -858,9 +961,10 @@ function AdminMainEvent() {
                 <div className="admin-main-event__event-footer">
                   <span>
                     Selection mode:
+
                     <strong>
                       {settings.mode ===
-                      "AUTOMATIC"
+                      "AUTO"
                         ? " Automatic"
                         : " Manual"}
                     </strong>
@@ -906,6 +1010,12 @@ function AdminMainEvent() {
         </div>
       </div>
 
+      {/*
+       * ========================================================
+       * MODE
+       * ========================================================
+       */}
+
       <div className="admin-main-event__section">
         <div className="admin-main-event__section-header">
           <span className="admin-main-event__section-icon">
@@ -932,19 +1042,19 @@ function AdminMainEvent() {
               type="button"
               className={`admin-main-event__mode-card ${
                 settings.mode ===
-                "AUTOMATIC"
+                "AUTO"
                   ? "admin-main-event__mode-card--active"
                   : ""
               }`}
               onClick={() =>
                 selectMode(
-                  "AUTOMATIC",
+                  "AUTO",
                 )
               }
             >
               <span className="admin-main-event__mode-check">
                 {settings.mode ===
-                  "AUTOMATIC" && (
+                  "AUTO" && (
                   <Check
                     size={14}
                   />
@@ -1017,8 +1127,14 @@ function AdminMainEvent() {
         </div>
       </div>
 
+      {/*
+       * ========================================================
+       * AUTO
+       * ========================================================
+       */}
+
       {settings.mode ===
-      "AUTOMATIC" ? (
+      "AUTO" ? (
         <div className="admin-main-event__section">
           <div className="admin-main-event__section-header">
             <span className="admin-main-event__section-icon">
@@ -1033,54 +1149,34 @@ function AdminMainEvent() {
               </h2>
 
               <p>
-                Configure when the
-                homepage moves to the
-                next published event.
+                The backend manages the
+                event automatically
+                using Thailand time.
               </p>
             </div>
           </div>
 
           <div className="admin-main-event__section-content">
             <div className="admin-main-event__auto-grid">
-              <label className="admin-main-event__field">
+              <div className="admin-main-event__field">
                 <span>
-                  Switch after event
-                  starts
+                  Automatic rule
                 </span>
 
-                <div className="admin-main-event__hours-input">
-                  <input
-                    type="number"
-                    min="0"
-                    max="48"
-                    step="1"
-                    value={
-                      settings.autoSwitchHours
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      handleSwitchHoursChange(
-                        event
-                          .target
-                          .value,
-                      )
-                    }
-                  />
-
-                  <span>
-                    hours
-                  </span>
-                </div>
+                <strong>
+                  9:00 PM Thailand time
+                </strong>
 
                 <small>
-                  The next published
-                  event becomes the
-                  homepage event this
-                  many hours after the
-                  current event starts.
+                  The current event
+                  remains featured until
+                  9:00 PM Thailand time
+                  on its event date. The
+                  switch will never
+                  happen before the
+                  event starts.
                 </small>
-              </label>
+              </div>
 
               <div className="admin-main-event__switch-summary">
                 <div className="admin-main-event__switch-step">
@@ -1126,31 +1222,36 @@ function AdminMainEvent() {
               </div>
             </div>
 
-            {automaticEvent &&
-              automaticSwitchDate && (
-                <div className="admin-main-event__info-box">
-                  <Clock3
-                    size={17}
-                  />
+            {serverSettings?.switchAt && (
+              <div className="admin-main-event__info-box">
+                <Clock3
+                  size={17}
+                />
 
-                  <div>
-                    <strong>
-                      Next automatic
-                      switch
-                    </strong>
+                <div>
+                  <strong>
+                    Next automatic
+                    switch
+                  </strong>
 
-                    <span>
-                      {formatDateTime(
-                        automaticSwitchDate,
-                      )}{" "}
-                      Thailand time
-                    </span>
-                  </div>
+                  <span>
+                    {formatDateTime(
+                      serverSettings.switchAt,
+                    )}{" "}
+                    Thailand time
+                  </span>
                 </div>
-              )}
+              </div>
+            )}
           </div>
         </div>
       ) : (
+        /*
+         * ======================================================
+         * MANUAL
+         * ======================================================
+         */
+
         <div className="admin-main-event__section">
           <div className="admin-main-event__section-header">
             <span className="admin-main-event__section-icon">
@@ -1247,6 +1348,12 @@ function AdminMainEvent() {
           </div>
         </div>
       )}
+
+      {/*
+       * ========================================================
+       * FOOTER
+       * ========================================================
+       */}
 
       <footer className="admin-main-event__footer">
         <div>

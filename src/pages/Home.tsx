@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -10,6 +11,7 @@ import {
 import {
   CalendarDays,
   Clock3,
+  ImageOff,
   MapPin,
   Sparkles,
   Ticket,
@@ -20,6 +22,18 @@ import {
   useWebsiteSettings,
 } from "../context/WebsiteSettingsContext";
 
+import {
+  getHomepageEvent,
+} from "../services/events.service";
+
+import {
+  getApiMediaUrl,
+} from "../services/api.service";
+
+import type {
+  Event,
+} from "../types/event";
+
 import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
 import ExperiencePreviewSection from "../components/experience/ExperiencePreviewSection";
 import FestivalReelsSection from "../components/home/FestivalReelsSection";
@@ -27,38 +41,21 @@ import PremiumExperiencesSection from "../components/home/PremiumExperiencesSect
 import GalleryPreviewSection from "../components/gallery/GalleryPreviewSection";
 import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 
-import eventPoster from "../../assets/waterfall-september-24-2026.png";
-
 import "./style/home.css";
 
-const EVENTPOP_URL =
-  "https://www.eventpop.me/e/169991";
+const FESTIVAL_TIME_ZONE =
+  "Asia/Bangkok";
 
-/*
- * Waterfall Festival
- * 24 September 2026
- * 9:00 PM Thailand time
- */
-const EVENT_START_TIME =
-  new Date(
-    "2026-09-24T21:00:00+07:00",
-  ).getTime();
+const WATERFALL_MAP_URL =
+  "https://share.google/9QxAyS1iVMSWES0X7";
 
-/*
- * Birthday promotion month.
- *
- * This uses Thailand time instead of
- * the visitor's local timezone.
- *
- * September -> October -> November...
- * automatically.
- */
 const BIRTHDAY_MONTH =
   new Intl.DateTimeFormat(
     "en-US",
     {
       month: "long",
-      timeZone: "Asia/Bangkok",
+      timeZone:
+        FESTIVAL_TIME_ZONE,
     },
   ).format(new Date());
 
@@ -70,9 +67,37 @@ type CountdownTime = {
   hasStarted: boolean;
 };
 
-function getCountdown(): CountdownTime {
+const EMPTY_COUNTDOWN: CountdownTime = {
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0,
+  hasStarted: false,
+};
+
+function getCountdown(
+  eventDate?: string | null,
+): CountdownTime {
+  if (!eventDate) {
+    return EMPTY_COUNTDOWN;
+  }
+
+  const eventStartTime =
+    new Date(
+      eventDate,
+    ).getTime();
+
+  if (
+    Number.isNaN(
+      eventStartTime,
+    )
+  ) {
+    return EMPTY_COUNTDOWN;
+  }
+
   const difference =
-    EVENT_START_TIME - Date.now();
+    eventStartTime -
+    Date.now();
 
   if (difference <= 0) {
     return {
@@ -84,27 +109,50 @@ function getCountdown(): CountdownTime {
     };
   }
 
-  const days = Math.floor(
-    difference /
-      (1000 * 60 * 60 * 24),
-  );
+  const days =
+    Math.floor(
+      difference /
+        (
+          1000 *
+          60 *
+          60 *
+          24
+        ),
+    );
 
-  const hours = Math.floor(
-    (difference /
-      (1000 * 60 * 60)) %
-      24,
-  );
+  const hours =
+    Math.floor(
+      (
+        difference /
+        (
+          1000 *
+          60 *
+          60
+        )
+      ) %
+        24,
+    );
 
-  const minutes = Math.floor(
-    (difference /
-      (1000 * 60)) %
-      60,
-  );
+  const minutes =
+    Math.floor(
+      (
+        difference /
+        (
+          1000 *
+          60
+        )
+      ) %
+        60,
+    );
 
-  const seconds = Math.floor(
-    (difference / 1000) %
-      60,
-  );
+  const seconds =
+    Math.floor(
+      (
+        difference /
+        1000
+      ) %
+        60,
+    );
 
   return {
     days,
@@ -115,44 +163,332 @@ function getCountdown(): CountdownTime {
   };
 }
 
+function getEventDate(
+  value?: string | null,
+): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function formatEventDate(
+  value?: string | null,
+): string {
+  const date =
+    getEventDate(value);
+
+  if (!date) {
+    return "Upcoming Event";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone:
+        FESTIVAL_TIME_ZONE,
+
+      day:
+        "numeric",
+
+      month:
+        "long",
+
+      year:
+        "numeric",
+    },
+  ).format(date);
+}
+
+function formatPopupDate(
+  value?: string | null,
+): string {
+  const date =
+    getEventDate(value);
+
+  if (!date) {
+    return "Upcoming";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone:
+        FESTIVAL_TIME_ZONE,
+
+      day:
+        "numeric",
+
+      month:
+        "long",
+    },
+  ).format(date);
+}
+
+function formatWeekday(
+  value?: string | null,
+): string {
+  const date =
+    getEventDate(value);
+
+  if (!date) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone:
+        FESTIVAL_TIME_ZONE,
+
+      weekday:
+        "long",
+    },
+  ).format(date);
+}
+
+function formatEventTime(
+  value?: string | null,
+): string {
+  const date =
+    getEventDate(value);
+
+  if (!date) {
+    return "9 PM";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone:
+        FESTIVAL_TIME_ZONE,
+
+      hour:
+        "numeric",
+
+      minute:
+        "2-digit",
+
+      hour12:
+        true,
+    },
+  )
+    .format(date)
+    .replace(
+      ":00",
+      "",
+    );
+}
+
+function getShortLocation(
+  location?: string | null,
+): string {
+  if (!location?.trim()) {
+    return "Koh Phangan";
+  }
+
+  const firstPart =
+    location
+      .split(",")[0]
+      ?.trim();
+
+  return (
+    firstPart ||
+    location.trim()
+  );
+}
+
 function Home() {
   const { settings } =
     useWebsiteSettings();
 
   const [
+    mainEvent,
+    setMainEvent,
+  ] =
+    useState<Event | null>(
+      null,
+    );
+
+  const [
+    isMainEventLoading,
+    setIsMainEventLoading,
+  ] =
+    useState(true);
+
+  /*
+   * We no longer keep a hardcoded September 24
+   * poster as a fallback.
+   *
+   * If the selected event's poster fails,
+   * posterFailed becomes true and we show a
+   * neutral placeholder instead.
+   */
+  const [
+    posterFailed,
+    setPosterFailed,
+  ] =
+    useState(false);
+
+  const [
     isEventPopupOpen,
     setIsEventPopupOpen,
-  ] = useState(true);
+  ] =
+    useState(false);
 
   const [
     countdown,
     setCountdown,
-  ] = useState<CountdownTime>(
-    getCountdown,
-  );
+  ] =
+    useState<CountdownTime>(
+      EMPTY_COUNTDOWN,
+    );
 
   /*
-   * Update countdown every second.
+   * ============================================================
+   * LOAD MAIN EVENT
+   * ============================================================
+   */
+
+  useEffect(() => {
+    let isMounted =
+      true;
+
+    async function loadMainEvent() {
+      try {
+        setIsMainEventLoading(
+          true,
+        );
+
+        const response =
+          await getHomepageEvent();
+
+        if (!isMounted) {
+          return;
+        }
+
+        setMainEvent(
+          response.event,
+        );
+
+        setPosterFailed(
+          false,
+        );
+
+        setIsEventPopupOpen(
+          Boolean(
+            response.event,
+          ),
+        );
+      } catch (error) {
+        console.error(
+          "Could not load homepage main event.",
+          error,
+        );
+
+        if (!isMounted) {
+          return;
+        }
+
+        setMainEvent(
+          null,
+        );
+
+        setPosterFailed(
+          false,
+        );
+
+        setIsEventPopupOpen(
+          false,
+        );
+      } finally {
+        if (isMounted) {
+          setIsMainEventLoading(
+            false,
+          );
+        }
+      }
+    }
+
+    void loadMainEvent();
+
+    return () => {
+      isMounted =
+        false;
+    };
+  }, []);
+
+  /*
+   * Whenever the Main Event changes,
+   * allow its new poster to load.
    */
   useEffect(() => {
+    setPosterFailed(
+      false,
+    );
+  }, [
+    mainEvent?.id,
+    mainEvent?.heroImageUrl,
+  ]);
+
+  /*
+   * ============================================================
+   * COUNTDOWN
+   * ============================================================
+   */
+
+  useEffect(() => {
+    if (!mainEvent?.date) {
+      setCountdown(
+        EMPTY_COUNTDOWN,
+      );
+
+      return;
+    }
+
+    function updateCountdown() {
+      setCountdown(
+        getCountdown(
+          mainEvent?.date,
+        ),
+      );
+    }
+
+    updateCountdown();
+
     const intervalId =
-      window.setInterval(() => {
-        setCountdown(
-          getCountdown(),
-        );
-      }, 1000);
+      window.setInterval(
+        updateCountdown,
+        1000,
+      );
 
     return () => {
       window.clearInterval(
         intervalId,
       );
     };
-  }, []);
+  }, [
+    mainEvent?.date,
+  ]);
 
   /*
-   * Prevent page scrolling while
-   * the promotional popup is open.
+   * ============================================================
+   * POPUP SCROLL LOCK
+   * ============================================================
    */
+
   useEffect(() => {
     if (!isEventPopupOpen) {
       return;
@@ -168,11 +504,16 @@ function Home() {
       document.body.style.overflow =
         previousOverflow;
     };
-  }, [isEventPopupOpen]);
+  }, [
+    isEventPopupOpen,
+  ]);
 
   /*
-   * Escape closes the popup.
+   * ============================================================
+   * ESCAPE CLOSES POPUP
+   * ============================================================
    */
+
   useEffect(() => {
     if (!isEventPopupOpen) {
       return;
@@ -181,7 +522,10 @@ function Home() {
     const handleKeyDown = (
       event: KeyboardEvent,
     ) => {
-      if (event.key === "Escape") {
+      if (
+        event.key ===
+        "Escape"
+      ) {
         setIsEventPopupOpen(
           false,
         );
@@ -199,7 +543,15 @@ function Home() {
         handleKeyDown,
       );
     };
-  }, [isEventPopupOpen]);
+  }, [
+    isEventPopupOpen,
+  ]);
+
+  /*
+   * ============================================================
+   * WEBSITE SETTINGS
+   * ============================================================
+   */
 
   const festivalName =
     settings?.festivalName?.trim() ||
@@ -209,9 +561,18 @@ function Home() {
     settings?.tagline?.trim() ||
     "Thailand’s Tropical Music Experience";
 
-  const location =
+  const websiteLocation =
     settings?.location?.trim() ||
     "Koh Phangan, Thailand";
+
+  const eventLocation =
+    mainEvent?.location?.trim() ||
+    websiteLocation;
+
+  const shortEventLocation =
+    getShortLocation(
+      eventLocation,
+    );
 
   const eventsEnabled =
     settings?.eventsPageEnabled ??
@@ -246,339 +607,499 @@ function Home() {
             ? "faq-preview"
             : null;
 
+  /*
+   * ============================================================
+   * MAIN EVENT VALUES
+   * ============================================================
+   */
+
+  const eventDateLabel =
+    formatEventDate(
+      mainEvent?.date,
+    );
+
+  const popupDateLabel =
+    formatPopupDate(
+      mainEvent?.date,
+    );
+
+  const eventWeekday =
+    formatWeekday(
+      mainEvent?.date,
+    );
+
+  const eventTimeLabel =
+    formatEventTime(
+      mainEvent?.date,
+    );
+
+  const ticketUrl =
+    mainEvent?.ticketPurchaseUrl?.trim() ||
+    null;
+
+  const posterUrl =
+    getApiMediaUrl(
+      mainEvent?.heroImageUrl,
+    );
+
+  const hasWorkingPoster =
+    Boolean(
+      posterUrl,
+    ) &&
+    !posterFailed;
+
+  const posterAlt =
+    useMemo(
+      () =>
+        mainEvent
+          ? `${mainEvent.title} event poster for ${eventDateLabel}`
+          : `${festivalName} event poster`,
+      [
+        mainEvent,
+        eventDateLabel,
+        festivalName,
+      ],
+    );
+
+  /*
+   * ============================================================
+   * POSTER
+   * ============================================================
+   */
+
+  const posterContent =
+    hasWorkingPoster &&
+    posterUrl ? (
+      <>
+        <img
+          key={`${mainEvent?.id ?? "event"}-${posterUrl}`}
+          src={
+            posterUrl
+          }
+          alt={
+            posterAlt
+          }
+          className="home-event-hero__poster"
+          onError={() => {
+            console.warn(
+              "Main event poster could not be loaded:",
+              posterUrl,
+            );
+
+            setPosterFailed(
+              true,
+            );
+          }}
+        />
+
+        <span
+          className="home-event-hero__poster-shine"
+          aria-hidden="true"
+        />
+      </>
+    ) : (
+      <div
+        className="home-event-hero__poster home-event-hero__poster--missing"
+        role="img"
+        aria-label={
+          posterAlt
+        }
+        style={{
+          display:
+            "flex",
+          flexDirection:
+            "column",
+          alignItems:
+            "center",
+          justifyContent:
+            "center",
+          gap:
+            "14px",
+          minHeight:
+            "420px",
+          textAlign:
+            "center",
+          padding:
+            "32px",
+        }}
+      >
+        <ImageOff
+          size={42}
+          aria-hidden="true"
+        />
+
+        <strong>
+          {mainEvent?.title ||
+            festivalName}
+        </strong>
+
+        <span>
+          {
+            eventDateLabel
+          }
+        </span>
+      </div>
+    );
+
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
+
   return (
     <>
-      {/* =========================
-          Event countdown popup
-      ========================= */}
+      {/*
+       * ========================================================
+       * MAIN EVENT POPUP
+       * ========================================================
+       */}
 
-      {isEventPopupOpen && (
-        <div
-          className="event-popup"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="event-popup-title"
-          onClick={() =>
-            setIsEventPopupOpen(
-              false,
-            )
-          }
-        >
+      {isEventPopupOpen &&
+        mainEvent && (
           <div
-            className="event-popup__card"
-            onClick={(event) =>
-              event.stopPropagation()
+            className="event-popup"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="event-popup-title"
+            onClick={() =>
+              setIsEventPopupOpen(
+                false,
+              )
             }
           >
-            <button
-              type="button"
-              className="event-popup__close"
-              onClick={() =>
-                setIsEventPopupOpen(
-                  false,
-                )
+            <div
+              className="event-popup__card"
+              onClick={(
+                event,
+              ) =>
+                event.stopPropagation()
               }
-              aria-label="Close event announcement"
             >
-              <X
-                size={20}
-                aria-hidden="true"
-              />
-            </button>
-
-            <div className="event-popup__content">
-              {/* =====================
-                  Festival label
-              ===================== */}
-
-              <div className="event-popup__festival-label">
-                <span
-                  className="event-popup__label-line"
-                  aria-hidden="true"
-                />
-
-                <Sparkles
-                  size={14}
-                  aria-hidden="true"
-                />
-
-                <span>
-                  Waterfall Festival
-                </span>
-
-                <Sparkles
-                  size={14}
-                  aria-hidden="true"
-                />
-
-                <span
-                  className="event-popup__label-line"
-                  aria-hidden="true"
-                />
-              </div>
-
-              {/* =====================
-                  Next event heading
-              ===================== */}
-
-              <p className="event-popup__coming">
-                Get Ready For The
-              </p>
-
-              <h2
-                id="event-popup-title"
-                className="event-popup__title"
+              <button
+                type="button"
+                className="event-popup__close"
+                onClick={() =>
+                  setIsEventPopupOpen(
+                    false,
+                  )
+                }
+                aria-label="Close event announcement"
               >
-                <>
+                <X
+                  size={20}
+                  aria-hidden="true"
+                />
+              </button>
+
+              <div className="event-popup__content">
+                <div className="event-popup__festival-label">
+                  <span
+                    className="event-popup__label-line"
+                    aria-hidden="true"
+                  />
+
+                  <Sparkles
+                    size={14}
+                    aria-hidden="true"
+                  />
+
+                  <span>
+                    {festivalName}
+                  </span>
+
+                  <Sparkles
+                    size={14}
+                    aria-hidden="true"
+                  />
+
+                  <span
+                    className="event-popup__label-line"
+                    aria-hidden="true"
+                  />
+                </div>
+
+                <p className="event-popup__coming">
+                  Get Ready For The
+                </p>
+
+                <h2
+                  id="event-popup-title"
+                  className="event-popup__title"
+                >
                   Next
 
                   <span>
                     Event
                   </span>
-                </>
-              </h2>
+                </h2>
 
-              {/* =====================
-                  Event details
-              ===================== */}
+                <div className="event-popup__event-info">
+                  <span>
+                    <CalendarDays
+                      size={15}
+                      aria-hidden="true"
+                    />
 
-              <div className="event-popup__event-info">
-                <span>
-                  <CalendarDays
-                    size={15}
+                    {
+                      popupDateLabel
+                    }
+                  </span>
+
+                  <span
+                    className="event-popup__info-dot"
                     aria-hidden="true"
                   />
 
-                  24 September
-                </span>
+                  <span>
+                    <MapPin
+                      size={15}
+                      aria-hidden="true"
+                    />
 
-                <span
-                  className="event-popup__info-dot"
-                  aria-hidden="true"
-                />
+                    {
+                      shortEventLocation
+                    }
+                  </span>
 
-                <span>
-                  <MapPin
-                    size={15}
+                  <span
+                    className="event-popup__info-dot"
                     aria-hidden="true"
                   />
 
-                  Koh Phangan
-                </span>
-
-                <span
-                  className="event-popup__info-dot"
-                  aria-hidden="true"
-                />
-
-                <span>
-                  <Clock3
-                    size={15}
-                    aria-hidden="true"
-                  />
-
-                  9 PM
-                </span>
-              </div>
-
-              {/* =====================
-                  Countdown
-              ===================== */}
-
-              {!countdown.hasStarted ? (
-                <>
-                  <p className="event-popup__countdown-label">
-                    The next experience
-                    begins in
-                  </p>
-
-                  <div className="event-popup__countdown">
-                    <div className="event-popup__countdown-item">
-                      <strong>
-                        {String(
-                          countdown.days,
-                        ).padStart(
-                          2,
-                          "0",
-                        )}
-                      </strong>
-
-                      <span>
-                        Days
-                      </span>
-                    </div>
-
-                    <span
-                      className="event-popup__separator"
+                  <span>
+                    <Clock3
+                      size={15}
                       aria-hidden="true"
-                    >
-                      :
-                    </span>
+                    />
 
-                    <div className="event-popup__countdown-item">
-                      <strong>
-                        {String(
-                          countdown.hours,
-                        ).padStart(
-                          2,
-                          "0",
-                        )}
-                      </strong>
-
-                      <span>
-                        Hours
-                      </span>
-                    </div>
-
-                    <span
-                      className="event-popup__separator"
-                      aria-hidden="true"
-                    >
-                      :
-                    </span>
-
-                    <div className="event-popup__countdown-item">
-                      <strong>
-                        {String(
-                          countdown.minutes,
-                        ).padStart(
-                          2,
-                          "0",
-                        )}
-                      </strong>
-
-                      <span>
-                        Min
-                      </span>
-                    </div>
-
-                    <span
-                      className="event-popup__separator"
-                      aria-hidden="true"
-                    >
-                      :
-                    </span>
-
-                    <div className="event-popup__countdown-item">
-                      <strong>
-                        {String(
-                          countdown.seconds,
-                        ).padStart(
-                          2,
-                          "0",
-                        )}
-                      </strong>
-
-                      <span>
-                        Sec
-                      </span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="event-popup__live">
-                  The event has started
+                    {
+                      eventTimeLabel
+                    }
+                  </span>
                 </div>
-              )}
 
-              {/* =====================
-                  Ticket offer
-              ===================== */}
+                {!countdown.hasStarted ? (
+                  <>
+                    <p className="event-popup__countdown-label">
+                      The next experience
+                      begins in
+                    </p>
 
-              <div className="event-popup__special-offer">
-                <span
-                  className="event-popup__offer-line"
-                  aria-hidden="true"
-                />
+                    <div className="event-popup__countdown">
+                      <div className="event-popup__countdown-item">
+                        <strong>
+                          {String(
+                            countdown.days,
+                          ).padStart(
+                            2,
+                            "0",
+                          )}
+                        </strong>
 
-                <span>
-                  ✦ Special Event Offer ✦
-                </span>
+                        <span>
+                          Days
+                        </span>
+                      </div>
 
-                <span
-                  className="event-popup__offer-line"
-                  aria-hidden="true"
-                />
+                      <span
+                        className="event-popup__separator"
+                        aria-hidden="true"
+                      >
+                        :
+                      </span>
+
+                      <div className="event-popup__countdown-item">
+                        <strong>
+                          {String(
+                            countdown.hours,
+                          ).padStart(
+                            2,
+                            "0",
+                          )}
+                        </strong>
+
+                        <span>
+                          Hours
+                        </span>
+                      </div>
+
+                      <span
+                        className="event-popup__separator"
+                        aria-hidden="true"
+                      >
+                        :
+                      </span>
+
+                      <div className="event-popup__countdown-item">
+                        <strong>
+                          {String(
+                            countdown.minutes,
+                          ).padStart(
+                            2,
+                            "0",
+                          )}
+                        </strong>
+
+                        <span>
+                          Min
+                        </span>
+                      </div>
+
+                      <span
+                        className="event-popup__separator"
+                        aria-hidden="true"
+                      >
+                        :
+                      </span>
+
+                      <div className="event-popup__countdown-item">
+                        <strong>
+                          {String(
+                            countdown.seconds,
+                          ).padStart(
+                            2,
+                            "0",
+                          )}
+                        </strong>
+
+                        <span>
+                          Sec
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="event-popup__live">
+                    The event has started
+                  </div>
+                )}
+
+                <div className="event-popup__special-offer">
+                  <span
+                    className="event-popup__offer-line"
+                    aria-hidden="true"
+                  />
+
+                  <span>
+                    ✦ Special Event Offer ✦
+                  </span>
+
+                  <span
+                    className="event-popup__offer-line"
+                    aria-hidden="true"
+                  />
+                </div>
+
+                {ticketUrl ? (
+                  <a
+                    href={
+                      ticketUrl
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="event-popup__ticket-button"
+                  >
+                    <Ticket
+                      size={18}
+                      aria-hidden="true"
+                    />
+
+                    <span>
+                      Get Special Offer Ticket
+                    </span>
+
+                    <span
+                      className="event-popup__ticket-arrow"
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  </a>
+                ) : (
+                  <Link
+                    to={`/events/${mainEvent.slug}`}
+                    className="event-popup__ticket-button"
+                    onClick={() =>
+                      setIsEventPopupOpen(
+                        false,
+                      )
+                    }
+                  >
+                    <Ticket
+                      size={18}
+                      aria-hidden="true"
+                    />
+
+                    <span>
+                      View Event
+                    </span>
+
+                    <span
+                      className="event-popup__ticket-arrow"
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  </Link>
+                )}
+
+                <Link
+                  to="/birthday-free-entry"
+                  className="event-popup__birthday-button"
+                  onClick={() =>
+                    setIsEventPopupOpen(
+                      false,
+                    )
+                  }
+                >
+                  <span className="event-popup__birthday-icon">
+                    🎂
+                  </span>
+
+                  <span className="event-popup__birthday-copy">
+                    <small>
+                      Born in{" "}
+                      {
+                        BIRTHDAY_MONTH
+                      }
+                      ?
+                    </small>
+
+                    <strong>
+                      Get Free Entry
+                    </strong>
+                  </span>
+
+                  <span
+                    className="event-popup__birthday-arrow"
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </Link>
+
+                <button
+                  type="button"
+                  className="event-popup__continue"
+                  onClick={() =>
+                    setIsEventPopupOpen(
+                      false,
+                    )
+                  }
+                >
+                  Continue to website
+                </button>
               </div>
-
-              <a
-                href={EVENTPOP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="event-popup__ticket-button"
-              >
-                <Ticket
-                  size={18}
-                  aria-hidden="true"
-                />
-
-                <span>
-                  Get Special Offer Ticket
-                </span>
-
-                <span
-                  className="event-popup__ticket-arrow"
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-              </a>
-
-              {/* =====================
-                  Birthday offer
-              ===================== */}
-
-              <Link
-                to="/birthday-free-entry"
-                className="event-popup__birthday-button"
-                onClick={() =>
-                  setIsEventPopupOpen(
-                    false,
-                  )
-                }
-              >
-                <span className="event-popup__birthday-icon">
-                  🎂
-                </span>
-
-                <span className="event-popup__birthday-copy">
-                  <small>
-                    Born in{" "}
-                    {BIRTHDAY_MONTH}?
-                  </small>
-
-                  <strong>
-                    Get Free Entry
-                  </strong>
-                </span>
-
-                <span
-                  className="event-popup__birthday-arrow"
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-              </Link>
-
-              <button
-                type="button"
-                className="event-popup__continue"
-                onClick={() =>
-                  setIsEventPopupOpen(
-                    false,
-                  )
-                }
-              >
-                Continue to website
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* =========================
-          Homepage hero
-      ========================= */}
+      {/*
+       * ========================================================
+       * HOMEPAGE HERO
+       * ========================================================
+       */}
 
       <section
         className="home-event-hero"
@@ -595,10 +1116,6 @@ function Home() {
         />
 
         <div className="home-event-hero__container">
-          {/* =========================
-              Text above poster
-          ========================= */}
-
           <header className="home-event-hero__header">
             <div className="home-event-hero__eyebrow">
               <span
@@ -652,24 +1169,33 @@ function Home() {
 
                 <div>
                   <strong>
-                    24 September 2026
+                    {isMainEventLoading
+                      ? "Loading event..."
+                      : eventDateLabel}
                   </strong>
 
                   <span>
-                    Thursday
+                    {
+                      eventWeekday ||
+                      "Waterfall Festival"
+                    }
                   </span>
                 </div>
               </div>
 
               <a
-                href="https://share.google/9QxAyS1iVMSWES0X7"
+                href={
+                  WATERFALL_MAP_URL
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="home-event-hero__meta-item"
                 aria-label="Open Waterfall Festival location in Google Maps"
                 style={{
-                  color: "inherit",
-                  textDecoration: "none",
+                  color:
+                    "inherit",
+                  textDecoration:
+                    "none",
                 }}
               >
                 <span className="home-event-hero__meta-icon">
@@ -681,18 +1207,22 @@ function Home() {
 
                 <div>
                   <strong>
-                    Koh Phangan
+                    {
+                      shortEventLocation
+                    }
                   </strong>
 
                   <span>
-                    {location}
+                    {
+                      eventLocation
+                    }
                   </span>
                 </div>
               </a>
 
               <div className="home-event-hero__meta-item">
                 <span className="home-event-hero__meta-icon">
-                  <Sparkles
+                  <Clock3
                     size={21}
                     aria-hidden="true"
                   />
@@ -700,62 +1230,101 @@ function Home() {
 
                 <div>
                   <strong>
-                    5 Stages
+                    {
+                      eventTimeLabel
+                    }
                   </strong>
 
                   <span>
-                    One Epic Experience
+                    Thailand Time
                   </span>
                 </div>
               </div>
             </div>
           </header>
 
-          {/* =========================
-              Poster
-          ========================= */}
+          {/*
+           * ====================================================
+           * MAIN EVENT POSTER
+           * ====================================================
+           */}
 
           <div className="home-event-hero__poster-wrapper">
-            <a
-              href={EVENTPOP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="home-event-hero__poster-link"
-              aria-label="Open Waterfall Festival tickets on Eventpop"
-            >
-              <img
-                src={eventPoster}
-                alt="Waterfall Festival event poster for Thursday 24 September 2026"
-                className="home-event-hero__poster"
-              />
-
-              <span
-                className="home-event-hero__poster-shine"
-                aria-hidden="true"
-              />
-            </a>
+            {ticketUrl ? (
+              <a
+                href={
+                  ticketUrl
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="home-event-hero__poster-link"
+                aria-label={`Open tickets for ${
+                  mainEvent?.title ||
+                  festivalName
+                }`}
+              >
+                {
+                  posterContent
+                }
+              </a>
+            ) : mainEvent ? (
+              <Link
+                to={`/events/${mainEvent.slug}`}
+                className="home-event-hero__poster-link"
+              >
+                {
+                  posterContent
+                }
+              </Link>
+            ) : (
+              <div className="home-event-hero__poster-link">
+                {
+                  posterContent
+                }
+              </div>
+            )}
           </div>
 
-          {/* =========================
-              Hero buttons
-          ========================= */}
+          {/*
+           * ====================================================
+           * HERO BUTTONS
+           * ====================================================
+           */}
 
           <div className="home-event-hero__actions">
-            <a
-              href={EVENTPOP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="home-event-hero__button home-event-hero__button--primary"
-            >
-              <Ticket
-                size={18}
-                aria-hidden="true"
-              />
+            {ticketUrl ? (
+              <a
+                href={
+                  ticketUrl
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="home-event-hero__button home-event-hero__button--primary"
+              >
+                <Ticket
+                  size={18}
+                  aria-hidden="true"
+                />
 
-              <span>
-                Get Your Tickets
-              </span>
-            </a>
+                <span>
+                  Get Your Tickets
+                </span>
+              </a>
+            ) : mainEvent ? (
+              <Link
+                to={`/events/${mainEvent.slug}`}
+                className="home-event-hero__button home-event-hero__button--primary"
+              >
+                <Ticket
+                  size={18}
+                  aria-hidden="true"
+                />
+
+                <span>
+                  View Event
+                </span>
+              </Link>
+            ) : null}
 
             {hasHomepageSections &&
               firstSectionId && (
@@ -779,15 +1348,7 @@ function Home() {
         </div>
       </section>
 
-      {/* =========================
-          Premium Experiences
-      ========================= */}
-
       <PremiumExperiencesSection />
-
-      {/* =========================
-          Homepage sections
-      ========================= */}
 
       {eventsEnabled && (
         <div id="upcoming-events">

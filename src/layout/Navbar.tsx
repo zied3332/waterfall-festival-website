@@ -30,6 +30,10 @@ import {
 
 import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
 
+import {
+  getHomepageEvent,
+} from "../services/events.service";
+
 import "./Navbar.css";
 
 import fallbackLogo from "./logo.png";
@@ -51,7 +55,7 @@ type SocialLink = {
   size: number;
 };
 
-const TICKETS_URL =
+const FALLBACK_TICKETS_URL =
   "https://www.eventpop.me/e/169991";
 
 function resolveImageUrl(
@@ -79,6 +83,13 @@ function resolveImageUrl(
 export default function Navbar() {
   const [moreOpen, setMoreOpen] =
     useState(false);
+
+  const [
+    ticketsUrl,
+    setTicketsUrl,
+  ] = useState(
+    FALLBACK_TICKETS_URL,
+  );
 
   const { settings } =
     useWebsiteSettings();
@@ -120,7 +131,7 @@ export default function Navbar() {
     },
     {
       label: "Tickets",
-      to: TICKETS_URL,
+      to: ticketsUrl,
       isVisible: ticketsPageEnabled,
       external: true,
     },
@@ -206,6 +217,46 @@ export default function Navbar() {
       (currentValue) => !currentValue,
     );
   }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMainEventTicketUrl() {
+      try {
+        const response =
+          await getHomepageEvent();
+
+        if (!isMounted) {
+          return;
+        }
+
+        const mainEventTicketUrl =
+          response.event?.ticketPurchaseUrl?.trim();
+
+        setTicketsUrl(
+          mainEventTicketUrl ||
+            FALLBACK_TICKETS_URL,
+        );
+      } catch (error) {
+        console.error(
+          "Could not load main event ticket URL.",
+          error,
+        );
+
+        if (isMounted) {
+          setTicketsUrl(
+            FALLBACK_TICKETS_URL,
+          );
+        }
+      }
+    }
+
+    void loadMainEventTicketUrl();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!moreOpen) {
@@ -350,7 +401,7 @@ export default function Navbar() {
 
             {ticketsPageEnabled && (
               <a
-                href={TICKETS_URL}
+                href={ticketsUrl}
                 className="navbar__button"
               >
                 <Ticket
@@ -505,7 +556,7 @@ export default function Navbar() {
 
         {ticketsPageEnabled && (
           <a
-            href={TICKETS_URL}
+            href={ticketsUrl}
             onClick={closeMore}
             className="mobile-bottom-nav__item mobile-bottom-nav__item--tickets"
           >

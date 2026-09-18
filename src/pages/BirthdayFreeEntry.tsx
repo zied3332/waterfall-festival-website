@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
@@ -27,12 +26,13 @@ import {
   Link,
 } from "react-router-dom";
 
-import september24Poster from
-  "../assets/waterfall-september-24-2026.png";
+import {
+  getHomepageEvent,
+} from "../services/events.service";
 
 import {
-  getPublicEvents,
-} from "../services/events.service";
+  getApiMediaUrl,
+} from "../services/api.service";
 
 import type {
   Event,
@@ -55,33 +55,6 @@ function getThailandMonth(): string {
         THAILAND_TIME_ZONE,
     },
   ).format(new Date());
-}
-
-function getNextEvent(
-  events: Event[],
-): Event | null {
-  const now = Date.now();
-
-  return (
-    events
-      .filter(
-        (event) =>
-          event.status ===
-            "PUBLISHED" &&
-          new Date(
-            event.date,
-          ).getTime() >= now,
-      )
-      .sort(
-        (eventA, eventB) =>
-          new Date(
-            eventA.date,
-          ).getTime() -
-          new Date(
-            eventB.date,
-          ).getTime(),
-      )[0] ?? null
-  );
 }
 
 function formatEventDate(
@@ -129,9 +102,9 @@ function formatEventTime(
 
 function BirthdayFreeEntry() {
   const [
-    events,
-    setEvents,
-  ] = useState<Event[]>([]);
+    mainEvent,
+    setMainEvent,
+  ] = useState<Event | null>(null);
 
   const [
     loading,
@@ -149,21 +122,23 @@ function BirthdayFreeEntry() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadEvents() {
+    async function loadMainEvent() {
       try {
         setLoading(true);
         setError("");
 
-        const data =
-          await getPublicEvents();
+        const response =
+          await getHomepageEvent();
 
         if (!cancelled) {
-          setEvents(data);
+          setMainEvent(
+            response.event,
+          );
         }
       } catch {
         if (!cancelled) {
           setError(
-            "We couldn't load the next event right now.",
+            "We couldn't load the main event right now.",
           );
         }
       } finally {
@@ -173,17 +148,16 @@ function BirthdayFreeEntry() {
       }
     }
 
-    void loadEvents();
+    void loadMainEvent();
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const nextEvent =
-    useMemo(
-      () => getNextEvent(events),
-      [events],
+  const posterUrl =
+    getApiMediaUrl(
+      mainEvent?.heroImageUrl,
     );
 
   return (
@@ -437,7 +411,7 @@ function BirthdayFreeEntry() {
 
           {!loading &&
             !error &&
-            !nextEvent && (
+            !mainEvent && (
               <div className="birthday-status-card">
                 The next Waterfall
                 Festival date will be
@@ -447,7 +421,7 @@ function BirthdayFreeEntry() {
 
           {!loading &&
             !error &&
-            nextEvent && (
+            mainEvent && (
               <article className="birthday-event">
                 <div className="birthday-event__info">
                   <div className="birthday-event__label">
@@ -461,13 +435,13 @@ function BirthdayFreeEntry() {
 
                   <h3>
                     {formatEventDate(
-                      nextEvent.date,
+                      mainEvent.date,
                     )}
                   </h3>
 
                   <span className="birthday-event__weekday">
                     {formatEventDay(
-                      nextEvent.date,
+                      mainEvent.date,
                     )}
                   </span>
 
@@ -506,7 +480,7 @@ function BirthdayFreeEntry() {
 
                         <strong>
                           {formatEventTime(
-                            nextEvent.date,
+                            mainEvent.date,
                           )}
                         </strong>
                       </span>
@@ -514,7 +488,7 @@ function BirthdayFreeEntry() {
                   </div>
 
                   <Link
-                    to={`/events/${nextEvent.slug}`}
+                    to={`/events/${mainEvent.slug}`}
                     className="birthday-event__button"
                   >
                     View Event
@@ -527,14 +501,26 @@ function BirthdayFreeEntry() {
                 </div>
 
                 <Link
-                  to={`/events/${nextEvent.slug}`}
+                  to={`/events/${mainEvent.slug}`}
                   className="birthday-event__poster"
-                  aria-label={`View ${nextEvent.title}`}
+                  aria-label={`View ${mainEvent.title}`}
                 >
-                  <img
-                    src={september24Poster}
-                    alt={`${nextEvent.title} poster`}
-                  />
+                  {posterUrl ? (
+                    <img
+                      src={posterUrl}
+                      alt={`${mainEvent.title} poster`}
+                    />
+                  ) : (
+                    <div
+                      className="birthday-event__poster-placeholder"
+                      aria-label={`${mainEvent.title} poster unavailable`}
+                    >
+                      <Ticket
+                        size={34}
+                        aria-hidden="true"
+                      />
+                    </div>
+                  )}
 
                   <span>
                     View Event
