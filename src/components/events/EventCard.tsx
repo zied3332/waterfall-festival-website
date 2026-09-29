@@ -3,7 +3,13 @@ import {
   MapPin,
 } from "lucide-react";
 
-import type { Event } from "../../types/event";
+import {
+  getApiMediaUrl,
+} from "../../services/api.service";
+
+import type {
+  Event,
+} from "../../types/event";
 
 import "./Events.css";
 
@@ -12,7 +18,10 @@ type EventCardProps = {
   onOpen?: (event: Event) => void;
 };
 
-const LOCAL_EVENT_POSTERS: Record<string, string> = {
+const LOCAL_EVENT_POSTERS: Record<
+  string,
+  string
+> = {
   "waterfall-festival-september-16-2026":
     "/images/events/waterfall-september-16-2026.png",
 
@@ -23,10 +32,17 @@ const LOCAL_EVENT_POSTERS: Record<string, string> = {
     "/images/events/waterfall-september-28-2026.png",
 };
 
+/**
+ * ============================================================
+ * DATE
+ * ============================================================
+ */
+
 function formatEventDate(
   date: string,
 ): string {
-  const parsedDate = new Date(date);
+  const parsedDate =
+    new Date(date);
 
   if (
     Number.isNaN(
@@ -46,10 +62,17 @@ function formatEventDate(
   ).format(parsedDate);
 }
 
+/**
+ * ============================================================
+ * EVENT BADGE
+ * ============================================================
+ */
+
 function getEventBadge(
   date: string,
 ): string {
-  const parsedDate = new Date(date);
+  const parsedDate =
+    new Date(date);
 
   if (
     Number.isNaN(
@@ -65,18 +88,57 @@ function getEventBadge(
     : "Past event";
 }
 
+/**
+ * ============================================================
+ * EVENT POSTER
+ * ============================================================
+ *
+ * Old events may still use frontend-local posters.
+ *
+ * New event posters are stored by the backend and returned
+ * as paths such as:
+ *
+ * /uploads/events/event-12-xxxxx.jpg
+ *
+ * getApiMediaUrl() converts those paths into complete
+ * backend URLs.
+ *
+ * Example:
+ *
+ * /uploads/events/event-12.jpg
+ *
+ * becomes:
+ *
+ * https://api.example.com/uploads/events/event-12.jpg
+ *
+ * Absolute URLs such as old Cloudinary URLs are preserved.
+ * ============================================================
+ */
+
 function getEventPoster(
   event: Event,
 ): string {
   const localPoster =
-    LOCAL_EVENT_POSTERS[event.slug];
+    LOCAL_EVENT_POSTERS[
+      event.slug
+    ];
 
   if (localPoster) {
     return localPoster;
   }
 
-  return event.heroImageUrl?.trim() || "";
+  return (
+    getApiMediaUrl(
+      event.heroImageUrl,
+    ) ?? ""
+  );
 }
+
+/**
+ * ============================================================
+ * EVENT CARD
+ * ============================================================
+ */
 
 function EventCard({
   event,
@@ -87,7 +149,8 @@ function EventCard({
     "Koh Phangan, Thailand";
 
   const ticketUrl =
-    event.ticketPurchaseUrl?.trim() || "";
+    event.ticketPurchaseUrl?.trim() ||
+    "";
 
   const posterUrl =
     getEventPoster(event);
@@ -166,6 +229,10 @@ function EventCard({
     </div>
   );
 
+  /**
+   * When an onOpen handler is provided,
+   * the whole event card behaves like a button.
+   */
   if (onOpen) {
     return (
       <button
@@ -181,6 +248,10 @@ function EventCard({
     );
   }
 
+  /**
+   * If the event has an external ticket URL,
+   * open the ticket provider in a new tab.
+   */
   if (ticketUrl) {
     return (
       <a
@@ -195,6 +266,9 @@ function EventCard({
     );
   }
 
+  /**
+   * Event without ticket URL.
+   */
   return (
     <div
       className="event-card__link"
