@@ -3,6 +3,7 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import {
   AlertCircle,
   CalendarDays,
@@ -20,7 +21,14 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+
+import {
+  Link,
+} from "react-router-dom";
+
+import {
+  getApiMediaUrl,
+} from "../../services/api.service";
 
 import {
   deleteEvent,
@@ -102,115 +110,189 @@ const sortOptions: Array<{
   },
 ];
 
-function formatStatus(status: EventStatus): string {
+function formatStatus(
+  status: EventStatus,
+): string {
   return status
     .toLowerCase()
-    .replace(/^\w/, (character) =>
-      character.toUpperCase(),
+    .replace(
+      /^\w/,
+      (character) =>
+        character.toUpperCase(),
     );
 }
 
-function parseEventDate(dateValue: string): Date | null {
-  const date = new Date(dateValue);
+function parseEventDate(
+  dateValue: string,
+): Date | null {
+  const date =
+    new Date(dateValue);
 
-  return Number.isNaN(date.getTime())
+  return Number.isNaN(
+    date.getTime(),
+  )
     ? null
     : date;
 }
 
-function formatEventDate(dateValue: string): string {
-  const date = parseEventDate(dateValue);
+function formatEventDate(
+  dateValue: string,
+): string {
+  const date =
+    parseEventDate(
+      dateValue,
+    );
 
   if (!date) {
     return dateValue;
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  ).format(date);
 }
 
-function formatEventTime(dateValue: string): string {
-  const date = parseEventDate(dateValue);
+function formatEventTime(
+  dateValue: string,
+): string {
+  const date =
+    parseEventDate(
+      dateValue,
+    );
 
   if (!date) {
     return "Time unavailable";
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    },
+  ).format(date);
 }
 
-function getRelativeTiming(dateValue: string): string {
-  const date = parseEventDate(dateValue);
+function getRelativeTiming(
+  dateValue: string,
+): string {
+  const date =
+    parseEventDate(
+      dateValue,
+    );
 
   if (!date) {
     return "Date unavailable";
   }
 
-  const now = new Date();
+  const now =
+    new Date();
 
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  );
+  const startOfToday =
+    new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
 
-  const startOfEventDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  );
+  const startOfEventDay =
+    new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
 
-  const differenceInDays = Math.round(
-    (startOfEventDay.getTime() -
-      startOfToday.getTime()) /
-      (1000 * 60 * 60 * 24),
-  );
+  const differenceInDays =
+    Math.round(
+      (
+        startOfEventDay.getTime() -
+        startOfToday.getTime()
+      ) /
+        (
+          1000 *
+          60 *
+          60 *
+          24
+        ),
+    );
 
-  if (differenceInDays === 0) {
+  if (
+    differenceInDays === 0
+  ) {
     return "Today";
   }
 
-  if (differenceInDays === 1) {
+  if (
+    differenceInDays === 1
+  ) {
     return "Tomorrow";
   }
 
-  if (differenceInDays > 1) {
+  if (
+    differenceInDays > 1
+  ) {
     return `In ${differenceInDays} days`;
   }
 
-  if (differenceInDays === -1) {
+  if (
+    differenceInDays === -1
+  ) {
     return "Yesterday";
   }
 
-  return `${Math.abs(differenceInDays)} days ago`;
+  return `${Math.abs(
+    differenceInDays,
+  )} days ago`;
 }
 
-function getTicketData(event: Event): TicketData | null {
+function getTicketData(
+  event: Event,
+): TicketData | null {
   if (
     event.capacity === null ||
-    event.remainingTickets === null
+    event.remainingTickets ===
+      null
   ) {
     return null;
   }
 
-  const capacity = Math.max(event.capacity, 0);
-  const remaining = Math.max(
-    Math.min(event.remainingTickets, capacity),
-    0,
-  );
-  const sold = Math.max(capacity - remaining, 0);
+  const capacity =
+    Math.max(
+      event.capacity,
+      0,
+    );
+
+  const remaining =
+    Math.max(
+      Math.min(
+        event.remainingTickets,
+        capacity,
+      ),
+      0,
+    );
+
+  const sold =
+    Math.max(
+      capacity - remaining,
+      0,
+    );
 
   const percentage =
     capacity > 0
       ? Math.min(
-          Math.round((sold / capacity) * 100),
+          Math.round(
+            (
+              sold /
+              capacity
+            ) *
+              100,
+          ),
           100,
         )
       : 0;
@@ -223,41 +305,76 @@ function getTicketData(event: Event): TicketData | null {
   };
 }
 
-function formatTicketNumber(value: number): string {
-  return new Intl.NumberFormat("en-US").format(
-    value,
-  );
+function formatTicketNumber(
+  value: number,
+): string {
+  return new Intl.NumberFormat(
+    "en-US",
+  ).format(value);
 }
 
 function AdminEvents() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [
+    events,
+    setEvents,
+  ] = useState<Event[]>([]);
 
-  const [searchTerm, setSearchTerm] =
-    useState("");
+  const [
+    searchTerm,
+    setSearchTerm,
+  ] = useState("");
 
-  const [selectedStatus, setSelectedStatus] =
-    useState<StatusFilter>("ALL");
+  const [
+    selectedStatus,
+    setSelectedStatus,
+  ] =
+    useState<StatusFilter>(
+      "ALL",
+    );
 
-  const [sortOption, setSortOption] =
-    useState<SortOption>("UPCOMING");
+  const [
+    sortOption,
+    setSortOption,
+  ] =
+    useState<SortOption>(
+      "UPCOMING",
+    );
 
-  const [eventToDelete, setEventToDelete] =
-    useState<Event | null>(null);
+  const [
+    eventToDelete,
+    setEventToDelete,
+  ] =
+    useState<Event | null>(
+      null,
+    );
 
-  const [openMenuId, setOpenMenuId] =
-    useState<number | null>(null);
+  const [
+    openMenuId,
+    setOpenMenuId,
+  ] =
+    useState<
+      number | null
+    >(null);
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [
+    isLoading,
+    setIsLoading,
+  ] = useState(true);
 
-  const [errorMessage, setErrorMessage] =
-    useState("");
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] = useState("");
 
-  const [isDeleting, setIsDeleting] =
-    useState(false);
+  const [
+    isDeleting,
+    setIsDeleting,
+  ] = useState(false);
 
-  const [deleteError, setDeleteError] =
-    useState("");
+  const [
+    deleteError,
+    setDeleteError,
+  ] = useState("");
 
   async function loadEvents(): Promise<void> {
     try {
@@ -267,7 +384,9 @@ function AdminEvents() {
       const adminEvents =
         await getAdminEvents();
 
-      setEvents(adminEvents);
+      setEvents(
+        adminEvents,
+      );
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -287,12 +406,24 @@ function AdminEvents() {
     function handleEscapeKey(
       event: KeyboardEvent,
     ): void {
-      if (event.key === "Escape") {
-        setOpenMenuId(null);
+      if (
+        event.key ===
+        "Escape"
+      ) {
+        setOpenMenuId(
+          null,
+        );
 
-        if (!isDeleting) {
-          setEventToDelete(null);
-          setDeleteError("");
+        if (
+          !isDeleting
+        ) {
+          setEventToDelete(
+            null,
+          );
+
+          setDeleteError(
+            "",
+          );
         }
       }
     }
@@ -310,157 +441,283 @@ function AdminEvents() {
     };
   }, [isDeleting]);
 
-  const eventCounts = useMemo(
-    () => ({
-      ALL: events.length,
-      PUBLISHED: events.filter(
-        (event) =>
-          event.status === "PUBLISHED",
-      ).length,
-      DRAFT: events.filter(
-        (event) =>
-          event.status === "DRAFT",
-      ).length,
-      COMPLETED: events.filter(
-        (event) =>
-          event.status === "COMPLETED",
-      ).length,
-      CANCELLED: events.filter(
-        (event) =>
-          event.status === "CANCELLED",
-      ).length,
-    }),
-    [events],
-  );
+  const eventCounts =
+    useMemo(
+      () => ({
+        ALL:
+          events.length,
 
-  const totalTicketsSold = useMemo(
-    () =>
-      events.reduce((total, event) => {
-        const ticketData = getTicketData(event);
+        PUBLISHED:
+          events.filter(
+            (event) =>
+              event.status ===
+              "PUBLISHED",
+          ).length,
 
-        return total + (ticketData?.sold ?? 0);
-      }, 0),
-    [events],
-  );
+        DRAFT:
+          events.filter(
+            (event) =>
+              event.status ===
+              "DRAFT",
+          ).length,
 
-  const filteredEvents = useMemo(() => {
-    const normalizedSearch = searchTerm
-      .trim()
-      .toLowerCase();
+        COMPLETED:
+          events.filter(
+            (event) =>
+              event.status ===
+              "COMPLETED",
+          ).length,
 
-    const matchingEvents = events.filter(
-      (event) => {
-        const matchesSearch =
-          event.title
-            .toLowerCase()
-            .includes(normalizedSearch) ||
-          event.location
-            .toLowerCase()
-            .includes(normalizedSearch) ||
-          event.slug
-            .toLowerCase()
-            .includes(normalizedSearch);
-
-        const matchesStatus =
-          selectedStatus === "ALL" ||
-          event.status === selectedStatus;
-
-        return matchesSearch && matchesStatus;
-      },
+        CANCELLED:
+          events.filter(
+            (event) =>
+              event.status ===
+              "CANCELLED",
+          ).length,
+      }),
+      [events],
     );
 
-    return [...matchingEvents].sort(
-      (firstEvent, secondEvent) => {
-        if (sortOption === "TITLE") {
-          return firstEvent.title.localeCompare(
-            secondEvent.title,
+  const totalTicketsSold =
+    useMemo(
+      () =>
+        events.reduce(
+          (
+            total,
+            event,
+          ) => {
+            const ticketData =
+              getTicketData(
+                event,
+              );
+
+            return (
+              total +
+              (
+                ticketData?.sold ??
+                0
+              )
+            );
+          },
+          0,
+        ),
+      [events],
+    );
+
+  const filteredEvents =
+    useMemo(() => {
+      const normalizedSearch =
+        searchTerm
+          .trim()
+          .toLowerCase();
+
+      const matchingEvents =
+        events.filter(
+          (event) => {
+            const matchesSearch =
+              event.title
+                .toLowerCase()
+                .includes(
+                  normalizedSearch,
+                ) ||
+              event.location
+                .toLowerCase()
+                .includes(
+                  normalizedSearch,
+                ) ||
+              event.slug
+                .toLowerCase()
+                .includes(
+                  normalizedSearch,
+                );
+
+            const matchesStatus =
+              selectedStatus ===
+                "ALL" ||
+              event.status ===
+                selectedStatus;
+
+            return (
+              matchesSearch &&
+              matchesStatus
+            );
+          },
+        );
+
+      return [
+        ...matchingEvents,
+      ].sort(
+        (
+          firstEvent,
+          secondEvent,
+        ) => {
+          if (
+            sortOption ===
+            "TITLE"
+          ) {
+            return firstEvent.title.localeCompare(
+              secondEvent.title,
+            );
+          }
+
+          const firstDate =
+            parseEventDate(
+              firstEvent.date,
+            )?.getTime() ??
+            0;
+
+          const secondDate =
+            parseEventDate(
+              secondEvent.date,
+            )?.getTime() ??
+            0;
+
+          if (
+            sortOption ===
+            "OLDEST"
+          ) {
+            return (
+              firstDate -
+              secondDate
+            );
+          }
+
+          if (
+            sortOption ===
+            "NEWEST"
+          ) {
+            return (
+              secondDate -
+              firstDate
+            );
+          }
+
+          const now =
+            Date.now();
+
+          const firstIsUpcoming =
+            firstDate >=
+            now;
+
+          const secondIsUpcoming =
+            secondDate >=
+            now;
+
+          if (
+            firstIsUpcoming !==
+            secondIsUpcoming
+          ) {
+            return firstIsUpcoming
+              ? -1
+              : 1;
+          }
+
+          if (
+            firstIsUpcoming
+          ) {
+            return (
+              firstDate -
+              secondDate
+            );
+          }
+
+          return (
+            secondDate -
+            firstDate
           );
-        }
+        },
+      );
+    }, [
+      events,
+      searchTerm,
+      selectedStatus,
+      sortOption,
+    ]);
 
-        const firstDate =
-          parseEventDate(firstEvent.date)?.getTime() ??
-          0;
-
-        const secondDate =
-          parseEventDate(secondEvent.date)?.getTime() ??
-          0;
-
-        if (sortOption === "OLDEST") {
-          return firstDate - secondDate;
-        }
-
-        if (sortOption === "NEWEST") {
-          return secondDate - firstDate;
-        }
-
-        const now = Date.now();
-
-        const firstIsUpcoming =
-          firstDate >= now;
-        const secondIsUpcoming =
-          secondDate >= now;
-
-        if (
-          firstIsUpcoming !== secondIsUpcoming
-        ) {
-          return firstIsUpcoming ? -1 : 1;
-        }
-
-        if (firstIsUpcoming) {
-          return firstDate - secondDate;
-        }
-
-        return secondDate - firstDate;
-      },
+  function openDeleteModal(
+    event: Event,
+  ): void {
+    setDeleteError(
+      "",
     );
-  }, [
-    events,
-    searchTerm,
-    selectedStatus,
-    sortOption,
-  ]);
 
-  function openDeleteModal(event: Event): void {
-    setDeleteError("");
-    setEventToDelete(event);
-    setOpenMenuId(null);
+    setEventToDelete(
+      event,
+    );
+
+    setOpenMenuId(
+      null,
+    );
   }
 
   function closeDeleteModal(): void {
-    if (isDeleting) {
+    if (
+      isDeleting
+    ) {
       return;
     }
 
-    setEventToDelete(null);
-    setDeleteError("");
+    setEventToDelete(
+      null,
+    );
+
+    setDeleteError(
+      "",
+    );
   }
 
   function clearFilters(): void {
-    setSearchTerm("");
-    setSelectedStatus("ALL");
-    setSortOption("UPCOMING");
+    setSearchTerm(
+      "",
+    );
+
+    setSelectedStatus(
+      "ALL",
+    );
+
+    setSortOption(
+      "UPCOMING",
+    );
   }
 
   async function handleDeleteEvent(): Promise<void> {
-    if (!eventToDelete || isDeleting) {
+    if (
+      !eventToDelete ||
+      isDeleting
+    ) {
       return;
     }
 
-    const eventId = eventToDelete.id;
+    const eventId =
+      eventToDelete.id;
 
     try {
-      setIsDeleting(true);
-      setDeleteError("");
-
-      await deleteEvent(eventId);
-
-      setEvents((currentEvents) =>
-        currentEvents.filter(
-          (event) => event.id !== eventId,
-        ),
+      setIsDeleting(
+        true,
       );
 
-      setEventToDelete(null);
+      setDeleteError(
+        "",
+      );
+
+      await deleteEvent(
+        eventId,
+      );
+
+      setEvents(
+        (
+          currentEvents,
+        ) =>
+          currentEvents.filter(
+            (event) =>
+              event.id !==
+              eventId,
+          ),
+      );
+
+      setEventToDelete(
+        null,
+      );
     } catch (error) {
       setDeleteError(
         error instanceof Error
@@ -468,7 +725,9 @@ function AdminEvents() {
           : "Unable to delete the event.",
       );
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(
+        false,
+      );
     }
   }
 
@@ -477,13 +736,18 @@ function AdminEvents() {
       <header className="admin-events__header">
         <div className="admin-events__heading">
           <span className="admin-events__eyebrow">
-            <CalendarDays size={15} />
+            <CalendarDays
+              size={15}
+            />
+
             Event overview
           </span>
 
           <p>
-            Manage schedules, publishing, locations,
-            and ticket availability.
+            Manage schedules,
+            publishing,
+            locations, and
+            ticket availability.
           </p>
         </div>
 
@@ -491,7 +755,10 @@ function AdminEvents() {
           to="/admin/events/new"
           className="admin-events__add-button"
         >
-          <Plus size={17} />
+          <Plus
+            size={17}
+          />
+
           Add Event
         </Link>
       </header>
@@ -499,55 +766,97 @@ function AdminEvents() {
       <div className="admin-events__stats">
         <article className="admin-events__stat-card admin-events__stat-card--purple">
           <div className="admin-events__stat-icon">
-            <CalendarDays size={18} />
+            <CalendarDays
+              size={18}
+            />
           </div>
 
           <div>
-            <span>Total Events</span>
-            <strong>{events.length}</strong>
-            <small>All festival events</small>
+            <span>
+              Total Events
+            </span>
+
+            <strong>
+              {events.length}
+            </strong>
+
+            <small>
+              All festival
+              events
+            </small>
           </div>
         </article>
 
         <article className="admin-events__stat-card admin-events__stat-card--green">
           <div className="admin-events__stat-icon">
-            <CheckCircle2 size={18} />
+            <CheckCircle2
+              size={18}
+            />
           </div>
 
           <div>
-            <span>Published</span>
+            <span>
+              Published
+            </span>
+
             <strong>
-              {eventCounts.PUBLISHED}
+              {
+                eventCounts.PUBLISHED
+              }
             </strong>
-            <small>Live and visible</small>
+
+            <small>
+              Live and visible
+            </small>
           </div>
         </article>
 
         <article className="admin-events__stat-card admin-events__stat-card--orange">
           <div className="admin-events__stat-icon">
-            <Clock3 size={18} />
+            <Clock3
+              size={18}
+            />
           </div>
 
           <div>
-            <span>Drafts</span>
-            <strong>{eventCounts.DRAFT}</strong>
-            <small>Not published</small>
+            <span>
+              Drafts
+            </span>
+
+            <strong>
+              {
+                eventCounts.DRAFT
+              }
+            </strong>
+
+            <small>
+              Not published
+            </small>
           </div>
         </article>
 
         <article className="admin-events__stat-card admin-events__stat-card--cyan">
           <div className="admin-events__stat-icon">
-            <Ticket size={18} />
+            <Ticket
+              size={18}
+            />
           </div>
 
           <div>
-            <span>Tickets Sold</span>
+            <span>
+              Tickets Sold
+            </span>
+
             <strong>
               {formatTicketNumber(
                 totalTicketsSold,
               )}
             </strong>
-            <small>Across configured events</small>
+
+            <small>
+              Across configured
+              events
+            </small>
           </div>
         </article>
       </div>
@@ -555,15 +864,22 @@ function AdminEvents() {
       <div className="admin-events__content">
         <div className="admin-events__toolbar">
           <div className="admin-events__search">
-            <Search size={17} />
+            <Search
+              size={17}
+            />
 
             <input
               type="search"
               placeholder="Search by title, location, or slug..."
-              value={searchTerm}
-              onChange={(event) =>
+              value={
+                searchTerm
+              }
+              onChange={(
+                event,
+              ) =>
                 setSearchTerm(
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
             />
@@ -573,35 +889,53 @@ function AdminEvents() {
                 type="button"
                 className="admin-events__clear-search"
                 onClick={() =>
-                  setSearchTerm("")
+                  setSearchTerm(
+                    "",
+                  )
                 }
                 aria-label="Clear search"
               >
-                <X size={15} />
+                <X
+                  size={15}
+                />
               </button>
             )}
           </div>
 
           <label className="admin-events__sort">
-            <span>Sort</span>
+            <span>
+              Sort
+            </span>
 
             <select
-              value={sortOption}
-              onChange={(event) =>
+              value={
+                sortOption
+              }
+              onChange={(
+                event,
+              ) =>
                 setSortOption(
                   event.target
                     .value as SortOption,
                 )
               }
             >
-              {sortOptions.map((option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                >
-                  {option.label}
-                </option>
-              ))}
+              {sortOptions.map(
+                (option) => (
+                  <option
+                    key={
+                      option.value
+                    }
+                    value={
+                      option.value
+                    }
+                  >
+                    {
+                      option.label
+                    }
+                  </option>
+                ),
+              )}
             </select>
           </label>
         </div>
@@ -610,40 +944,68 @@ function AdminEvents() {
           className="admin-events__filters"
           aria-label="Filter events by status"
         >
-          {statusOptions.map((status) => (
-            <button
-              type="button"
-              key={status.value}
-              className={
-                selectedStatus === status.value
-                  ? "admin-events__filter admin-events__filter--active"
-                  : "admin-events__filter"
-              }
-              onClick={() =>
-                setSelectedStatus(status.value)
-              }
-            >
-              <span>{status.label}</span>
+          {statusOptions.map(
+            (status) => (
+              <button
+                type="button"
+                key={
+                  status.value
+                }
+                className={
+                  selectedStatus ===
+                  status.value
+                    ? "admin-events__filter admin-events__filter--active"
+                    : "admin-events__filter"
+                }
+                onClick={() =>
+                  setSelectedStatus(
+                    status.value,
+                  )
+                }
+              >
+                <span>
+                  {
+                    status.label
+                  }
+                </span>
 
-              <small>
-                {eventCounts[status.value]}
-              </small>
-            </button>
-          ))}
+                <small>
+                  {
+                    eventCounts[
+                      status
+                        .value
+                    ]
+                  }
+                </small>
+              </button>
+            ),
+          )}
         </div>
 
         <div className="admin-events__table-header">
           <div>
-            <h2>Festival Events</h2>
+            <h2>
+              Festival Events
+            </h2>
 
             <p>
-              Showing {filteredEvents.length} of{" "}
-              {events.length} events
+              Showing{" "}
+              {
+                filteredEvents.length
+              }{" "}
+              of{" "}
+              {
+                events.length
+              }{" "}
+              events
             </p>
           </div>
 
           <span className="admin-events__result-count">
-            {filteredEvents.length} results
+            {
+              filteredEvents.length
+            }{" "}
+            results
           </span>
         </div>
 
@@ -654,22 +1016,34 @@ function AdminEvents() {
               size={28}
             />
 
-            <h3>Loading events</h3>
+            <h3>
+              Loading events
+            </h3>
 
             <p>
-              Retrieving festival events from the
-              server.
+              Retrieving
+              festival events
+              from the server.
             </p>
           </div>
         ) : errorMessage ? (
           <div className="admin-events__state admin-events__state--error">
             <div className="admin-events__state-icon">
-              <AlertCircle size={26} />
+              <AlertCircle
+                size={26}
+              />
             </div>
 
-            <h3>Unable to load events</h3>
+            <h3>
+              Unable to load
+              events
+            </h3>
 
-            <p>{errorMessage}</p>
+            <p>
+              {
+                errorMessage
+              }
+            </p>
 
             <button
               type="button"
@@ -677,20 +1051,38 @@ function AdminEvents() {
                 void loadEvents()
               }
             >
-              <RefreshCw size={15} />
+              <RefreshCw
+                size={15}
+              />
+
               Try again
             </button>
           </div>
-        ) : filteredEvents.length > 0 ? (
+        ) : filteredEvents.length >
+          0 ? (
           <div className="admin-events__table-wrapper">
             <table className="admin-events__table">
               <thead>
                 <tr>
-                  <th>Event</th>
-                  <th>Schedule</th>
-                  <th>Tickets</th>
-                  <th>Status</th>
-                  <th aria-label="Event actions" />
+                  <th>
+                    Event
+                  </th>
+
+                  <th>
+                    Schedule
+                  </th>
+
+                  <th>
+                    Tickets
+                  </th>
+
+                  <th>
+                    Status
+                  </th>
+
+                  <th
+                    aria-label="Event actions"
+                  />
                 </tr>
               </thead>
 
@@ -698,42 +1090,65 @@ function AdminEvents() {
                 {filteredEvents.map(
                   (event) => {
                     const ticketData =
-                      getTicketData(event);
+                      getTicketData(
+                        event,
+                      );
 
                     const statusClass =
                       event.status.toLowerCase();
 
                     return (
-                      <tr key={event.id}>
+                      <tr
+                        key={
+                          event.id
+                        }
+                      >
                         <td data-label="Event">
                           <div className="admin-events__event-info">
                             <div className="admin-events__event-image">
                               {event.heroImageUrl ? (
                                 <img
                                   src={
-                                    event.heroImageUrl
+                                    getApiMediaUrl(
+                                      event.heroImageUrl,
+                                    ) ??
+                                    ""
                                   }
-                                  alt=""
+                                  alt={`${event.title} poster`}
                                 />
                               ) : (
                                 <CalendarDays
-                                  size={21}
+                                  size={
+                                    21
+                                  }
                                 />
                               )}
                             </div>
 
                             <div className="admin-events__event-text">
                               <strong>
-                                {event.title}
+                                {
+                                  event.title
+                                }
                               </strong>
 
                               <span>
-                                /{event.slug}
+                                /
+                                {
+                                  event.slug
+                                }
                               </span>
 
                               <small>
-                                <MapPin size={13} />
-                                {event.location}
+                                <MapPin
+                                  size={
+                                    13
+                                  }
+                                />
+
+                                {
+                                  event.location
+                                }
                               </small>
                             </div>
                           </div>
@@ -743,7 +1158,9 @@ function AdminEvents() {
                           <div className="admin-events__details">
                             <span>
                               <CalendarDays
-                                size={14}
+                                size={
+                                  14
+                                }
                               />
 
                               {formatEventDate(
@@ -752,7 +1169,11 @@ function AdminEvents() {
                             </span>
 
                             <span>
-                              <Clock3 size={14} />
+                              <Clock3
+                                size={
+                                  14
+                                }
+                              />
 
                               {formatEventTime(
                                 event.date,
@@ -795,13 +1216,18 @@ function AdminEvents() {
                                 {formatTicketNumber(
                                   ticketData.remaining,
                                 )}{" "}
-                                remaining ·{" "}
-                                {ticketData.percentage}%
+                                remaining
+                                ·{" "}
+                                {
+                                  ticketData.percentage
+                                }
+                                %
                               </small>
                             </div>
                           ) : (
                             <span className="admin-events__not-available">
-                              Not configured
+                              Not
+                              configured
                             </span>
                           )}
                         </td>
@@ -836,7 +1262,11 @@ function AdminEvents() {
                                 aria-label={`View ${event.title}`}
                                 title="View event"
                               >
-                                <Eye size={16} />
+                                <Eye
+                                  size={
+                                    16
+                                  }
+                                />
                               </Link>
                             )}
 
@@ -846,7 +1276,11 @@ function AdminEvents() {
                               aria-label={`Edit ${event.title}`}
                               title="Edit event"
                             >
-                              <Edit3 size={16} />
+                              <Edit3
+                                size={
+                                  16
+                                }
+                              />
                             </Link>
 
                             <div className="admin-events__more-wrapper">
@@ -861,7 +1295,9 @@ function AdminEvents() {
                                 title="More actions"
                                 onClick={() =>
                                   setOpenMenuId(
-                                    (currentId) =>
+                                    (
+                                      currentId,
+                                    ) =>
                                       currentId ===
                                       event.id
                                         ? null
@@ -870,7 +1306,9 @@ function AdminEvents() {
                                 }
                               >
                                 <MoreHorizontal
-                                  size={17}
+                                  size={
+                                    17
+                                  }
                                 />
                               </button>
 
@@ -887,9 +1325,13 @@ function AdminEvents() {
                                     }
                                   >
                                     <Trash2
-                                      size={15}
+                                      size={
+                                        15
+                                      }
                                     />
-                                    Delete event
+
+                                    Delete
+                                    event
                                   </button>
                                 </div>
                               )}
@@ -906,19 +1348,28 @@ function AdminEvents() {
         ) : (
           <div className="admin-events__empty">
             <div className="admin-events__empty-icon">
-              <Search size={26} />
+              <Search
+                size={26}
+              />
             </div>
 
-            <h3>No events found</h3>
+            <h3>
+              No events found
+            </h3>
 
             <p>
-              No events match your current search,
-              status, and sorting settings.
+              No events match
+              your current
+              search, status,
+              and sorting
+              settings.
             </p>
 
             <button
               type="button"
-              onClick={clearFilters}
+              onClick={
+                clearFilters
+              }
             >
               Clear filters
             </button>
@@ -930,41 +1381,59 @@ function AdminEvents() {
         <div
           className="admin-events__modal-overlay"
           role="presentation"
-          onClick={closeDeleteModal}
+          onClick={
+            closeDeleteModal
+          }
         >
           <div
             className="admin-events__modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-event-title"
-            onClick={(event) =>
+            onClick={(
+              event,
+            ) =>
               event.stopPropagation()
             }
           >
             <button
               type="button"
               className="admin-events__modal-close"
-              onClick={closeDeleteModal}
+              onClick={
+                closeDeleteModal
+              }
               aria-label="Close delete confirmation"
-              disabled={isDeleting}
+              disabled={
+                isDeleting
+              }
             >
-              <X size={18} />
+              <X
+                size={18}
+              />
             </button>
 
             <div className="admin-events__modal-icon">
-              <Trash2 size={22} />
+              <Trash2
+                size={22}
+              />
             </div>
 
             <h2 id="delete-event-title">
-              Delete this event?
+              Delete this
+              event?
             </h2>
 
             <p>
-              You are about to delete{" "}
+              You are about
+              to delete{" "}
               <strong>
-                {eventToDelete.title}
+                {
+                  eventToDelete.title
+                }
               </strong>
-              . This action cannot be undone.
+              . This action
+              cannot be
+              undone.
             </p>
 
             {deleteError && (
@@ -972,8 +1441,15 @@ function AdminEvents() {
                 className="admin-events__delete-error"
                 role="alert"
               >
-                <AlertCircle size={15} />
-                <span>{deleteError}</span>
+                <AlertCircle
+                  size={15}
+                />
+
+                <span>
+                  {
+                    deleteError
+                  }
+                </span>
               </div>
             )}
 
@@ -981,8 +1457,12 @@ function AdminEvents() {
               <button
                 type="button"
                 className="admin-events__cancel-button"
-                onClick={closeDeleteModal}
-                disabled={isDeleting}
+                onClick={
+                  closeDeleteModal
+                }
+                disabled={
+                  isDeleting
+                }
               >
                 Cancel
               </button>
@@ -993,20 +1473,31 @@ function AdminEvents() {
                 onClick={() =>
                   void handleDeleteEvent()
                 }
-                disabled={isDeleting}
+                disabled={
+                  isDeleting
+                }
               >
                 {isDeleting ? (
                   <>
                     <LoaderCircle
-                      size={15}
+                      size={
+                        15
+                      }
                       className="admin-events__loading-icon"
                     />
+
                     Deleting...
                   </>
                 ) : (
                   <>
-                    <Trash2 size={15} />
-                    Delete Event
+                    <Trash2
+                      size={
+                        15
+                      }
+                    />
+
+                    Delete
+                    Event
                   </>
                 )}
               </button>
