@@ -1,7 +1,11 @@
-import { Link } from "react-router-dom";
-import { ArrowDown, CalendarDays, Images, Sparkles, Ticket } from "lucide-react";
+import {
+  ArrowDown,
+  CalendarDays,
+} from "lucide-react";
 
-import { useWebsiteSettings } from "../context/WebsiteSettingsContext";
+import {
+  useWebsiteSettings,
+} from "../context/WebsiteSettingsContext";
 
 import UpcomingEventsSection from "../components/events/UpcomingEventsSection";
 import ExperiencePreviewSection from "../components/experience/ExperiencePreviewSection";
@@ -13,7 +17,8 @@ import FAQPreviewSection from "../components/faq/FAQPreviewSection";
 import "./style/home.css";
 
 function Home() {
-  const { settings } = useWebsiteSettings();
+  const { settings } =
+    useWebsiteSettings();
 
   /*
    * ============================================================
@@ -30,136 +35,84 @@ function Home() {
     "Thailand’s Tropical Music Experience";
 
   const eventsEnabled =
-    settings?.eventsPageEnabled ?? true;
+    settings?.eventsPageEnabled ??
+    true;
 
   const experienceEnabled =
-    settings?.experiencePageEnabled ?? true;
+    settings?.experiencePageEnabled ??
+    true;
 
   const galleryEnabled =
-    settings?.galleryPageEnabled ?? true;
+    settings?.galleryPageEnabled ??
+    true;
 
   const faqEnabled =
-    settings?.faqPageEnabled ?? true;
+    settings?.faqPageEnabled ??
+    true;
 
   /*
    * ============================================================
-   * FIRST SECTION AFTER REELS
+   * FIRST SECTION AFTER OPENING
    * ============================================================
    */
 
-  const nextSectionId = eventsEnabled
-    ? "upcoming-events"
-    : galleryEnabled
-      ? "gallery-preview"
-      : experienceEnabled
-        ? "experience-preview"
-        : faqEnabled
-          ? "faq-preview"
-          : null;
+  const nextSectionId =
+    eventsEnabled
+      ? "upcoming-events"
+      : galleryEnabled
+        ? "gallery-preview"
+        : experienceEnabled
+          ? "experience-preview"
+          : faqEnabled
+            ? "faq-preview"
+            : null;
 
   return (
     <>
       {/*
        * ============================================================
-       * FESTIVAL REELS
+       * REELS — FIRST THING ON THE HOMEPAGE
+       * ============================================================
        *
-       * The homepage now opens directly with real festival media.
-       * No popup.
-       * No event poster hero.
+       * The user sees festival videos immediately.
+       * No large hero appears before them.
        * ============================================================
        */}
 
       {galleryEnabled ? (
         <section
-          className="home-media-opening"
-          aria-label={`${festivalName} festival experience`}
+          className="home-reels-opening"
+          aria-label={`${festivalName} festival moments`}
         >
-          {/*
-           * Small overlay introducing the festival.
-           * The actual photos/videos remain the visual focus.
-           */}
-          <div className="home-media-opening__intro">
-            <div className="home-media-opening__eyebrow">
-              <span
-                className="home-media-opening__line"
-                aria-hidden="true"
-              />
-
-              <Sparkles
-                size={14}
-                aria-hidden="true"
-              />
-
-              <span>{tagline}</span>
-
-              <Sparkles
-                size={14}
-                aria-hidden="true"
-              />
-
-              <span
-                className="home-media-opening__line"
-                aria-hidden="true"
-              />
-            </div>
-
-            <h1 className="home-media-opening__title">
-              {festivalName}
-            </h1>
-
-            <p className="home-media-opening__subtitle">
-              Feel the energy.
-              <span> Live the moment.</span>
-            </p>
-
-            <div className="home-media-opening__actions">
-              {eventsEnabled && (
-                <a
-                  href="#upcoming-events"
-                  className="home-media-opening__button home-media-opening__button--primary"
-                >
-                  <Ticket
-                    size={18}
-                    aria-hidden="true"
-                  />
-
-                  <span>
-                    Explore Events
-                  </span>
-                </a>
-              )}
-
-              <Link
-                to="/gallery"
-                className="home-media-opening__button home-media-opening__button--secondary"
-              >
-                <Images
-                  size={18}
-                  aria-hidden="true"
-                />
-
-                <span>
-                  View Gallery
-                </span>
-              </Link>
-            </div>
+          <div
+            id="festival-reels"
+            className="home-reels-opening__reels"
+          >
+            <FestivalReelsSection />
           </div>
 
           {/*
-           * Existing reels component.
-           * This is now the first major visual content users see.
+           * Small festival identity shown AFTER the reels.
            */}
-          <div
-            id="festival-reels"
-            className="home-media-opening__reels"
-          >
-            <FestivalReelsSection />
+
+          <div className="home-reels-opening__identity">
+            <span className="home-reels-opening__tagline">
+              {tagline}
+            </span>
+
+            <h1>
+              {festivalName}
+            </h1>
+
+            <p>
+              Koh Phangan, Thailand
+            </p>
           </div>
 
           {nextSectionId && (
             <a
               href={`#${nextSectionId}`}
-              className="home-media-opening__scroll"
+              className="home-reels-opening__scroll"
               aria-label="Continue down the homepage"
             >
               <span>
@@ -167,7 +120,7 @@ function Home() {
               </span>
 
               <ArrowDown
-                size={17}
+                size={15}
                 aria-hidden="true"
               />
             </a>
@@ -175,23 +128,19 @@ function Home() {
         </section>
       ) : (
         /*
-         * Fallback if gallery/reels are disabled from settings.
+         * ============================================================
+         * FALLBACK
+         * ============================================================
+         *
+         * Used only if gallery/reels are disabled in settings.
+         * ============================================================
          */
+
         <section className="home-simple-opening">
           <div className="home-simple-opening__content">
-            <div className="home-simple-opening__eyebrow">
-              <Sparkles
-                size={15}
-                aria-hidden="true"
-              />
-
-              <span>{tagline}</span>
-
-              <Sparkles
-                size={15}
-                aria-hidden="true"
-              />
-            </div>
+            <span className="home-simple-opening__eyebrow">
+              {tagline}
+            </span>
 
             <h1>
               {festivalName}
@@ -199,6 +148,7 @@ function Home() {
 
             <p>
               More Than a Festival
+
               <span>
                 A Once in a Lifetime Memory
               </span>
@@ -226,8 +176,6 @@ function Home() {
       {/*
        * ============================================================
        * UPCOMING EVENTS
-       *
-       * Events now come immediately after the visual experience.
        * ============================================================
        */}
 

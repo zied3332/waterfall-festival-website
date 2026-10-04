@@ -1,11 +1,12 @@
 /* ============================================================
    WATERFALL FESTIVAL — HOME PAGE
-   Media-first homepage
+   Reels-first homepage
    ============================================================ */
 
-.home-media-opening,
+.home-reels-opening,
 .home-simple-opening {
   position: relative;
+
   isolation: isolate;
 
   width: 100%;
@@ -17,17 +18,17 @@
   background:
     radial-gradient(
       circle at 50% 0%,
-      rgba(126, 34, 206, 0.2),
+      rgba(126, 34, 206, 0.14),
       transparent 32%
     ),
     radial-gradient(
       circle at 10% 55%,
-      rgba(34, 211, 238, 0.06),
+      rgba(34, 211, 238, 0.04),
       transparent 25%
     ),
     radial-gradient(
       circle at 90% 60%,
-      rgba(217, 70, 239, 0.07),
+      rgba(217, 70, 239, 0.05),
       transparent 25%
     ),
     linear-gradient(
@@ -43,9 +44,10 @@
    BACKGROUND TEXTURE
    ============================================================ */
 
-.home-media-opening::before,
+.home-reels-opening::before,
 .home-simple-opening::before {
   position: absolute;
+
   z-index: -2;
 
   inset: 0;
@@ -61,7 +63,9 @@
       transparent 1px
     );
 
-  background-size: 70px 70px;
+  background-size:
+    70px
+    70px;
 
   content: "";
 
@@ -72,312 +76,45 @@
 
 
 /* ============================================================
-   INTRO
-   ============================================================ */
-
-.home-media-opening__intro {
-  position: relative;
-  z-index: 5;
-
-  width: min(
-    calc(100% - 40px),
-    1200px
-  );
-
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-
-  margin: 0 auto;
-
-  padding:
-    clamp(42px, 6vw, 80px)
-    0
-    clamp(24px, 4vw, 45px);
-
-  text-align: center;
-}
-
-
-/* ============================================================
-   EYEBROW
-   ============================================================ */
-
-.home-media-opening__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  gap: 9px;
-
-  margin-bottom: 14px;
-
-  color: #c084fc;
-
-  font-size: clamp(
-    0.58rem,
-    0.8vw,
-    0.72rem
-  );
-
-  font-weight: 900;
-
-  letter-spacing: 0.17em;
-
-  text-transform: uppercase;
-}
-
-.home-media-opening__eyebrow svg {
-  flex: 0 0 auto;
-
-  color: #a855f7;
-}
-
-.home-media-opening__line {
-  width: 40px;
-  height: 1px;
-
-  flex-shrink: 0;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(168, 85, 247, 0.9)
-    );
-}
-
-.home-media-opening__line:last-child {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(168, 85, 247, 0.9),
-      transparent
-    );
-}
-
-
-/* ============================================================
-   TITLE
-   ============================================================ */
-
-.home-media-opening__title {
-  width: 100%;
-  max-width: 1100px;
-
-  margin: 0;
-
-  color: #ffffff;
-
-  font-size: clamp(
-    3rem,
-    7vw,
-    7rem
-  );
-
-  font-weight: 950;
-
-  line-height: 0.88;
-
-  letter-spacing: -0.065em;
-
-  text-align: center;
-  text-transform: uppercase;
-
-  text-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.75),
-    0 0 50px rgba(126, 34, 206, 0.13);
-}
-
-
-/* ============================================================
-   SUBTITLE
-   ============================================================ */
-
-.home-media-opening__subtitle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-
-  gap: 7px;
-
-  margin:
-    18px
-    0
-    0;
-
-  color:
-    rgba(255, 255, 255, 0.72);
-
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-
-  font-size: clamp(
-    0.95rem,
-    1.5vw,
-    1.3rem
-  );
-
-  font-style: italic;
-
-  line-height: 1.4;
-}
-
-.home-media-opening__subtitle span {
-  color: #d8b4fe;
-}
-
-
-/* ============================================================
-   INTRO ACTIONS
-   ============================================================ */
-
-.home-media-opening__actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-
-  gap: 10px;
-
-  margin-top: 25px;
-}
-
-.home-media-opening__button {
-  min-height: 48px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  gap: 9px;
-
-  padding:
-    0
-    22px;
-
-  border-radius: 11px;
-
-  color: #ffffff;
-
-  font-size: 0.68rem;
-  font-weight: 900;
-
-  letter-spacing: 0.065em;
-
-  text-decoration: none;
-  text-transform: uppercase;
-
-  transition:
-    transform 180ms ease,
-    border-color 180ms ease,
-    background 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.home-media-opening__button:hover {
-  transform: translateY(-2px);
-}
-
-.home-media-opening__button:active {
-  transform: translateY(0);
-}
-
-.home-media-opening__button:focus-visible {
-  outline:
-    3px solid
-    rgba(192, 132, 252, 0.5);
-
-  outline-offset: 4px;
-}
-
-.home-media-opening__button--primary {
-  border:
-    1px solid
-    rgba(255, 255, 255, 0.15);
-
-  background:
-    linear-gradient(
-      135deg,
-      #6d28d9 0%,
-      #9333ea 50%,
-      #a855f7 100%
-    );
-
-  box-shadow:
-    0 13px 35px
-    rgba(126, 34, 206, 0.32),
-    inset 0 1px 0
-    rgba(255, 255, 255, 0.15);
-}
-
-.home-media-opening__button--primary:hover {
-  box-shadow:
-    0 18px 42px
-    rgba(126, 34, 206, 0.45);
-}
-
-.home-media-opening__button--secondary {
-  border:
-    1px solid
-    rgba(255, 255, 255, 0.14);
-
-  background:
-    rgba(255, 255, 255, 0.04);
-
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.home-media-opening__button--secondary:hover {
-  border-color:
-    rgba(192, 132, 252, 0.45);
-
-  background:
-    rgba(168, 85, 247, 0.08);
-}
-
-
-/* ============================================================
    REELS
    ============================================================ */
 
-.home-media-opening__reels {
+.home-reels-opening__reels {
   position: relative;
+
   z-index: 2;
 
   width: 100%;
 
   margin: 0;
+
   padding: 0;
 }
 
-.home-media-opening__reels > section {
-  margin-top: 0;
+.home-reels-opening__reels > section {
+  margin: 0;
 }
 
 
 /* ============================================================
-   REELS GLOW
+   SUBTLE REELS GLOW
    ============================================================ */
 
-.home-media-opening__reels::before {
+.home-reels-opening__reels::before {
   position: absolute;
+
   z-index: -1;
 
-  top: -100px;
+  top: -40px;
   right: 0;
   left: 0;
 
-  height: 200px;
+  height: 120px;
 
   background:
     radial-gradient(
       ellipse at center,
-      rgba(126, 34, 206, 0.12),
+      rgba(126, 34, 206, 0.1),
       transparent 65%
     );
 
@@ -388,46 +125,133 @@
 
 
 /* ============================================================
-   DISCOVER MORE
+   SMALL FESTIVAL IDENTITY
+   Appears AFTER the reels.
    ============================================================ */
 
-.home-media-opening__scroll {
+.home-reels-opening__identity {
   position: relative;
-  z-index: 5;
 
-  width: max-content;
+  z-index: 3;
+
+  width: min(
+    calc(100% - 40px),
+    1320px
+  );
 
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
 
-  gap: 7px;
+  gap: 24px;
 
-  margin:
-    20px
-    auto
-    35px;
+  margin: 0 auto;
 
   padding:
-    9px
-    14px;
+    15px
+    0
+    18px;
+
+  border-top:
+    1px solid
+    rgba(255, 255, 255, 0.06);
+}
+
+.home-reels-opening__identity-copy {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 0;
+}
+
+.home-reels-opening__tagline {
+  margin:
+    0
+    0
+    4px;
+
+  color: #c084fc;
+
+  font-size: 0.6rem;
+  font-weight: 850;
+
+  line-height: 1.2;
+
+  letter-spacing: 0.11em;
+
+  text-transform: uppercase;
+}
+
+.home-reels-opening__title {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size:
+    clamp(
+      0.95rem,
+      1.8vw,
+      1.25rem
+    );
+
+  font-weight: 900;
+
+  line-height: 1.15;
+
+  letter-spacing:
+    -0.025em;
+}
+
+.home-reels-opening__location {
+  margin:
+    4px
+    0
+    0;
+
+  color:
+    rgba(255, 255, 255, 0.46);
+
+  font-size: 0.68rem;
+
+  line-height: 1.4;
+}
+
+
+/* ============================================================
+   DISCOVER MORE
+   ============================================================ */
+
+.home-reels-opening__scroll {
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  padding:
+    8px
+    12px;
 
   border:
     1px solid
-    rgba(255, 255, 255, 0.08);
+    rgba(255, 255, 255, 0.09);
 
   border-radius: 999px;
 
   background:
-    rgba(255, 255, 255, 0.025);
+    rgba(255, 255, 255, 0.03);
 
   color:
-    rgba(255, 255, 255, 0.48);
+    rgba(255, 255, 255, 0.58);
 
-  font-size: 0.58rem;
-  font-weight: 800;
+  font-size: 0.56rem;
+  font-weight: 850;
 
-  letter-spacing: 0.1em;
+  letter-spacing: 0.07em;
 
   text-decoration: none;
   text-transform: uppercase;
@@ -435,20 +259,29 @@
   transition:
     color 160ms ease,
     border-color 160ms ease,
-    background 160ms ease,
+    background-color 160ms ease,
     transform 160ms ease;
 }
 
-.home-media-opening__scroll:hover {
+.home-reels-opening__scroll:hover {
   border-color:
-    rgba(168, 85, 247, 0.32);
+    rgba(192, 132, 252, 0.35);
 
   background:
-    rgba(168, 85, 247, 0.06);
+    rgba(168, 85, 247, 0.08);
 
   color: #d8b4fe;
 
-  transform: translateY(2px);
+  transform:
+    translateY(2px);
+}
+
+.home-reels-opening__scroll:focus-visible {
+  outline:
+    3px solid
+    rgba(192, 132, 252, 0.45);
+
+  outline-offset: 3px;
 }
 
 
@@ -464,7 +297,8 @@
 
 
 /* ============================================================
-   FALLBACK OPENING
+   FALLBACK
+   Used if the gallery/reels feature is disabled.
    ============================================================ */
 
 .home-simple-opening {
@@ -519,17 +353,19 @@
 
   color: #ffffff;
 
-  font-size: clamp(
-    3.2rem,
-    8vw,
-    7.5rem
-  );
+  font-size:
+    clamp(
+      3.2rem,
+      8vw,
+      7.5rem
+    );
 
   font-weight: 950;
 
   line-height: 0.9;
 
-  letter-spacing: -0.065em;
+  letter-spacing:
+    -0.065em;
 
   text-transform: uppercase;
 }
@@ -553,11 +389,12 @@
     "Times New Roman",
     serif;
 
-  font-size: clamp(
-    1rem,
-    2vw,
-    1.4rem
-  );
+  font-size:
+    clamp(
+      1rem,
+      2vw,
+      1.4rem
+    );
 
   font-style: italic;
 }
@@ -615,7 +452,8 @@
 }
 
 .home-simple-opening__button:hover {
-  transform: translateY(-2px);
+  transform:
+    translateY(-2px);
 
   box-shadow:
     0 18px 42px
@@ -628,291 +466,98 @@
    ============================================================ */
 
 @media (max-width: 900px) {
-  .home-media-opening__intro {
+  .home-reels-opening__identity {
     width:
-      min(
-        calc(100% - 28px),
-        850px
-      );
-
-    padding-top: 45px;
-  }
-
-  .home-media-opening__title {
-    font-size:
-      clamp(
-        3rem,
-        10vw,
-        5.8rem
-      );
-  }
-
-  .home-media-opening__subtitle {
-    font-size:
-      clamp(
-        0.9rem,
-        2.5vw,
-        1.15rem
-      );
+      calc(100% - 30px);
   }
 }
 
 
 /* ============================================================
    MOBILE
-   Main phone layout
    ============================================================ */
 
-@media (max-width: 600px) {
-  .home-media-opening {
+@media (max-width: 640px) {
+  .home-reels-opening {
     min-height: auto;
-
-    background:
-      radial-gradient(
-        circle at 50% 0%,
-        rgba(126, 34, 206, 0.2),
-        transparent 30%
-      ),
-      radial-gradient(
-        circle at 50% 55%,
-        rgba(168, 85, 247, 0.05),
-        transparent 35%
-      ),
-      linear-gradient(
-        180deg,
-        #02030a 0%,
-        #05030d 58%,
-        #05050d 100%
-      );
   }
 
-  /*
-   * Compact introduction so the media becomes visible
-   * very quickly on a phone.
-   */
-  .home-media-opening__intro {
-    width:
-      calc(100% - 28px);
-
-    margin:
-      0
-      auto;
-
-    padding:
-      22px
-      0
-      16px;
-  }
-
-
-  /* ----------------------------------------------------------
-     MOBILE EYEBROW
-     ---------------------------------------------------------- */
-
-  .home-media-opening__eyebrow {
-    max-width: 100%;
-
-    gap: 5px;
-
-    margin-bottom: 9px;
-
-    font-size: 0.43rem;
-    font-weight: 900;
-
-    letter-spacing: 0.1em;
-
-    white-space: nowrap;
-  }
-
-  .home-media-opening__eyebrow svg {
-    width: 11px;
-    height: 11px;
-
-    flex-shrink: 0;
-  }
-
-  .home-media-opening__line {
-    width: 15px;
-
-    flex-shrink: 0;
-  }
-
-
-  /* ----------------------------------------------------------
-     MOBILE TITLE
-     ---------------------------------------------------------- */
-
-  .home-media-opening__title {
-    width: 100%;
-    max-width: 360px;
-
-    margin:
-      0
-      auto;
-
-    font-size:
-      clamp(
-        2.25rem,
-        11.5vw,
-        3.25rem
-      );
-
-    font-weight: 950;
-
-    line-height: 0.9;
-
-    letter-spacing: -0.055em;
-
-    overflow-wrap: normal;
-
-    word-break: normal;
-  }
-
-
-  /* ----------------------------------------------------------
-     MOBILE SUBTITLE
-     ---------------------------------------------------------- */
-
-  .home-media-opening__subtitle {
-    display: block;
-
-    margin:
-      9px
-      auto
-      0;
-
-    color:
-      rgba(255, 255, 255, 0.62);
-
-    font-size:
-      clamp(
-        0.72rem,
-        3.3vw,
-        0.88rem
-      );
-
-    line-height: 1.35;
-  }
-
-  .home-media-opening__subtitle span {
-    display: inline;
-
-    margin-left: 3px;
-  }
-
-
-  /* ----------------------------------------------------------
-     MOBILE ACTIONS
-     ---------------------------------------------------------- */
-
-  .home-media-opening__actions {
-    width: min(
-      100%,
-      350px
-    );
-
-    display: grid;
-
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0, 1fr)
-      );
-
-    gap: 7px;
-
-    margin-top: 15px;
-  }
-
-  .home-media-opening__button {
-    width: 100%;
-    min-width: 0;
-    min-height: 40px;
-
-    gap: 6px;
-
-    padding:
-      0
-      9px;
-
-    border-radius: 8px;
-
-    font-size: 0.48rem;
-    font-weight: 900;
-
-    letter-spacing: 0.035em;
-
-    white-space: nowrap;
-  }
-
-  .home-media-opening__button svg {
-    width: 13px;
-    height: 13px;
-
-    flex-shrink: 0;
-  }
-
-
-  /* ----------------------------------------------------------
-     MOBILE REELS
-     ---------------------------------------------------------- */
-
-  .home-media-opening__reels {
+  .home-reels-opening__reels {
     width: 100%;
 
-    margin-top: 0;
+    margin: 0;
 
     padding: 0;
   }
 
-  .home-media-opening__reels::before {
-    top: -45px;
+  .home-reels-opening__reels::before {
+    top: -30px;
 
-    height: 100px;
+    height: 80px;
 
-    opacity: 0.75;
+    opacity: 0.7;
   }
 
+  /*
+   * Keep this intentionally small.
+   * The reel should remain the visual focus.
+   */
+  .home-reels-opening__identity {
+    width:
+      calc(100% - 36px);
 
-  /* ----------------------------------------------------------
-     MOBILE DISCOVER MORE
-     ---------------------------------------------------------- */
+    align-items: center;
 
-  .home-media-opening__scroll {
-    gap: 5px;
-
-    margin:
-      10px
-      auto
-      18px;
+    gap: 10px;
 
     padding:
-      7px
-      11px;
+      11px
+      0
+      13px;
+  }
+
+  .home-reels-opening__tagline {
+    margin-bottom: 2px;
 
     font-size: 0.45rem;
 
     letter-spacing: 0.07em;
   }
 
-  .home-media-opening__scroll svg {
-    width: 13px;
-    height: 13px;
+  .home-reels-opening__title {
+    font-size: 0.86rem;
+
+    line-height: 1.1;
   }
 
+  .home-reels-opening__location {
+    margin-top: 2px;
 
-  /* ----------------------------------------------------------
-     MOBILE ANCHORS
-     ---------------------------------------------------------- */
+    font-size: 0.57rem;
+  }
+
+  .home-reels-opening__scroll {
+    gap: 4px;
+
+    padding:
+      6px
+      8px;
+
+    font-size: 0.44rem;
+
+    letter-spacing: 0.05em;
+
+    white-space: nowrap;
+  }
+
+  .home-reels-opening__scroll svg {
+    width: 12px;
+    height: 12px;
+  }
 
   .home-section-anchor {
     scroll-margin-top: 72px;
   }
-
-
-  /* ----------------------------------------------------------
-     MOBILE FALLBACK
-     ---------------------------------------------------------- */
 
   .home-simple-opening {
     min-height:
@@ -963,10 +608,11 @@
   }
 
   .home-simple-opening__button {
-    width: min(
-      100%,
-      330px
-    );
+    width:
+      min(
+        100%,
+        330px
+      );
 
     min-height: 44px;
 
@@ -985,69 +631,37 @@
 
 /* ============================================================
    NARROW PHONES
-   Examples: iPhone SE width, smaller Android devices
    ============================================================ */
 
 @media (max-width: 430px) {
-  .home-media-opening__intro {
+  .home-reels-opening__identity {
     width:
-      calc(100% - 20px);
+      calc(100% - 30px);
 
     padding:
-      18px
+      10px
       0
-      13px;
+      12px;
   }
 
-  .home-media-opening__eyebrow {
-    font-size: 0.39rem;
-
-    letter-spacing: 0.075em;
+  .home-reels-opening__tagline {
+    font-size: 0.42rem;
   }
 
-  .home-media-opening__line {
-    width: 10px;
+  .home-reels-opening__title {
+    font-size: 0.82rem;
   }
 
-  .home-media-opening__title {
-    max-width: 330px;
-
-    font-size:
-      clamp(
-        2rem,
-        11.5vw,
-        2.8rem
-      );
+  .home-reels-opening__location {
+    font-size: 0.54rem;
   }
 
-  .home-media-opening__subtitle {
-    margin-top: 7px;
-
-    font-size: 0.72rem;
-  }
-
-  .home-media-opening__actions {
-    width: min(
-      100%,
-      330px
-    );
-
-    margin-top: 12px;
-  }
-
-  .home-media-opening__button {
-    min-height: 38px;
-
+  .home-reels-opening__scroll {
     padding:
-      0
+      5px
       7px;
 
-    font-size: 0.44rem;
-  }
-
-  .home-media-opening__button svg {
-    width: 12px;
-    height: 12px;
+    font-size: 0.41rem;
   }
 }
 
@@ -1057,104 +671,31 @@
    ============================================================ */
 
 @media (max-width: 360px) {
-  .home-media-opening__intro {
+  .home-reels-opening__identity {
     width:
-      calc(100% - 16px);
+      calc(100% - 24px);
 
-    padding-top: 15px;
+    gap: 7px;
   }
 
-  /*
-   * Decorative lines are removed here to prevent the eyebrow
-   * from becoming too wide.
-   */
-  .home-media-opening__line {
-    display: none;
+  .home-reels-opening__tagline {
+    font-size: 0.39rem;
   }
 
-  .home-media-opening__eyebrow {
-    font-size: 0.38rem;
+  .home-reels-opening__title {
+    font-size: 0.76rem;
   }
 
-  .home-media-opening__title {
-    max-width: 300px;
-
-    font-size:
-      clamp(
-        1.85rem,
-        11.5vw,
-        2.45rem
-      );
+  .home-reels-opening__location {
+    font-size: 0.51rem;
   }
 
-  .home-media-opening__subtitle {
-    font-size: 0.68rem;
-  }
-
-  /*
-   * On genuinely narrow screens, stack the two CTA buttons.
-   */
-  .home-media-opening__actions {
-    grid-template-columns: 1fr;
-
-    width: min(
-      100%,
-      290px
-    );
-
-    gap: 6px;
-  }
-
-  .home-media-opening__button {
-    min-height: 38px;
-
-    font-size: 0.47rem;
-  }
-
-  .home-media-opening__scroll {
-    margin-bottom: 14px;
-  }
-}
-
-
-/* ============================================================
-   SHORT PHONE SCREENS
-   Reduces vertical space for short devices.
-   ============================================================ */
-
-@media (max-width: 600px) and (max-height: 700px) {
-  .home-media-opening__intro {
+  .home-reels-opening__scroll {
     padding:
-      13px
-      0
-      10px;
-  }
+      5px
+      6px;
 
-  .home-media-opening__eyebrow {
-    margin-bottom: 6px;
-  }
-
-  .home-media-opening__title {
-    font-size:
-      clamp(
-        1.9rem,
-        10.5vw,
-        2.65rem
-      );
-  }
-
-  .home-media-opening__subtitle {
-    margin-top: 5px;
-
-    font-size: 0.68rem;
-  }
-
-  .home-media-opening__actions {
-    margin-top: 9px;
-  }
-
-  .home-media-opening__button {
-    min-height: 36px;
+    font-size: 0.38rem;
   }
 }
 
@@ -1163,41 +704,28 @@
    LANDSCAPE PHONES
    ============================================================ */
 
-@media (max-height: 500px) and (orientation: landscape) {
-  .home-media-opening__intro {
+@media (
+  max-height: 500px
+) and (
+  orientation: landscape
+) {
+  .home-reels-opening__identity {
     padding:
-      12px
+      8px
       0
       10px;
   }
 
-  .home-media-opening__eyebrow {
-    margin-bottom: 5px;
-
-    font-size: 0.4rem;
+  .home-reels-opening__tagline {
+    font-size: 0.42rem;
   }
 
-  .home-media-opening__title {
-    font-size:
-      clamp(
-        2rem,
-        6vw,
-        3rem
-      );
+  .home-reels-opening__title {
+    font-size: 0.82rem;
   }
 
-  .home-media-opening__subtitle {
-    margin-top: 5px;
-
-    font-size: 0.7rem;
-  }
-
-  .home-media-opening__actions {
-    margin-top: 9px;
-  }
-
-  .home-media-opening__button {
-    min-height: 36px;
+  .home-reels-opening__location {
+    font-size: 0.54rem;
   }
 }
 
@@ -1207,8 +735,7 @@
    ============================================================ */
 
 @media (hover: none) {
-  .home-media-opening__button:hover,
-  .home-media-opening__scroll:hover,
+  .home-reels-opening__scroll:hover,
   .home-simple-opening__button:hover {
     transform: none;
   }
@@ -1219,9 +746,10 @@
    REDUCED MOTION
    ============================================================ */
 
-@media (prefers-reduced-motion: reduce) {
-  .home-media-opening__button,
-  .home-media-opening__scroll,
+@media (
+  prefers-reduced-motion: reduce
+) {
+  .home-reels-opening__scroll,
   .home-simple-opening__button {
     transition: none;
   }

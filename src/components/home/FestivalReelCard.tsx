@@ -11,25 +11,20 @@ import {
   VolumeX,
 } from "lucide-react";
 
+import {
+  getApiMediaUrl,
+} from "../../services/api.service";
+
 import type {
   GalleryImage,
 } from "../../types/gallery";
 
 type FestivalReelCardProps = {
   video: GalleryImage;
-
-  /*
-   * Local MP4 assigned by FestivalReelsSection.
-   *
-   * Example:
-   * /videos/reels/waterfall-reel-1.mp4
-   */
-  fallbackVideoUrl: string;
 };
 
 export default function FestivalReelCard({
   video,
-  fallbackVideoUrl,
 }: FestivalReelCardProps) {
   const cardRef =
     useRef<HTMLElement | null>(
@@ -44,42 +39,8 @@ export default function FestivalReelCard({
   const isVisibleRef =
     useRef(false);
 
-  /*
-   * Start with the backend/Cloudinary URL.
-   *
-   * If there is no remote URL, immediately
-   * use the local fallback.
-   */
-  const [videoSource, setVideoSource] =
-    useState<string>(
-      video.imageUrl ||
-        fallbackVideoUrl,
-    );
-
-  /*
-   * Cloudinary thumbnails are also unavailable
-   * while the Cloudinary account is disabled.
-   *
-   * We initially try the thumbnail, but remove
-   * it if the remote video fails.
-   */
-  const [posterSource, setPosterSource] =
-    useState<string | undefined>(
-      video.thumbnailUrl ??
-        undefined,
-    );
-
-  const [
-    usingFallback,
-    setUsingFallback,
-  ] = useState(
-    !video.imageUrl,
-  );
-
-  const [
-    hasVideoError,
-    setHasVideoError,
-  ] = useState(false);
+  const [hasVideoError, setHasVideoError] =
+    useState(false);
 
   const [isPlaying, setIsPlaying] =
     useState(false);
@@ -87,41 +48,51 @@ export default function FestivalReelCard({
   const [isMuted, setIsMuted] =
     useState(true);
 
-  /* =========================================================
-     RESET WHEN VIDEO CHANGES
-  ========================================================= */
+  /*
+   * =========================================================
+   * MEDIA URLS
+   * =========================================================
+   *
+   * New gallery uploads are stored in the database as:
+   *
+   * /uploads/gallery/videos/example.mp4
+   *
+   * getApiMediaUrl() converts that into the complete backend URL.
+   *
+   * Existing absolute URLs are preserved.
+   * =========================================================
+   */
+
+  const videoUrl =
+    getApiMediaUrl(
+      video.imageUrl,
+    );
+
+  const posterUrl =
+    getApiMediaUrl(
+      video.thumbnailUrl,
+    );
+
+  /*
+   * =========================================================
+   * RESET WHEN VIDEO CHANGES
+   * =========================================================
+   */
 
   useEffect(() => {
-    setVideoSource(
-      video.imageUrl ||
-        fallbackVideoUrl,
-    );
-
-    setPosterSource(
-      video.thumbnailUrl ??
-        undefined,
-    );
-
-    setUsingFallback(
-      !video.imageUrl,
-    );
-
-    setHasVideoError(
-      false,
-    );
-
-    setIsPlaying(
-      false,
-    );
+    setHasVideoError(false);
+    setIsPlaying(false);
+    setIsMuted(true);
   }, [
-    video.imageUrl,
-    video.thumbnailUrl,
-    fallbackVideoUrl,
+    video.id,
+    videoUrl,
   ]);
 
-  /* =========================================================
-     AUTO PLAY / PAUSE
-  ========================================================= */
+  /*
+   * =========================================================
+   * AUTO PLAY / PAUSE
+   * =========================================================
+   */
 
   useEffect(() => {
     const cardElement =
@@ -133,11 +104,15 @@ export default function FestivalReelCard({
     if (
       !cardElement ||
       !currentVideoElement ||
+      !videoUrl ||
       hasVideoError
     ) {
       return;
     }
 
+    /*
+     * Keep a stable non-null reference for callbacks.
+     */
     const videoElement =
       currentVideoElement;
 
@@ -166,9 +141,7 @@ export default function FestivalReelCard({
             void videoElement
               .play()
               .catch(() => {
-                setIsPlaying(
-                  false,
-                );
+                setIsPlaying(false);
               });
 
             return;
@@ -201,15 +174,11 @@ export default function FestivalReelCard({
         return;
       }
 
-      if (
-        isVisibleRef.current
-      ) {
+      if (isVisibleRef.current) {
         void videoElement
           .play()
           .catch(() => {
-            setIsPlaying(
-              false,
-            );
+            setIsPlaying(false);
           });
       }
     }
@@ -230,80 +199,31 @@ export default function FestivalReelCard({
       videoElement.pause();
     };
   }, [
-    videoSource,
+    videoUrl,
     hasVideoError,
   ]);
 
-  /* =========================================================
-     REMOTE VIDEO FAILURE
-  ========================================================= */
+  /*
+   * =========================================================
+   * VIDEO ERROR
+   * =========================================================
+   */
 
   function handleVideoError() {
-    /*
-     * Remote Cloudinary video failed.
-     *
-     * Switch THIS card to the exact local
-     * fallback passed from FestivalReelsSection.
-     */
-
-    if (
-      !usingFallback &&
-      videoSource !== fallbackVideoUrl
-    ) {
-      console.warn(
-        `Remote reel unavailable: ${video.title}. Using ${fallbackVideoUrl}`,
-      );
-
-      setUsingFallback(
-        true,
-      );
-
-      /*
-       * Cloudinary thumbnail will probably
-       * also return 401, so remove it.
-       */
-      setPosterSource(
-        undefined,
-      );
-
-      setHasVideoError(
-        false,
-      );
-
-      setIsPlaying(
-        false,
-      );
-
-      setVideoSource(
-        fallbackVideoUrl,
-      );
-
-      return;
-    }
-
-    /*
-     * The local fallback itself failed.
-     *
-     * Stop here instead of triggering
-     * an infinite error loop.
-     */
-
     console.error(
-      `Local fallback reel failed: ${fallbackVideoUrl}`,
+      `Festival reel failed to load: ${video.title}`,
+      videoUrl,
     );
 
-    setHasVideoError(
-      true,
-    );
-
-    setIsPlaying(
-      false,
-    );
+    setHasVideoError(true);
+    setIsPlaying(false);
   }
 
-  /* =========================================================
-     PLAY / PAUSE
-  ========================================================= */
+  /*
+   * =========================================================
+   * PLAY / PAUSE
+   * =========================================================
+   */
 
   async function togglePlayback() {
     const videoElement =
@@ -311,6 +231,7 @@ export default function FestivalReelCard({
 
     if (
       !videoElement ||
+      !videoUrl ||
       hasVideoError
     ) {
       return;
@@ -328,15 +249,15 @@ export default function FestivalReelCard({
 
       videoElement.pause();
     } catch {
-      setIsPlaying(
-        false,
-      );
+      setIsPlaying(false);
     }
   }
 
-  /* =========================================================
-     SOUND
-  ========================================================= */
+  /*
+   * =========================================================
+   * SOUND
+   * =========================================================
+   */
 
   function toggleMuted() {
     const videoElement =
@@ -344,6 +265,7 @@ export default function FestivalReelCard({
 
     if (
       !videoElement ||
+      !videoUrl ||
       hasVideoError
     ) {
       return;
@@ -360,9 +282,11 @@ export default function FestivalReelCard({
     );
   }
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  /*
+   * =========================================================
+   * RENDER
+   * =========================================================
+   */
 
   return (
     <article
@@ -370,19 +294,15 @@ export default function FestivalReelCard({
       className="festival-reel-card"
     >
       <div className="festival-reel-card__media">
-
-        {!hasVideoError && (
+        {!hasVideoError && videoUrl ? (
           <video
-            /*
-             * Recreate the video element whenever
-             * the source changes from Cloudinary
-             * to the local fallback.
-             */
-            key={videoSource}
             ref={videoRef}
             className="festival-reel-card__video"
-            src={videoSource}
-            poster={posterSource}
+            src={videoUrl}
+            poster={
+              posterUrl ??
+              undefined
+            }
             muted={isMuted}
             playsInline
             loop
@@ -394,28 +314,28 @@ export default function FestivalReelCard({
               handleVideoError
             }
             onPlay={() => {
-              setIsPlaying(
-                true,
-              );
+              setIsPlaying(true);
             }}
             onPause={() => {
-              setIsPlaying(
-                false,
-              );
+              setIsPlaying(false);
             }}
             onEnded={() => {
-              setIsPlaying(
-                false,
-              );
+              setIsPlaying(false);
             }}
             aria-label={
               video.altText ??
               video.title
             }
           />
+        ) : (
+          <div className="festival-reel-card__error">
+            <span>
+              Video unavailable
+            </span>
+          </div>
         )}
 
-        {!hasVideoError && (
+        {!hasVideoError && videoUrl && (
           <>
             <button
               type="button"
@@ -479,7 +399,6 @@ export default function FestivalReelCard({
         />
 
         <div className="festival-reel-card__content">
-
           <span className="festival-reel-card__badge">
             Festival Reel
           </span>
@@ -493,9 +412,7 @@ export default function FestivalReelCard({
               {video.description}
             </p>
           )}
-
         </div>
-
       </div>
     </article>
   );
