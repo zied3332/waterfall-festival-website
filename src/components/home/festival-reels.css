@@ -1,15 +1,19 @@
-/* =========================
-   Festival reels section
-========================= */
+/* ============================================================
+   WATERFALL FESTIVAL — REELS
+   Reels-first homepage section
+   ============================================================ */
 
 .festival-reels {
   position: relative;
-
   overflow: hidden;
 
-  padding:
-    clamp(62px, 8vw, 110px)
-    0;
+  width: 100%;
+
+  /*
+   * The reels are now the first visual element on the homepage,
+   * so there should be almost no empty space above them.
+   */
+  padding: 10px 0 18px;
 
   background:
     radial-gradient(
@@ -32,9 +36,11 @@
 }
 
 
-/* =========================
-   Header
-========================= */
+/* ============================================================
+   HEADER
+   Kept for compatibility, but FestivalReelsSection no longer
+   renders the old large heading.
+   ============================================================ */
 
 .festival-reels__header {
   display: flex;
@@ -43,8 +49,7 @@
 
   gap: 28px;
 
-  margin-bottom:
-    clamp(26px, 4vw, 42px);
+  margin-bottom: 20px;
 }
 
 .festival-reels__heading {
@@ -96,10 +101,7 @@
 .festival-reels__header p {
   max-width: 540px;
 
-  margin:
-    14px
-    0
-    0;
+  margin: 14px 0 0;
 
   color:
     rgba(255, 255, 255, 0.62);
@@ -110,9 +112,9 @@
 }
 
 
-/* =========================
-   Controls
-========================= */
+/* ============================================================
+   CONTROLS
+   ============================================================ */
 
 .festival-reels__controls {
   display: flex;
@@ -129,7 +131,8 @@
 
   padding: 0;
 
-  border: 1px solid
+  border:
+    1px solid
     rgba(255, 255, 255, 0.12);
 
   border-radius: 50%;
@@ -160,16 +163,17 @@
 }
 
 .festival-reels__controls button:focus-visible {
-  outline: 3px solid
+  outline:
+    3px solid
     rgba(192, 132, 252, 0.45);
 
   outline-offset: 3px;
 }
 
 
-/* =========================
-   Reels track
-========================= */
+/* ============================================================
+   REELS TRACK
+   ============================================================ */
 
 .festival-reels__track {
   display: grid;
@@ -191,7 +195,7 @@
   padding:
     2px
     2px
-    16px;
+    14px;
 
   scroll-behavior: smooth;
 
@@ -212,9 +216,9 @@
 }
 
 
-/* =========================
-   Reel card
-========================= */
+/* ============================================================
+   REEL CARD
+   ============================================================ */
 
 .festival-reel-card {
   min-width: 0;
@@ -229,7 +233,8 @@
 
   aspect-ratio: 9 / 16;
 
-  border: 1px solid
+  border:
+    1px solid
     rgba(255, 255, 255, 0.09);
 
   border-radius: 20px;
@@ -257,9 +262,39 @@
 }
 
 
-/* =========================
-   Card overlays
-========================= */
+/* ============================================================
+   VIDEO ERROR
+   ============================================================ */
+
+.festival-reel-card__error {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #070812,
+      #02030a
+    );
+
+  color:
+    rgba(255, 255, 255, 0.55);
+
+  font-size: 0.78rem;
+
+  text-align: center;
+}
+
+
+/* ============================================================
+   CARD GRADIENT
+   ============================================================ */
 
 .festival-reel-card__gradient {
   position: absolute;
@@ -271,21 +306,18 @@
   background:
     linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.04)
-        28%,
-      rgba(0, 0, 0, 0.2)
-        52%,
-      rgba(0, 0, 0, 0.86)
-        100%
+      rgba(0, 0, 0, 0.04) 28%,
+      rgba(0, 0, 0, 0.2) 52%,
+      rgba(0, 0, 0, 0.86) 100%
     );
 
   pointer-events: none;
 }
 
 
-/* =========================
-   Play / pause control
-========================= */
+/* ============================================================
+   PLAY / PAUSE
+   ============================================================ */
 
 .festival-reel-card__play {
   position: absolute;
@@ -303,7 +335,8 @@
 
   padding: 0;
 
-  border: 1px solid
+  border:
+    1px solid
     rgba(255, 255, 255, 0.2);
 
   border-radius: 50%;
@@ -347,22 +380,12 @@
     scale(1.05);
 }
 
-/*
- * Once autoplay begins we don't want
- * a large pause icon permanently
- * covering the reel.
- */
 .festival-reel-card__play--playing {
   opacity: 0;
 
   pointer-events: none;
 }
 
-/*
- * Desktop users can still reveal the
- * pause control by hovering over the
- * reel.
- */
 .festival-reel-card__media:hover
   .festival-reel-card__play--playing {
   opacity: 1;
@@ -373,16 +396,17 @@
 .festival-reel-card__play:focus-visible {
   opacity: 1;
 
-  outline: 3px solid
+  outline:
+    3px solid
     rgba(192, 132, 252, 0.55);
 
   outline-offset: 4px;
 }
 
 
-/* =========================
-   Sound control
-========================= */
+/* ============================================================
+   SOUND
+   ============================================================ */
 
 .festival-reel-card__sound {
   position: absolute;
@@ -400,7 +424,8 @@
 
   padding: 0;
 
-  border: 1px solid
+  border:
+    1px solid
     rgba(255, 255, 255, 0.14);
 
   border-radius: 50%;
@@ -437,16 +462,17 @@
 }
 
 .festival-reel-card__sound:focus-visible {
-  outline: 3px solid
+  outline:
+    3px solid
     rgba(192, 132, 252, 0.45);
 
   outline-offset: 3px;
 }
 
 
-/* =========================
-   Card content
-========================= */
+/* ============================================================
+   CARD CONTENT
+   ============================================================ */
 
 .festival-reel-card__content {
   position: absolute;
@@ -480,11 +506,12 @@
 
   color: #ffffff;
 
-  font-size: clamp(
-    1rem,
-    1.5vw,
-    1.35rem
-  );
+  font-size:
+    clamp(
+      1rem,
+      1.5vw,
+      1.35rem
+    );
 
   font-weight: 850;
 
@@ -512,13 +539,14 @@
     vertical;
 
   -webkit-line-clamp: 2;
+
   line-clamp: 2;
 }
 
 
-/* =========================
-   Footer
-========================= */
+/* ============================================================
+   FOOTER
+   ============================================================ */
 
 .festival-reels__footer {
   display: flex;
@@ -527,7 +555,7 @@
 
   gap: 20px;
 
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .festival-reels__footer > span {
@@ -564,9 +592,9 @@
 }
 
 
-/* =========================
-   Loading
-========================= */
+/* ============================================================
+   LOADING
+   ============================================================ */
 
 .festival-reels__loading {
   display: grid;
@@ -585,12 +613,9 @@
   background:
     linear-gradient(
       110deg,
-      rgba(255, 255, 255, 0.04)
-        8%,
-      rgba(255, 255, 255, 0.08)
-        18%,
-      rgba(255, 255, 255, 0.04)
-        33%
+      rgba(255, 255, 255, 0.04) 8%,
+      rgba(255, 255, 255, 0.08) 18%,
+      rgba(255, 255, 255, 0.04) 33%
     );
 
   background-size:
@@ -610,9 +635,50 @@
 }
 
 
-/* =========================
-   Tablet
-========================= */
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.festival-reels--empty {
+  min-height: 260px;
+
+  display: flex;
+  align-items: center;
+}
+
+.festival-reels__empty {
+  min-height: 180px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  gap: 10px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.06);
+
+  border-radius: 18px;
+
+  background:
+    rgba(255, 255, 255, 0.02);
+
+  color:
+    rgba(255, 255, 255, 0.55);
+
+  text-align: center;
+}
+
+.festival-reels__empty svg {
+  color: #c084fc;
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
 
 @media (max-width: 900px) {
   .festival-reels__container {
@@ -644,16 +710,20 @@
 }
 
 
-/* =========================
-   Phones
-========================= */
+/* ============================================================
+   PHONES
+   ============================================================ */
 
 @media (max-width: 640px) {
   .festival-reels {
+    /*
+     * Critical for the reels-first layout.
+     * Removes the old 54px blank space.
+     */
     padding:
-      54px
+      6px
       0
-      58px;
+      14px;
   }
 
   .festival-reels__container {
@@ -667,7 +737,7 @@
       0
       18px;
 
-    margin-bottom: 22px;
+    margin-bottom: 14px;
   }
 
   .festival-reels__header h2 {
@@ -701,7 +771,7 @@
     padding:
       2px
       18px
-      14px;
+      12px;
 
     scroll-padding-left:
       18px;
@@ -717,12 +787,6 @@
     left: 14px;
   }
 
-  /*
-   * On touch devices the reel itself
-   * can be tapped to pause/play, so a
-   * permanent center pause icon is not
-   * necessary while playing.
-   */
   .festival-reel-card__play {
     width: 52px;
     height: 52px;
@@ -745,7 +809,7 @@
       0
       18px;
 
-    margin-top: 8px;
+    margin-top: 5px;
   }
 
   .festival-reels__footer > span {
@@ -769,20 +833,42 @@
       0
       18px;
   }
+
+  .festival-reels--empty {
+    min-height: 200px;
+
+    padding:
+      0
+      18px;
+  }
+
+  .festival-reels__empty {
+    min-height: 150px;
+  }
 }
 
 
-/* =========================
-   Small phones
-========================= */
+/* ============================================================
+   SMALL PHONES
+   ============================================================ */
 
 @media (max-width: 390px) {
+  .festival-reels {
+    padding-top: 4px;
+  }
+
   .festival-reels__track {
     grid-auto-columns:
       min(
         82vw,
         315px
       );
+
+    padding-left: 15px;
+    padding-right: 15px;
+
+    scroll-padding-left:
+      15px;
   }
 
   .festival-reels__header {
@@ -791,15 +877,13 @@
       15px;
   }
 
-  .festival-reels__track {
-    padding-left: 15px;
-    padding-right: 15px;
-
-    scroll-padding-left:
+  .festival-reels__footer {
+    padding:
+      0
       15px;
   }
 
-  .festival-reels__footer {
+  .festival-reels__loading {
     padding:
       0
       15px;
@@ -807,15 +891,14 @@
 }
 
 
-/* =========================
-   Touch devices
-========================= */
+/* ============================================================
+   TOUCH DEVICES
+   ============================================================ */
 
 @media (hover: none) {
   .festival-reel-card__play:hover,
   .festival-reel-card__sound:hover,
-  .festival-reels__controls
-    button:hover {
+  .festival-reels__controls button:hover {
     transform: none;
   }
 
@@ -828,9 +911,9 @@
 }
 
 
-/* =========================
-   Reduced motion
-========================= */
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
 
 @media (
   prefers-reduced-motion: reduce

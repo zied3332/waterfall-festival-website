@@ -26,106 +26,6 @@ import FestivalReelCard from "./FestivalReelCard";
 
 import "./festival-reels.css";
 
-/* =========================================================
-   LOCAL FALLBACK REELS
-
-   Used when:
-   - The API/backend fails
-   - The backend returns no homepage videos
-
-   Files:
-   public/videos/reels/waterfall-reel-1.mp4
-   public/videos/reels/waterfall-reel-2.mp4
-   public/videos/reels/waterfall-reel-3.mp4
-========================================================= */
-
-const FALLBACK_REELS: GalleryImage[] = [
-  {
-    id: -1,
-
-    title:
-      "Waterfall Festival Moment 1",
-
-    mediaType:
-      "VIDEO",
-
-    status:
-      "PUBLISHED",
-
-    showOnHomepage:
-      true,
-
-    homepageSortOrder:
-      1,
-
-    imageUrl:
-      "/videos/reels/waterfall-reel-1.mp4",
-  },
-
-  {
-    id: -2,
-
-    title:
-      "Waterfall Festival Moment 2",
-
-    mediaType:
-      "VIDEO",
-
-    status:
-      "PUBLISHED",
-
-    showOnHomepage:
-      true,
-
-    homepageSortOrder:
-      2,
-
-    imageUrl:
-      "/videos/reels/waterfall-reel-2.mp4",
-  },
-
-  {
-    id: -3,
-
-    title:
-      "Waterfall Festival Moment 3",
-
-    mediaType:
-      "VIDEO",
-
-    status:
-      "PUBLISHED",
-
-    showOnHomepage:
-      true,
-
-    homepageSortOrder:
-      3,
-
-    imageUrl:
-      "/videos/reels/waterfall-reel-3.mp4",
-  },
-] as GalleryImage[];
-
-/* =========================================================
-   LOCAL FALLBACK VIDEO PATHS
-
-   These are passed directly to each FestivalReelCard.
-
-   This is important because we do NOT want the card
-   to guess its fallback based on homepageSortOrder.
-
-   Card 1 -> reel 1
-   Card 2 -> reel 2
-   Card 3 -> reel 3
-========================================================= */
-
-const FALLBACK_VIDEO_URLS = [
-  "/videos/reels/waterfall-reel-1.mp4",
-  "/videos/reels/waterfall-reel-2.mp4",
-  "/videos/reels/waterfall-reel-3.mp4",
-];
-
 export default function FestivalReelsSection() {
   const [videos, setVideos] =
     useState<GalleryImage[]>([]);
@@ -133,10 +33,19 @@ export default function FestivalReelsSection() {
   const [isLoading, setIsLoading] =
     useState(true);
 
+  const [hasError, setHasError] =
+    useState(false);
+
   const scrollContainerRef =
     useRef<HTMLDivElement | null>(
       null,
     );
+
+  /*
+   * =========================================================
+   * LOAD HOMEPAGE VIDEOS FROM DATABASE
+   * =========================================================
+   */
 
   useEffect(() => {
     let isMounted = true;
@@ -144,6 +53,7 @@ export default function FestivalReelsSection() {
     async function loadVideos() {
       try {
         setIsLoading(true);
+        setHasError(false);
 
         const response =
           await getHomepageVideos();
@@ -171,41 +81,6 @@ export default function FestivalReelsSection() {
                 secondVideo.homepageSortOrder,
             );
 
-        /*
-         * Backend works, but there are
-         * no homepage videos.
-         *
-         * Use the local fallback reels.
-         */
-
-        if (
-          homepageVideos.length === 0
-        ) {
-          console.warn(
-            "No homepage reels returned. Using local fallback reels.",
-          );
-
-          setVideos(
-            FALLBACK_REELS,
-          );
-
-          return;
-        }
-
-        /*
-         * Backend returned videos.
-         *
-         * We keep the backend records.
-         *
-         * FestivalReelCard will try the
-         * remote video first.
-         *
-         * If the remote video fails,
-         * the card receives its exact
-         * local fallback URL based on
-         * its position in this list.
-         */
-
         setVideos(
           homepageVideos,
         );
@@ -214,26 +89,16 @@ export default function FestivalReelsSection() {
           return;
         }
 
-        /*
-         * Backend/API unavailable.
-         *
-         * Use the local reels so this
-         * homepage section never disappears.
-         */
-
-        console.warn(
-          "Festival reels API unavailable. Using local fallback reels.",
+        console.error(
+          "Unable to load homepage festival videos.",
           error,
         );
 
-        setVideos(
-          FALLBACK_REELS,
-        );
+        setVideos([]);
+        setHasError(true);
       } finally {
         if (isMounted) {
-          setIsLoading(
-            false,
-          );
+          setIsLoading(false);
         }
       }
     }
@@ -244,6 +109,12 @@ export default function FestivalReelsSection() {
       isMounted = false;
     };
   }, []);
+
+  /*
+   * =========================================================
+   * REEL NAVIGATION
+   * =========================================================
+   */
 
   function scrollReels(
     direction:
@@ -279,140 +150,81 @@ export default function FestivalReelsSection() {
     });
   }
 
-  /* =========================================================
-     LOADING STATE
-  ========================================================= */
+  /*
+   * =========================================================
+   * LOADING
+   * =========================================================
+   */
 
   if (isLoading) {
     return (
       <section
         className="festival-reels"
-        aria-label="Festival reels"
+        aria-label="Festival video reels"
       >
         <div className="festival-reels__container">
-
-          <div className="festival-reels__header">
-
-            <div>
-
-              <span className="festival-reels__eyebrow">
-                Festival Moments
-              </span>
-
-              <h2>
-                Feel the Waterfall
-              </h2>
-
-            </div>
-
-          </div>
-
-          <div
-            className="festival-reels__loading"
-            aria-hidden="true"
-          >
+          <div className="festival-reels__loading">
             <div />
             <div />
             <div />
           </div>
-
         </div>
       </section>
     );
   }
 
-  /* =========================================================
-     FESTIVAL REELS
-  ========================================================= */
+  /*
+   * =========================================================
+   * EMPTY / ERROR
+   * =========================================================
+   */
+
+  if (videos.length === 0) {
+    return (
+      <section
+        className="festival-reels festival-reels--empty"
+        aria-label="Festival video reels"
+      >
+        <div className="festival-reels__container">
+          <div className="festival-reels__empty">
+            <Film
+              size={22}
+              aria-hidden="true"
+            />
+
+            <span>
+              {hasError
+                ? "Festival moments are temporarily unavailable."
+                : "New festival moments coming soon."}
+            </span>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  /*
+   * =========================================================
+   * REELS
+   * =========================================================
+   *
+   * No large heading is rendered here.
+   * The videos are the first visual content.
+   * =========================================================
+   */
 
   return (
     <section
-      className="festival-reels"
-      aria-labelledby="festival-reels-title"
+      className="festival-reels festival-reels--hero"
+      aria-label="Waterfall Festival video reels"
     >
       <div className="festival-reels__container">
 
-        {/* =========================
-            Header
-        ========================= */}
-
-        <div className="festival-reels__header">
-
-          <div className="festival-reels__heading">
-
-            <div className="festival-reels__eyebrow">
-
-              <Film
-                size={15}
-                aria-hidden="true"
-              />
-
-              <span>
-                Festival Moments
-              </span>
-
-            </div>
-
-            <h2
-              id="festival-reels-title"
-            >
-              Feel the Waterfall
-            </h2>
-
-            <p>
-              Real moments from Waterfall
-              Festival — music, fire,
-              lights, and energy from Koh
-              Phangan.
-            </p>
-
-          </div>
-
-          {/* =========================
-              Desktop controls
-          ========================= */}
-
-          {videos.length > 1 && (
-            <div className="festival-reels__controls">
-
-              <button
-                type="button"
-                onClick={() =>
-                  scrollReels(
-                    "left",
-                  )
-                }
-                aria-label="Previous festival reels"
-              >
-                <ArrowLeft
-                  size={19}
-                  aria-hidden="true"
-                />
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  scrollReels(
-                    "right",
-                  )
-                }
-                aria-label="Next festival reels"
-              >
-                <ArrowRight
-                  size={19}
-                  aria-hidden="true"
-                />
-              </button>
-
-            </div>
-          )}
-
-        </div>
-
-        {/* =========================
-            Reels track
-        ========================= */}
+        {/*
+         * =====================================================
+         * VIDEO TRACK
+         * =====================================================
+         */}
 
         <div
           ref={scrollContainerRef}
@@ -420,71 +232,73 @@ export default function FestivalReelsSection() {
           aria-label="Festival video reels"
         >
           {videos.map(
-            (
-              video,
-              index,
-            ) => {
-              /*
-               * Give each card its own
-               * deterministic local fallback.
-               *
-               * 0 -> reel 1
-               * 1 -> reel 2
-               * 2 -> reel 3
-               *
-               * If there are more than
-               * three backend videos, the
-               * fallback sequence repeats.
-               */
-
-              const fallbackVideoUrl =
-                FALLBACK_VIDEO_URLS[
-                  index %
-                    FALLBACK_VIDEO_URLS.length
-                ];
-
-              return (
-                <FestivalReelCard
-                  key={video.id}
-                  video={video}
-                  fallbackVideoUrl={
-                    fallbackVideoUrl
-                  }
-                />
-              );
-            },
+            (video) => (
+              <FestivalReelCard
+                key={video.id}
+                video={video}
+              />
+            ),
           )}
         </div>
 
-        {/* =========================
-            Footer
-        ========================= */}
+        {/*
+         * =====================================================
+         * COMPACT FOOTER
+         * =====================================================
+         */}
 
         <div className="festival-reels__footer">
+          <span>
+            {videos.length > 1
+              ? "Swipe to watch more"
+              : "Festival moment"}
+          </span>
 
-          {videos.length > 1 ? (
-            <span>
-              Swipe to watch more
-            </span>
-          ) : (
-            <span>
-              Festival moments
-            </span>
-          )}
+          <div className="festival-reels__footer-actions">
+            {videos.length > 1 && (
+              <div className="festival-reels__controls">
+                <button
+                  type="button"
+                  onClick={() =>
+                    scrollReels(
+                      "left",
+                    )
+                  }
+                  aria-label="Previous festival reel"
+                >
+                  <ArrowLeft
+                    size={18}
+                    aria-hidden="true"
+                  />
+                </button>
 
-          <Link to="/gallery">
+                <button
+                  type="button"
+                  onClick={() =>
+                    scrollReels(
+                      "right",
+                    )
+                  }
+                  aria-label="Next festival reel"
+                >
+                  <ArrowRight
+                    size={18}
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            )}
 
-            View Gallery
+            <Link to="/gallery">
+              View Gallery
 
-            <ArrowRight
-              size={16}
-              aria-hidden="true"
-            />
-
-          </Link>
-
+              <ArrowRight
+                size={15}
+                aria-hidden="true"
+              />
+            </Link>
+          </div>
         </div>
-
       </div>
     </section>
   );
