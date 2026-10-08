@@ -892,3 +892,55 @@
     width: 100%;
   }
 }
+
+/* ==========================================
+   MESSAGES INBOX — WORKSPACE REDESIGN
+   ========================================== */
+
+@media (min-width: 1181px) {
+  .admin-messages__workspace:has(
+    .admin-messages__drawer
+  ) {
+    grid-template-columns:
+      minmax(420px, 0.9fr)
+      minmax(0, 1.1fr);
+    align-items: start;
+  }
+
+  .admin-messages__drawer {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+
+  .admin-messages__drawer-content {
+    padding: 24px;
+  }
+
+  .admin-messages__message-body {
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .admin-messages__message-body p {
+    font-size: 0.9rem;
+    line-height: 1.8;
+  }
+
+  .admin-messages__drawer-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .admin-messages__contact-card strong {
+    font-size: 0.85rem;
+  }
+
+  .admin-messages__contact-card a {
+    font-size: 0.75rem;
+  }
+
+  .admin-messages__details dd {
+    font-size: 0.75rem;
+  }
+}
