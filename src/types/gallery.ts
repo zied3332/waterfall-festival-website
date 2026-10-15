@@ -96,5 +96,7 @@ export interface CreateGalleryImageInput {
   eventId?: number;
 }
 
-export interface UpdateGalleryImageInput
-  extends Partial<CreateGalleryImageInput> {}
+export type UpdateGalleryImageInput = Partial<Omit<
+  CreateGalleryImageInput,
+  "imageUrl" | "publicId" | "thumbnailUrl" | "mediaType"
+>>;

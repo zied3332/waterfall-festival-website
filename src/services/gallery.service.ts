@@ -1,4 +1,4 @@
-import { api } from "./api.service";
+import { api, getApiMediaUrl } from "./api.service";
 
 import type {
   CreateGalleryImageInput,
@@ -55,12 +55,24 @@ export type UploadGalleryVideoInput = {
   eventId?: number;
 };
 
+function normalizeGalleryItem(item: GalleryImage): GalleryImage {
+  return {
+    ...item,
+    imageUrl: getApiMediaUrl(item.imageUrl) ?? "",
+    thumbnailUrl: getApiMediaUrl(item.thumbnailUrl),
+  };
+}
+
+function normalizeGalleryItems(items: GalleryImage[]): GalleryImage[] {
+  return items.map(normalizeGalleryItem);
+}
+
 export function getGallery(): Promise<
   GalleryImage[]
 > {
   return api.get<GalleryImage[]>(
     "/gallery",
-  );
+  ).then(normalizeGalleryItems);
 }
 
 export function getGalleryImages(): Promise<
@@ -68,7 +80,7 @@ export function getGalleryImages(): Promise<
 > {
   return api.get<GalleryImage[]>(
     "/gallery/images",
-  );
+  ).then(normalizeGalleryItems);
 }
 
 export function getGalleryVideos(): Promise<
@@ -76,7 +88,7 @@ export function getGalleryVideos(): Promise<
 > {
   return api.get<GalleryImage[]>(
     "/gallery/videos",
-  );
+  ).then(normalizeGalleryItems);
 }
 
 export function getHomepageVideos(): Promise<
@@ -84,7 +96,7 @@ export function getHomepageVideos(): Promise<
 > {
   return api.get<GalleryImage[]>(
     "/gallery/homepage-videos",
-  );
+  ).then(normalizeGalleryItems);
 }
 
 export function getAdminGallery(): Promise<
@@ -92,7 +104,7 @@ export function getAdminGallery(): Promise<
 > {
   return api.get<GalleryImage[]>(
     "/admin/gallery",
-  );
+  ).then(normalizeGalleryItems);
 }
 
 export function getGalleryImage(
@@ -100,7 +112,7 @@ export function getGalleryImage(
 ): Promise<GalleryImage> {
   return api.get<GalleryImage>(
     `/admin/gallery/${id}`,
-  );
+  ).then(normalizeGalleryItem);
 }
 
 export function createGalleryImage(
@@ -109,7 +121,7 @@ export function createGalleryImage(
   return api.post<GalleryImage>(
     "/admin/gallery",
     data,
-  );
+  ).then(normalizeGalleryItem);
 }
 
 export function uploadGalleryImages(
@@ -177,7 +189,7 @@ export function uploadGalleryImages(
   >(
     "/admin/gallery/upload",
     formData,
-  );
+  ).then((result) => ({ ...result, items: normalizeGalleryItems(result.items) }));
 }
 
 export function uploadGalleryVideo(
@@ -253,7 +265,7 @@ export function uploadGalleryVideo(
   return api.post<GalleryImage>(
     "/admin/gallery/upload/video",
     formData,
-  );
+  ).then(normalizeGalleryItem);
 }
 
 export function updateGalleryImage(
@@ -263,7 +275,7 @@ export function updateGalleryImage(
   return api.patch<GalleryImage>(
     `/admin/gallery/${id}`,
     data,
-  );
+  ).then(normalizeGalleryItem);
 }
 
 export function deleteGalleryImage(

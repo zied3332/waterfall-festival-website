@@ -423,7 +423,15 @@ function AdminGallery() {
   }
 
   useEffect(() => {
-    void loadGallery();
+    let active = true;
+    getAdminGallery().then((items) => {
+      if (active) setGalleryItems(items);
+    }).catch((requestError: unknown) => {
+      if (active) setError(requestError instanceof Error ? requestError.message : "Failed to load gallery media.");
+    }).finally(() => {
+      if (active) setIsLoading(false);
+    });
+    return () => { active = false; };
   }, []);
 
   const filteredItems =
@@ -1011,9 +1019,6 @@ function AdminGallery() {
     const title =
       form.title.trim();
 
-    const imageUrl =
-      form.imageUrl.trim();
-
     const sortOrder =
       Number(
         form.sortOrder,
@@ -1027,17 +1032,6 @@ function AdminGallery() {
     if (!title) {
       setFormError(
         "The media title is required.",
-      );
-
-      return;
-    }
-
-    if (
-      editingItem &&
-      !imageUrl
-    ) {
-      setFormError(
-        "The media URL is required when editing.",
       );
 
       return;
@@ -1108,14 +1102,10 @@ function AdminGallery() {
             title,
 
             description:
-              form.description.trim() ||
-              undefined,
-
-            imageUrl,
+              form.description.trim(),
 
             altText:
-              form.altText.trim() ||
-              undefined,
+              form.altText.trim(),
 
             status:
               form.status,
@@ -2584,34 +2574,8 @@ function AdminGallery() {
 
                 {editingItem && (
                   <label>
-                    Media URL
-
-                    <input
-                      type="url"
-                      value={
-                        form.imageUrl
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        setForm(
-                          (
-                            currentForm,
-                          ) => ({
-                            ...currentForm,
-
-                            imageUrl:
-                              event
-                                .target
-                                .value,
-                          }),
-                        )
-                      }
-                      required
-                      disabled={
-                        isSubmitting
-                      }
-                    />
+                    Media URL (managed by storage)
+                    <input type="text" value={form.imageUrl} readOnly />
                   </label>
                 )}
 
@@ -2893,7 +2857,7 @@ function AdminGallery() {
                         Update the
                         metadata without
                         re-uploading the
-                        Cloudinary
+                        stored media
                         asset.
                       </p>
                     </div>
