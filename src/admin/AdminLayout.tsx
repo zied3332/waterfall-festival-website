@@ -9,6 +9,7 @@ import {
   CalendarRange,
   ChevronDown,
   CircleHelp,
+  HardDrive,
   Images,
   LayoutDashboard,
   LogOut,
@@ -101,6 +102,11 @@ const pageDetailsByPath: Record<
     title: "Gallery",
     description:
       "Upload and organize festival gallery content.",
+  },
+
+  "/admin/storage": {
+    title: "Storage & Media",
+    description: "Measure supported local media storage and review upload estimates.",
   },
 
   "/admin/experience": {
@@ -440,6 +446,11 @@ function AdminLayout() {
               <span>
                 Gallery
               </span>
+            </NavLink>
+
+            <NavLink to="/admin/storage">
+              <HardDrive size={18} />
+              <span>Storage &amp; Media</span>
             </NavLink>
 
             <NavLink

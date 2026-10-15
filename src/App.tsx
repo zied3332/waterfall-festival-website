@@ -26,6 +26,7 @@ import AdminLogin from "./admin/pages/AdminLogin";
 import AdminMainEvent from "./admin/pages/AdminMainEvent";
 import AdminMessages from "./admin/pages/AdminMessages";
 import AdminSettings from "./admin/pages/AdminSettings";
+import AdminStorage from "./admin/pages/AdminStorage";
 import AdminTickets from "./admin/pages/AdminTickets";
 import Dashboard from "./admin/pages/Dashboard";
 
@@ -347,6 +348,8 @@ function AppContent() {
                 <AdminGallery />
               }
             />
+
+            <Route path="storage" element={<AdminStorage />} />
 
             <Route
               path="experience"
