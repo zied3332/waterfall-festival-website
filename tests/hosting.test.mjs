@@ -27,6 +27,11 @@ test('permission denial is provider status, not an expired admin login', async (
   const { hostingPresentation } = await loadStorage();
   assert.equal(hostingPresentation.hostingMessage(hostingFixture('permission_denied')), 'cPanel denied access to hosting statistics. Check the API token permissions or hosting API access settings.');
 });
+test('rejects coerced status values and success containing an error code', async () => {
+  const { hosting } = await loadStorage();
+  assert.throws(() => hosting.parseHostingStats({ ...hostingFixture(), status: ['ok'] }));
+  assert.throws(() => hosting.parseHostingStats({ ...hostingFixture(), errorCode: 'permission_denied' }));
+});
 for (const status of [401, 403, 404, 500]) {
   test(`HTTP ${status} fails safely and does not expose server text`, async () => {
     const { hosting, hostingPresentation } = await loadStorage(async () => Response.json({ message: 'secret /private/config' }, { status }));

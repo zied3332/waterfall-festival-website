@@ -5,7 +5,7 @@ export function parseHostingStats(value: unknown): HostingStorageStats {
   const invalid = () => { throw new Error("Invalid hosting measurement response"); };
   if (!value || typeof value !== "object" || Array.isArray(value)) return invalid();
   const data = value as Record<string, unknown>;
-  if (!["ok", "unavailable", "unlimited", "not_configured"].includes(String(data.status)) || data.source !== "cpanel_uapi" || typeof data.isUnlimited !== "boolean") return invalid();
+  if (typeof data.status !== "string" || !["ok", "unavailable", "unlimited", "not_configured"].includes(data.status) || data.source !== "cpanel_uapi" || typeof data.isUnlimited !== "boolean") return invalid();
   if (data.measuredAt !== null && (typeof data.measuredAt !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(data.measuredAt) || !Number.isFinite(Date.parse(data.measuredAt)))) return invalid();
   for (const key of ["quotaBytes", "usedBytes", "availableBytes", "usagePercent"]) {
     const number = data[key];
@@ -13,6 +13,7 @@ export function parseHostingStats(value: unknown): HostingStorageStats {
   }
   if (data.errorCode !== undefined && (typeof data.errorCode !== "string" || !/^[a-z][a-z0-9_]{0,63}$/.test(data.errorCode))) return invalid();
   const success = data.status === "ok" || data.status === "unlimited";
+  if (success && data.errorCode !== undefined) return invalid();
   if (data.isUnlimited !== (data.status === "unlimited") || (success && data.measuredAt === null)) return invalid();
   if (!success && [data.quotaBytes, data.usedBytes, data.availableBytes, data.usagePercent, data.measuredAt].some(field => field !== null)) return invalid();
   if (data.isUnlimited && [data.quotaBytes, data.availableBytes, data.usagePercent].some(field => field !== null)) return invalid();

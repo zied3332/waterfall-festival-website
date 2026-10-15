@@ -5,12 +5,15 @@ import { resolve, join, extname, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { storageFixture } from './helpers/storage-fixtures.mjs';
+import { hostingFixture } from './helpers/hosting-fixtures.mjs';
 
 // This smoke test serves only disposable fixtures and blocks all remote origins.
 const browserPath = process.env.GALLERY_TEST_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const profile = await mkdtemp(join(tmpdir(), 'storage-smoke-'));
 let mode = 'complete';
 let responseDelay = 0;
+let hostingMode = 'permission_denied';
+let hostingDelay = 0;
 const requests = [];
 const apiServer = createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,6 +22,13 @@ const apiServer = createServer(async (req, res) => {
   requests.push({ method: req.method, path: req.url, token: req.headers.authorization });
   const json = (data, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(data)); };
   if (req.url === '/auth/me') return json({ id: 1, email: 'storage@example.invalid', firstName: 'Storage', lastName: 'Admin', role: 'ADMIN' });
+  if (req.url === '/admin/storage/hosting') {
+    const current = hostingMode;
+    await new Promise(resolve => setTimeout(resolve, hostingDelay));
+    if (current === 'network') { req.socket.destroy(); return; }
+    if (current.startsWith('http')) return json({ message: 'secret /private/config' }, Number(current.slice(4)));
+    return json(hostingFixture(current));
+  }
   if (req.url === '/admin/storage/stats') {
     const currentMode = mode;
     await new Promise(resolve => setTimeout(resolve, responseDelay));
@@ -89,19 +99,21 @@ try {
   await send('Emulation.setDeviceMetricsOverride', { width: 1365, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url: `${origin}/admin/storage` });
   await waitFor(() => evaluate(`document.querySelectorAll('.admin-storage__card').length === 4`), 'storage route');
-  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.admin-storage__card-value')].map(element=>element.textContent)`), ['3','2','4','16 MB']);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.admin-storage__overview .admin-storage__card-value')].map(element=>element.textContent)`), ['3','2','4','16 MB']);
   assert.equal(await evaluate(`document.querySelector('.admin-nav a[href="/admin/storage"]').getAttribute('aria-current')`), 'page');
-  assert.equal(await evaluate(`document.querySelector('.admin-storage time').getAttribute('datetime')`), '2026-10-15T10:00:01.000Z');
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__measurement time').getAttribute('datetime')`), '2026-10-15T10:00:01.000Z');
   assert.equal(requests.find(request => request.path === '/admin/storage/stats').token, 'Bearer storage-browser-token');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__segments').getAttribute('aria-label').includes('75%')`), true);
   assert.deepEqual(await evaluate(`[...document.querySelectorAll('.admin-storage__segment')].map(segment=>parseFloat(segment.style.width))`), [18.75,75,6.25]);
-  assert.equal(await evaluate(`document.querySelector('.admin-storage__estimator').textContent.includes('Hosting capacity not connected') && document.querySelector('.admin-storage__estimate').textContent.includes('No estimate yet')`), true);
+  await waitFor(() => evaluate(`document.querySelector('.admin-hosting').textContent.includes('cPanel denied access')`), 'provider permission denial');
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.admin-hosting__card .admin-storage__card-value')].map(e=>e.textContent)`), ['—','—','—','—']);
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__estimator').textContent.includes('Simulation — not connected to live hosting capacity.') && document.querySelector('.admin-storage__estimate').textContent.includes('No estimate yet')`), true);
   async function setSpace(value) {
     await evaluate(`(() => { const input=document.querySelector('.admin-storage__simulation input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)}); input.dispatchEvent(new Event('input',{bubbles:true})); })()`);
   }
   await setSpace('1');
   await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent.replace(/[^0-9]/g,'') === '1000'`), 'hypothetical 1GB simulation');
-  await evaluate(`document.querySelector('.admin-storage__estimator select').value='5'; document.querySelector('.admin-storage__estimator select').dispatchEvent(new Event('change',{bubbles:true}))`);
+  await evaluate(`document.querySelector('select[id$="-average"]').value='5'; document.querySelector('select[id$="-average"]').dispatchEvent(new Event('change',{bubbles:true}))`);
   await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent === '200'`), 'average image assumption updates simulation');
   await setSpace('0');
   await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent === '0'`), 'zero hypothetical free space');
@@ -121,6 +133,8 @@ try {
     assert.equal(await evaluate(`getComputedStyle(document.querySelector('.admin-storage__overview')).gridTemplateColumns.split(' ').length`), columns);
     assert.equal(await evaluate(`document.documentElement.scrollWidth <= ${width}`), true, `no overflow at ${width}px`);
     assert.equal(await evaluate(`[...document.querySelectorAll('.admin-storage__card, .admin-storage__panel')].every(panel => { const bounds=panel.getBoundingClientRect(); return bounds.left >= 0 && bounds.right <= innerWidth; })`), true, `storage panels stay within ${width}px viewport`);
+    assert.equal(await evaluate(`[...document.querySelectorAll('.admin-hosting__card')].every(panel => { const bounds=panel.getBoundingClientRect(); return bounds.left >= 0 && bounds.right <= innerWidth; })`), true, `hosting cards stay within ${width}px viewport`);
+    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.admin-hosting__cards')).gridTemplateColumns.split(' ').length`), width <= 400 ? 1 : columns);
   }
   async function refreshScenario(next, expected) {
     mode = next;
@@ -133,7 +147,7 @@ try {
   assert.equal(await evaluate(`document.querySelector('.admin-storage__segments') === null && document.querySelector('.admin-storage__chart-unavailable') !== null`), true, 'partial results never invent percentages');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__alert').textContent.includes('directory does not exist')`), true);
   await refreshScenario('unavailable', 'Measurement unavailable');
-  assert.equal(await evaluate(`document.querySelector('.admin-storage__card-value').textContent`), 'Not measured');
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__overview .admin-storage__card-value').textContent`), 'Not measured');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__empty') === null`), true, 'unreadable is not empty');
   await refreshScenario('empty', 'No supported local media files found');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__card--total .admin-storage__card-value').textContent`), '0 B');
@@ -150,6 +164,49 @@ try {
     assert.equal(await evaluate(`document.querySelector('.admin-storage__overview') === null`), true);
   }
   await refreshScenario('complete', 'Measurement complete');
+  const hostingCalls = () => requests.filter(request => request.path === '/admin/storage/hosting').length;
+  async function refreshHosting(next, expected) {
+    hostingMode = next;
+    await evaluate(`document.querySelector('[aria-label="Refresh hosting statistics"]').click()`);
+    await waitFor(() => evaluate(`!document.querySelector('[aria-label="Refresh hosting statistics"]').disabled && document.querySelector('.admin-hosting').textContent.includes(${JSON.stringify(expected)})`), `hosting ${next}`);
+    assert.equal(await evaluate(`document.querySelector('.admin-storage__card--total .admin-storage__card-value').textContent`), '16 MB', 'hosting failure does not remove media measurements');
+  }
+  await refreshHosting('ok', 'Hosting measurements verified');
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.admin-hosting__card .admin-storage__card-value')].map(e=>e.textContent)`), ['100 GB','75 GB','25 GB','75%']);
+  assert.equal(requests.find(request => request.path === '/admin/storage/hosting').token, 'Bearer storage-browser-token');
+  assert.equal(await evaluate(`document.querySelector('[role="progressbar"]').getAttribute('aria-valuenow')`), '75');
+  assert.equal(await evaluate(`document.querySelector('.admin-hosting__utilization').dataset.level`), 'caution');
+  await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent.replace(/[^0-9]/g,'') === '5000'`), 'automatic live estimator uses selected 5MB assumption');
+  await evaluate(`(() => { const input=document.querySelector('input[id$="-reserve"]'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'10'); input.dispatchEvent(new Event('input',{bubbles:true})); })()`);
+  await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent.replace(/[^0-9]/g,'') === '4500'`), 'live reserve updates estimate');
+  await evaluate(`document.querySelector('select[id$="-mode"]').value='manual'; document.querySelector('select[id$="-mode"]').dispatchEvent(new Event('change',{bubbles:true}))`);
+  await setSpace('1');
+  await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent === '200'`), 'explicit manual mode remains hypothetical');
+  await refreshHosting('ok', 'Hosting measurements verified');
+  assert.equal(await evaluate(`document.querySelector('select[id$="-mode"]').value`), 'manual', 'explicit simulation choice survives refresh');
+  await evaluate(`document.querySelector('select[id$="-mode"]').value='live'; document.querySelector('select[id$="-mode"]').dispatchEvent(new Event('change',{bubbles:true}))`);
+  hostingDelay = 300; hostingMode = 'permission_denied';
+  const beforeHosting = hostingCalls();
+  await evaluate(`document.querySelector('[aria-label="Refresh hosting statistics"]').click(); document.querySelector('[aria-label="Refresh hosting statistics"]').click()`);
+  assert.equal(await evaluate(`document.querySelectorAll('.admin-hosting__skeleton').length`), 4);
+  assert.equal(await evaluate(`document.querySelector('select[id$="-mode"]').value`), 'manual', 'loading cannot retain stale live estimator');
+  await waitFor(() => evaluate(`!document.querySelector('[aria-label="Refresh hosting statistics"]').disabled`), 'hosting loading resolves');
+  assert.equal(hostingCalls(), beforeHosting + 1, 'hosting refresh is locked'); hostingDelay = 0;
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__estimate strong').textContent`), '200', 'manual amount survives live outage without copying live bytes');
+  for (const [next, text] of [['not_configured','Hosting monitoring is not configured'],['unlimited','Unlimited hosting quota'],['http401','Your session has expired'],['http403','Your admin account does not have permission'],['http500','could not be loaded or validated'],['network','could not be loaded or validated'],['malformed','could not be loaded or validated']]) {
+    await refreshHosting(next, text);
+    assert.equal(await evaluate(`document.querySelector('[role="progressbar"]') === null`), true);
+    assert.equal(await evaluate(`document.body.textContent.includes('secret /private')`), false);
+  }
+  await refreshHosting('partial', 'Hosting measurements verified');
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.admin-hosting__card .admin-storage__card-value')].map(e=>e.textContent)`), ['100 GB','—','25 GB','—']);
+  await refreshHosting('over', 'Hosting measurements verified');
+  assert.equal(await evaluate(`document.querySelector('[role="progressbar"]').getAttribute('aria-valuenow')`), '100');
+  assert.equal(await evaluate(`document.querySelector('[role="progressbar"]').getAttribute('aria-valuetext').includes('110% used')`), true);
+  assert.equal(await evaluate(`document.querySelector('.admin-hosting__utilization').dataset.level`), 'critical');
+  await refreshHosting('permission_denied', 'cPanel denied access');
+  const noHostingPolling = hostingCalls(); await delay(250);
+  assert.equal(hostingCalls(), noHostingPolling, 'hosting is never polled automatically');
   await evaluate(`document.querySelector('.admin-mobile-menu-button').click()`);
   await evaluate(`document.querySelector('.admin-nav a[href="/admin/gallery"]').click()`);
   await waitFor(() => evaluate(`location.pathname === '/admin/gallery' && document.querySelector('.admin-gallery') !== null`), 'existing admin gallery navigation');
@@ -184,7 +241,7 @@ try {
   await waitFor(() => evaluate(`location.pathname === '/admin/login'`), 'existing auth protection when session is removed');
   assert.deepEqual(browserErrors, []);
   assert.equal(requests.some(request => !['GET','OPTIONS'].includes(request.method)), false);
-  console.log('Storage browser smoke passed: protected route/navigation, bearer auth, real contract fixtures, refresh locking, partial/unavailable/empty states, safe errors, correct complete-only percentages, hypothetical capacity calculations, 2/4-card layouts, and existing gallery navigation. Real API requests: 0.');
+  console.log('Storage browser smoke passed: independent hosting/media refresh, loading, provider permission denial vs admin auth errors, malformed/partial/unlimited/network states, clamped utilization, live/reserve/manual estimates, stale-data removal, responsive layout, themes, and existing gallery navigation. Real API requests: 0.');
 } finally {
   if (ws?.readyState === WebSocket.OPEN) { try { await send('Browser.close'); } catch { /* browser can close before replying */ } ws.close(); }
   browser.kill();

@@ -7,9 +7,12 @@ import type { StorageStats } from "../../types/storage";
 import { formatStorageBytes, formatStorageCount, storageErrorMessage, STORAGE_CATEGORY_LABELS, STORAGE_DIRECTORY_LABELS, storageWarningMessage } from "../utils/storage";
 import AdminStorageBreakdown from "../components/AdminStorageBreakdown";
 import AdminStorageEstimator from "../components/AdminStorageEstimator";
+import AdminHostingCapacity from "../components/AdminHostingCapacity";
+import useHostingStorage from "../hooks/useHostingStorage";
 import "../style/admin-storage.css";
 
 export default function AdminStorage() {
+  const hosting = useHostingStorage();
   const [stats, setStats] = useState<StorageStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,9 +49,11 @@ export default function AdminStorage() {
   const complete = stats?.status === "ok";
 
   return <section className="admin-storage" aria-labelledby="storage-title" aria-busy={isLoading}>
+    <h1 id="storage-title">Storage &amp; Media</h1>
+    <AdminHostingCapacity hosting={hosting} />
     <header className="admin-storage__header">
       <div><span className="admin-storage__eyebrow"><HardDrive size={16} aria-hidden="true" />LOCAL MEDIA MONITORING</span>
-        <h1 id="storage-title">Storage &amp; Media</h1>
+        <h2>Local media monitoring</h2>
         <p>Measured media files on the backend server. Hosting capacity is a separate measurement.</p>
       </div>
       <button className="admin-storage__refresh" type="button" disabled={isLoading} onClick={refresh}>
@@ -96,7 +101,7 @@ export default function AdminStorage() {
     </>}
     <div className="admin-storage__insights">
       {stats && <AdminStorageBreakdown stats={stats} />}
-      <AdminStorageEstimator />
+      <AdminStorageEstimator availableBytes={hosting.stats?.status === "ok" && !hosting.loading && !hosting.error ? hosting.stats.availableBytes : null} />
     </div>
     {stats && <>
       <section className="admin-storage__panel" aria-labelledby="storage-details-title">

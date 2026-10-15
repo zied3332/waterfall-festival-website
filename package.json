@@ -10,6 +10,7 @@
     "test:gallery": "node --experimental-vm-modules --test tests/gallery.test.mjs",
     "test:gallery:browser": "npm run build && node tests/gallery-ui-smoke.mjs",
     "test:storage": "node --experimental-vm-modules --test tests/storage.test.mjs",
+    "test:hosting": "node --experimental-vm-modules --test tests/hosting.test.mjs",
     "test:storage:browser": "npm run build && node tests/storage-ui-smoke.mjs",
     "preview": "vite preview"
   },
