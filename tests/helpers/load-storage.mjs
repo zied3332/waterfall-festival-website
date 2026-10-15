@@ -21,5 +21,7 @@ export async function loadStorage(fetchImpl = async () => Response.json({})) {
   }
   const service = await load(resolve('src/services/storage.service.ts')); await service.evaluate();
   const presentation = await load(resolve('src/admin/utils/storage.ts')); await presentation.evaluate();
-  return { service: service.namespace, presentation: presentation.namespace };
+  const hosting = await load(resolve('src/services/hosting.service.ts')); await hosting.evaluate();
+  const hostingPresentation = await load(resolve('src/admin/utils/hosting.ts')); await hostingPresentation.evaluate();
+  return { service: service.namespace, presentation: presentation.namespace, hosting: hosting.namespace, hostingPresentation: hostingPresentation.namespace };
 }
