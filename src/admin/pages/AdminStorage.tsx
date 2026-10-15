@@ -5,6 +5,8 @@ import { ApiError } from "../../services/api.service";
 import { getAdminStorageStats } from "../../services/storage.service";
 import type { StorageStats } from "../../types/storage";
 import { formatStorageBytes, formatStorageCount, storageErrorMessage, STORAGE_CATEGORY_LABELS, STORAGE_DIRECTORY_LABELS, storageWarningMessage } from "../utils/storage";
+import AdminStorageBreakdown from "../components/AdminStorageBreakdown";
+import AdminStorageEstimator from "../components/AdminStorageEstimator";
 import "../style/admin-storage.css";
 
 export default function AdminStorage() {
@@ -91,6 +93,12 @@ export default function AdminStorage() {
           <small>{complete ? "Supported local media only" : "Incomplete measurement"}</small>
         </article>
       </div>
+    </>}
+    <div className="admin-storage__insights">
+      {stats && <AdminStorageBreakdown stats={stats} />}
+      <AdminStorageEstimator />
+    </div>
+    {stats && <>
       <section className="admin-storage__panel" aria-labelledby="storage-details-title">
         <div className="admin-storage__panel-heading"><h2 id="storage-details-title">File size details</h2><p>For incomplete categories, sizes describe only the files observed.</p></div>
         <dl className="admin-storage__details">

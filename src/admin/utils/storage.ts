@@ -43,3 +43,19 @@ export function storageErrorMessage(error: unknown): string {
   // Server error text is deliberately not rendered: it may contain internal paths.
   return "Storage measurements could not be loaded or validated. Check the API connection and try again.";
 }
+
+export function formatStoragePercent(percentage: number | null): string {
+  return percentage === null || !Number.isFinite(percentage) || percentage < 0 || percentage > 100
+    ? "Not available" : `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(percentage)}%`;
+}
+
+/** Hypothetical free space only: never infer hosting capacity from media bytes. */
+export function estimateUploadCapacity(availableSpace: string, unit: "MB" | "GB", averageImageMB: number): number | null {
+  const value = availableSpace.trim();
+  if (!["MB", "GB"].includes(unit) || !value || !/^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(value)) return null;
+  const amount = Number(value);
+  const bytes = amount * (unit === "GB" ? 1_000_000_000 : 1_000_000);
+  const averageBytes = averageImageMB * 1_000_000;
+  if (!Number.isFinite(bytes) || bytes < 0 || bytes > Number.MAX_SAFE_INTEGER || !Number.isFinite(averageBytes) || averageBytes < 1 || averageBytes > Number.MAX_SAFE_INTEGER) return null;
+  return Math.floor(Math.floor(bytes) / averageBytes);
+}

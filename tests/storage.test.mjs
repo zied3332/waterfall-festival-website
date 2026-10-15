@@ -14,7 +14,7 @@ test('storage GET uses existing API origin and bearer authentication', async () 
   assert.equal(result.gallery.images.averageBytes, 1000000);
 });
 
-for (const scenario of ['complete', 'partial', 'unavailable', 'empty', 'warning', 'zeroBytes']) {
+for (const scenario of ['complete', 'partial', 'unavailable', 'empty', 'warning', 'zeroBytes', 'zeroByteOnly']) {
   test(`adapter preserves the real ${scenario} measurement semantics`, async () => {
     const fixture = storageFixture(scenario);
     const { service } = await loadStorage();
@@ -84,4 +84,26 @@ test('warnings are displayed through a safe allowlist with a generic future-code
   assert.match(presentation.storageWarningMessage('directory_missing'), /does not exist/);
   assert.match(presentation.storageWarningMessage('future_warning'), /additional measurement warning/);
   assert.equal(presentation.storageWarningMessage('/srv/private/uploads').includes('/srv'), false);
+});
+
+
+test('storage percentages preserve zero/unknown distinctions without invented shares', async () => {
+  const { presentation } = await loadStorage();
+  assert.equal(presentation.formatStoragePercent(0), '0%');
+  assert.equal(presentation.formatStoragePercent(18.75), '18.75%');
+  for (const value of [null, NaN, Infinity, -1, 101]) assert.equal(presentation.formatStoragePercent(value), 'Not available');
+});
+
+test('capacity simulation uses only administrator-entered available space and assumed image size', async () => {
+  const { presentation } = await loadStorage();
+  for (const [space, unit, average, expected] of [['1','GB',1,1000],['1','GB',0.5,2000],['1','GB',5,200],['1','GB',10,100],['500','MB',2,250],['0','GB',1,0],['1','MB',5,0]]) {
+    assert.equal(presentation.estimateUploadCapacity(space,unit,average), expected);
+  }
+});
+
+test('capacity simulation has no fake default and rejects unsupported or unsafe numbers', async () => {
+  const { presentation } = await loadStorage();
+  for (const value of ['', ' ', '-1', 'Infinity', '1e309', '1e100', 'not a number']) assert.equal(presentation.estimateUploadCapacity(value,'GB',1), null);
+  for (const average of [0, -1, NaN, Infinity, 1e-100, 1e100]) assert.equal(presentation.estimateUploadCapacity('1','GB',average), null);
+  assert.equal(presentation.estimateUploadCapacity('1','TB',1), null);
 });

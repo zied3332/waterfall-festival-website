@@ -5,6 +5,7 @@
   let warnings = [];
   if (mode === 'empty') images = videos = posters = ok(0, 0, 0);
   if (mode === 'zeroBytes') images = ok(1, 0, 0);
+  if (mode === 'zeroByteOnly') { images = ok(1, 0, 0); videos = posters = ok(0, 0, 0); }
   if (mode === 'partial') {
     images = { ...ok(2, 2000000, 1000000), status: 'partial' }; videos = unknown('missing');
     warnings = [{ category: 'gallery.images', code: 'metadata_unavailable' }, { category: 'gallery.videos', code: 'directory_missing' }];

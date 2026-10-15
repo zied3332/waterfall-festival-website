@@ -93,6 +93,23 @@ try {
   assert.equal(await evaluate(`document.querySelector('.admin-nav a[href="/admin/storage"]').getAttribute('aria-current')`), 'page');
   assert.equal(await evaluate(`document.querySelector('.admin-storage time').getAttribute('datetime')`), '2026-10-15T10:00:01.000Z');
   assert.equal(requests.find(request => request.path === '/admin/storage/stats').token, 'Bearer storage-browser-token');
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__segments').getAttribute('aria-label').includes('75%')`), true);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.admin-storage__segment')].map(segment=>parseFloat(segment.style.width))`), [18.75,75,6.25]);
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__estimator').textContent.includes('Hosting capacity not connected') && document.querySelector('.admin-storage__estimate').textContent.includes('No estimate yet')`), true);
+  async function setSpace(value) {
+    await evaluate(`(() => { const input=document.querySelector('.admin-storage__simulation input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)}); input.dispatchEvent(new Event('input',{bubbles:true})); })()`);
+  }
+  await setSpace('1');
+  await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent.replace(/[^0-9]/g,'') === '1000'`), 'hypothetical 1GB simulation');
+  await evaluate(`document.querySelector('.admin-storage__estimator select').value='5'; document.querySelector('.admin-storage__estimator select').dispatchEvent(new Event('change',{bubbles:true}))`);
+  await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent === '200'`), 'average image assumption updates simulation');
+  await setSpace('0');
+  await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate strong')?.textContent === '0'`), 'zero hypothetical free space');
+  await setSpace('-1');
+  await waitFor(() => evaluate(`document.querySelector('.admin-storage__input-error') !== null && document.querySelector('.admin-storage__simulation input').getAttribute('aria-invalid') === 'true'`), 'invalid hypothetical space');
+  await setSpace('');
+  await waitFor(() => evaluate(`document.querySelector('.admin-storage__estimate').textContent.includes('No estimate yet')`), 'cleared simulation');
+
   const storageCalls = () => requests.filter(request => request.path === '/admin/storage/stats').length;
   const before = storageCalls(); responseDelay = 200;
   await evaluate(`document.querySelector('.admin-storage__refresh').click(); document.querySelector('.admin-storage__refresh').click()`);
@@ -103,6 +120,7 @@ try {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: width < 768 });
     assert.equal(await evaluate(`getComputedStyle(document.querySelector('.admin-storage__overview')).gridTemplateColumns.split(' ').length`), columns);
     assert.equal(await evaluate(`document.documentElement.scrollWidth <= ${width}`), true, `no overflow at ${width}px`);
+    assert.equal(await evaluate(`[...document.querySelectorAll('.admin-storage__card, .admin-storage__panel')].every(panel => { const bounds=panel.getBoundingClientRect(); return bounds.left >= 0 && bounds.right <= innerWidth; })`), true, `storage panels stay within ${width}px viewport`);
   }
   async function refreshScenario(next, expected) {
     mode = next;
@@ -112,12 +130,17 @@ try {
   await refreshScenario('partial', 'Measurement incomplete');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__card--total .admin-storage__card-value').textContent`), 'Not available');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__empty') === null`), true, 'partial is not empty');
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__segments') === null && document.querySelector('.admin-storage__chart-unavailable') !== null`), true, 'partial results never invent percentages');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__alert').textContent.includes('directory does not exist')`), true);
   await refreshScenario('unavailable', 'Measurement unavailable');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__card-value').textContent`), 'Not measured');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__empty') === null`), true, 'unreadable is not empty');
   await refreshScenario('empty', 'No supported local media files found');
   assert.equal(await evaluate(`document.querySelector('.admin-storage__card--total .admin-storage__card-value').textContent`), '0 B');
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__segments').textContent.includes('NaN')`), false);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.admin-storage__segment')].map(segment=>segment.style.width)`), ['0%','0%','0%']);
+  await refreshScenario('zeroByteOnly', 'Measured files contain no bytes');
+  assert.equal(await evaluate(`document.querySelector('.admin-storage__empty') === null`), true, 'a measured zero-byte file is not an empty directory');
   await refreshScenario('warning', 'Measurement notes');
   await refreshScenario('http500', 'Showing the last successful response');
   assert.equal(await evaluate(`document.body.textContent.includes('/srv/private')`), false);
@@ -132,13 +155,36 @@ try {
   await waitFor(() => evaluate(`location.pathname === '/admin/gallery' && document.querySelector('.admin-gallery') !== null`), 'existing admin gallery navigation');
   await send('Page.navigate', { url: `${origin}/admin/storage` });
   await waitFor(() => evaluate(`document.querySelectorAll('.admin-storage__card').length === 4`), 'storage route after gallery navigation');
+  await send('Emulation.setDeviceMetricsOverride', { width: 375, height: 1000, deviceScaleFactor: 1, mobile: true });
+  await evaluate(`document.querySelector('.admin-sidebar-close').click()`);
+  await send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 });
+  await delay(350);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.admin-storage__insights')).gridTemplateColumns.split(' ').length`), 1, 'mobile panels use a single column');
+
+  if (process.env.STORAGE_MOBILE_SCREENSHOT) {
+    const screenshot = await send('Page.captureScreenshot', { format: 'png' });
+    await writeFile(process.env.STORAGE_MOBILE_SCREENSHOT, Buffer.from(screenshot.data, 'base64'));
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 1365, height: 1000, deviceScaleFactor: 1, mobile: false });
   if (process.env.STORAGE_SCREENSHOT) {
     const screenshot = await send('Page.captureScreenshot', { format: 'png' });
     await writeFile(process.env.STORAGE_SCREENSHOT, Buffer.from(screenshot.data, 'base64'));
   }
+  const lightSurface = await evaluate(`getComputedStyle(document.querySelector('.admin-storage__card')).backgroundColor`);
+  await evaluate(`document.querySelector('[aria-label="Switch to dark mode"]').click()`);
+  await waitFor(() => evaluate(`document.documentElement.dataset.adminTheme === 'dark'`), 'existing admin dark theme');
+  assert.notEqual(await evaluate(`getComputedStyle(document.querySelector('.admin-storage__card')).backgroundColor`), lightSurface);
+  if (process.env.STORAGE_DARK_SCREENSHOT) {
+    const screenshot = await send('Page.captureScreenshot', { format: 'png' });
+    await writeFile(process.env.STORAGE_DARK_SCREENSHOT, Buffer.from(screenshot.data, 'base64'));
+  }
+  const noPollingCount = storageCalls(); await delay(250);
+  assert.equal(storageCalls(), noPollingCount, 'the page does not poll automatically');
+  await evaluate(`localStorage.removeItem('waterfall_access_token'); document.querySelector('.admin-nav a[href="/admin/gallery"]').click()`);
+  await waitFor(() => evaluate(`location.pathname === '/admin/login'`), 'existing auth protection when session is removed');
   assert.deepEqual(browserErrors, []);
   assert.equal(requests.some(request => !['GET','OPTIONS'].includes(request.method)), false);
-  console.log('Storage browser smoke passed: protected route/navigation, bearer auth, real contract fixtures, refresh locking, partial/unavailable/empty states, safe errors, 2/4-card layouts, and existing gallery navigation. Real API requests: 0.');
+  console.log('Storage browser smoke passed: protected route/navigation, bearer auth, real contract fixtures, refresh locking, partial/unavailable/empty states, safe errors, correct complete-only percentages, hypothetical capacity calculations, 2/4-card layouts, and existing gallery navigation. Real API requests: 0.');
 } finally {
   if (ws?.readyState === WebSocket.OPEN) { try { await send('Browser.close'); } catch { /* browser can close before replying */ } ws.close(); }
   browser.kill();
