@@ -59,3 +59,10 @@
 .gallery-storage-notice { color: #b7b6c8; font-size: .8rem; line-height: 1.6; }
 .gallery-pagination { display: grid; justify-items: center; gap: 12px; padding-top: 28px; }
 .gallery-pagination small { color: #b7b6c8; font-size: .75rem; text-align: center; }
+
+.gallery-lightbox__top-actions { display: flex; align-items: center; gap: 8px; }
+.gallery-lightbox .gallery-viewer-favorite[aria-pressed="true"] { color: #ff568a; }
+.gallery-lightbox__viewer:has(img) { touch-action: pinch-zoom; }
+.gallery-lightbox__bottom > div:first-child { min-width: 0; }
+.gallery-lightbox__bottom strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gallery-lightbox__image.gallery-media-fallback { height: 100%; max-width: 100%; }

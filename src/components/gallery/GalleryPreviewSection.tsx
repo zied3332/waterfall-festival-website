@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 import { getGallery } from "../../services/gallery.service";
 import type { GalleryImage } from "../../types/gallery";
+import { useGalleryViewer } from "../../hooks/useGalleryViewer";
 import { useGalleryFavorites } from "../../hooks/useGalleryFavorites";
 import GalleryMedia from "./GalleryMedia";
 import "./gallery-preview.css";
 
 const PREVIEW_LIMIT = 12;
-const SWIPE_THRESHOLD = 50;
 
 type GalleryPreviewItem = GalleryImage & { videoUrl?: string | null };
 
@@ -28,7 +28,6 @@ function GalleryPreviewSection() {
   const { favorites, toggleFavorite, favoriteNotice } = useGalleryFavorites();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLButtonElement | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -63,41 +62,7 @@ function GalleryPreviewSection() {
       ? null : (index + 1) % previewItems.length);
   }, [previewItems.length]);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!isViewerOpen || !dialog) return;
-    // The existing homepage viewer uses a native modal for background inertness
-    // and focus containment, without adding a second lightbox dependency.
-    const overflow = document.body.style.overflow;
-    const rootOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    dialog.showModal();
-    dialog.querySelector<HTMLButtonElement>(".gallery-preview-lightbox__close")?.focus();
-    return () => {
-      dialog.close();
-      document.body.style.overflow = overflow;
-      document.documentElement.style.overflow = rootOverflow;
-      openerRef.current?.focus({ preventScroll: true });
-      touchStartRef.current = null;
-    };
-  }, [isViewerOpen]);
-
-  function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
-    const touch = event.touches.length === 1 ? event.touches[0] : null;
-    touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
-  }
-
-  function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
-    const start = touchStartRef.current;
-    const end = event.changedTouches[0];
-    touchStartRef.current = null;
-    if (!start || !end || event.touches.length) return;
-    const distance = start.x - end.clientX;
-    if (Math.abs(distance) < SWIPE_THRESHOLD || Math.abs(distance) <= Math.abs(start.y - end.clientY)) return;
-    if (distance > 0) showNextImage();
-    else showPreviousImage();
-  }
+  const viewer = useGalleryViewer({ isOpen: isViewerOpen, dialogRef, openerRef, onClose: closeImage, onPrevious: showPreviousImage, onNext: showNextImage });
 
   return (
     <>
@@ -161,30 +126,19 @@ function GalleryPreviewSection() {
       <dialog ref={dialogRef} className="gallery-preview-lightbox" aria-label="Festival photo viewer"
         onCancel={event => { event.preventDefault(); closeImage(); }}
         onClick={event => { if (event.target === event.currentTarget) closeImage(); }}
-        onKeyDown={event => {
-          if (event.key === "Escape") { event.preventDefault(); closeImage(); }
-          if (event.key === "ArrowLeft") { event.preventDefault(); showPreviousImage(); }
-          if (event.key === "ArrowRight") { event.preventDefault(); showNextImage(); }
-          if (event.key === "Tab") {
-            const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
-            const first = buttons[0];
-            const last = buttons[buttons.length - 1];
-            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-          }
-        }}>
+        onKeyDown={viewer.onKeyDown}>
         {selectedItem && (
           <>
             <div className="gallery-preview-lightbox__top">
               <span className="gallery-preview-lightbox__counter" aria-live="polite" aria-atomic="true">
                 Photo {(selectedIndex ?? 0) + 1} of {previewItems.length}
               </span>
-              <button type="button" className="gallery-preview-lightbox__close" aria-label="Close image" onClick={closeImage}>
+              <button type="button" data-viewer-close className="gallery-preview-lightbox__close" aria-label="Close image" onClick={closeImage}>
                 <X size={24} aria-hidden="true" />
               </button>
             </div>
-            <div className="gallery-preview-lightbox__viewer" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}
-              onTouchCancel={() => { touchStartRef.current = null; }}>
+            <div className="gallery-preview-lightbox__viewer" onTouchStart={viewer.onTouchStart} onTouchMove={viewer.onTouchMove} onTouchEnd={viewer.onTouchEnd}
+              onTouchCancel={viewer.onTouchCancel}>
               <GalleryMedia key={`${selectedItem.id}-${selectedItem.imageUrl}`} src={selectedItem.imageUrl}
                 alt={selectedItem.altText ?? selectedItem.title} className="gallery-preview-lightbox__image" draggable={false} />
             </div>

@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Camera, Film, Heart, Images, RotateCcw, Star, X } from "lucide-react";
+import { useGalleryViewer } from "../hooks/useGalleryViewer";
 import { useGalleryFavorites } from "../hooks/useGalleryFavorites";
 import GalleryMedia from "../components/gallery/GalleryMedia";
 import { getGallery } from "../services/gallery.service";
@@ -19,6 +20,7 @@ export default function Gallery() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [viewerItems, setViewerItems] = useState<GalleryImage[]>([]);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -48,29 +50,17 @@ export default function Gallery() {
     && (filter !== "videos" || item.mediaType === "VIDEO")), [items, filter, event, favorites]);
   const visibleItems = filteredItems.slice(0, visibleCount);
   const favoriteCount = items.filter(item => item.mediaType === "IMAGE" && favorites.has(String(item.id))).length;
-  const selectedItem = selectedIndex === null ? null : filteredItems[selectedIndex] ?? null;
+  const selectedItem = selectedIndex === null ? null : viewerItems[selectedIndex] ?? null;
   const isViewerOpen = selectedItem !== null;
   const closeViewer = useCallback(() => setSelectedIndex(null), []);
-  function moveViewer(direction: number) {
-    setSelectedIndex(index => index === null || !filteredItems.length ? null : (index + direction + filteredItems.length) % filteredItems.length);
-  }
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!isViewerOpen || !dialog) return;
-    const bodyOverflow = document.body.style.overflow;
-    const rootOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    dialog.showModal();
-    dialog.querySelector<HTMLButtonElement>(".gallery-lightbox__close")?.focus();
-    return () => {
-      dialog.close();
-      document.body.style.overflow = bodyOverflow;
-      document.documentElement.style.overflow = rootOverflow;
-      openerRef.current?.focus({ preventScroll: true });
-    };
-  }, [isViewerOpen]);
+  const previousItem = useCallback(() => {
+    setSelectedIndex(index => index === null || !viewerItems.length ? null : (index - 1 + viewerItems.length) % viewerItems.length);
+  }, [viewerItems.length]);
+  const nextItem = useCallback(() => {
+    setSelectedIndex(index => index === null || !viewerItems.length ? null : (index + 1) % viewerItems.length);
+  }, [viewerItems.length]);
+  const viewer = useGalleryViewer({ isOpen: isViewerOpen, dialogRef, openerRef, onClose: closeViewer,
+    onPrevious: previousItem, onNext: nextItem, allowSwipe: selectedItem?.mediaType === "IMAGE" });
 
   const filterOptions: { value: GalleryFilter; label: string }[] = [
     { value: "all", label: "All moments" }, { value: "photos", label: "Photos" },
@@ -119,7 +109,7 @@ export default function Gallery() {
         </div> : <div className="gallery-grid">
           {visibleItems.map((item, index) => <article className="gallery-tile" key={item.id}>
             <button type="button" className={`gallery-card${item.isFeatured ? " gallery-card--featured" : ""}`}
-              aria-label={`Open ${item.title}`} aria-haspopup="dialog" onClick={event => { openerRef.current = event.currentTarget; setSelectedIndex(index); }}>
+              aria-label={`Open ${item.title}`} aria-haspopup="dialog" onClick={event => { openerRef.current = event.currentTarget; setViewerItems([...filteredItems]); setSelectedIndex(index); }}>
               <GalleryMedia mediaType={item.mediaType} src={item.imageUrl} poster={item.thumbnailUrl}
                 alt={item.altText || item.title} className="gallery-card__image" loading={index < 4 ? "eager" : "lazy"} decoding="async" />
               <span className="gallery-card__shade" aria-hidden="true" />
@@ -143,23 +133,25 @@ export default function Gallery() {
     </section>
 
     <dialog ref={dialogRef} className="gallery-lightbox" aria-label="Festival media viewer" onCancel={event => { event.preventDefault(); closeViewer(); }}
-      onKeyDown={event => {
-        if (event.key === "Escape") { event.preventDefault(); closeViewer(); }
-        if (event.key === "ArrowLeft") { event.preventDefault(); moveViewer(-1); }
-        if (event.key === "ArrowRight") { event.preventDefault(); moveViewer(1); }
-      }}>
+      onKeyDown={viewer.onKeyDown}>
       {selectedItem && <>
-        <div className="gallery-lightbox__top"><span aria-live="polite">Moment {(selectedIndex ?? 0) + 1} of {filteredItems.length}</span>
-          <button type="button" className="gallery-lightbox__close" onClick={closeViewer} aria-label="Close media viewer"><X size={24} aria-hidden="true" /></button>
+        <div className="gallery-lightbox__top"><span aria-live="polite">Moment {(selectedIndex ?? 0) + 1} of {viewerItems.length}</span>
+          <div className="gallery-lightbox__top-actions">
+          {selectedItem.mediaType === "IMAGE" && <button type="button" className="gallery-viewer-favorite" aria-label={favorites.has(String(selectedItem.id)) ? "Remove photo from favorites" : "Add photo to favorites"}
+            aria-pressed={favorites.has(String(selectedItem.id))} onClick={() => toggleFavorite(selectedItem.id)}>
+            <Heart size={21} fill={favorites.has(String(selectedItem.id)) ? "currentColor" : "none"} aria-hidden="true" />
+          </button>}
+          <button type="button" data-viewer-close className="gallery-lightbox__close" onClick={closeViewer} aria-label="Close media viewer"><X size={24} aria-hidden="true" /></button>
+          </div>
         </div>
-        <div className="gallery-lightbox__viewer">
+        <div className="gallery-lightbox__viewer" onTouchStart={viewer.onTouchStart} onTouchMove={viewer.onTouchMove} onTouchEnd={viewer.onTouchEnd} onTouchCancel={viewer.onTouchCancel}>
           <GalleryMedia key={selectedItem.id} mediaType={selectedItem.mediaType} src={selectedItem.imageUrl} poster={selectedItem.thumbnailUrl}
             alt={selectedItem.altText || selectedItem.title} controls muted={false} className="gallery-lightbox__image" draggable={false} />
         </div>
         <div className="gallery-lightbox__bottom"><div><strong>{selectedItem.title}</strong><p>{selectedItem.event?.title || "Waterfall Festival"}</p></div>
-          {filteredItems.length > 1 && <div className="gallery-lightbox__navigation">
-            <button type="button" aria-label="Previous media item" onClick={() => moveViewer(-1)}><ArrowLeft size={22} aria-hidden="true" /></button>
-            <button type="button" aria-label="Next media item" onClick={() => moveViewer(1)}><ArrowRight size={22} aria-hidden="true" /></button>
+          {viewerItems.length > 1 && <div className="gallery-lightbox__navigation">
+            <button type="button" aria-label="Previous media item" onClick={previousItem}><ArrowLeft size={22} aria-hidden="true" /></button>
+            <button type="button" aria-label="Next media item" onClick={nextItem}><ArrowRight size={22} aria-hidden="true" /></button>
           </div>}
         </div>
       </>}

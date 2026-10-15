@@ -53,7 +53,9 @@ export async function loadGallery(fetchImpl = async () => Response.json([]), env
   await selection.evaluate();
   const favorites = await load(resolve('src/services/gallery-favorites.ts'));
   await favorites.evaluate();
-  return { gallery: service.namespace, api: api.namespace, selection: selection.namespace, favorites: favorites.namespace, storage, browserWindow };
+  const gestures = await load(resolve('src/utils/gallery-gestures.ts'));
+  await gestures.evaluate();
+  return { gallery: service.namespace, api: api.namespace, selection: selection.namespace, favorites: favorites.namespace, gestures: gestures.namespace, storage, browserWindow };
 }
 
 const item = { id: 1, imageUrl: '/uploads/gallery/images/photo.webp', thumbnailUrl: '/uploads/gallery/images/thumb.webp' };
@@ -312,4 +314,18 @@ test('invalid favorite IDs do not change state or persistent storage', async () 
   for (const id of [0, -1, 1.1, NaN, 2147483648]) favorites.toggleGalleryFavorite(id);
   assert.equal(favorites.getFavoritesSnapshot(), before);
   assert.equal(storage.size, 0);
+});
+
+
+test('photo gestures recognize deliberate horizontal swipes in either direction', async () => {
+  const { gestures } = await loadGallery();
+  assert.equal(gestures.gallerySwipeDirection({x:200,y:100}, {x:100,y:110}), 1);
+  assert.equal(gestures.gallerySwipeDirection({x:100,y:100}, {x:200,y:110}), -1);
+});
+
+test('photo gestures ignore taps, vertical/diagonal scrolls and canceled touches', async () => {
+  const { gestures } = await loadGallery();
+  for (const [start, end] of [[null,{x:100,y:100}], [{x:100,y:100},null], [{x:100,y:100},{x:90,y:100}], [{x:200,y:200},{x:100,y:0}], [{x:200,y:200},{x:100,y:100}]]) {
+    assert.equal(gestures.gallerySwipeDirection(start,end), 0);
+  }
 });
