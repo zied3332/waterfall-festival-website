@@ -143,6 +143,19 @@ try {
   await waitFor(() => evaluate(`document.querySelector('.gallery-card video')?.videoWidth > 0`), 'public video decoded across origins');
   await waitFor(() => evaluate(`document.querySelector('.gallery-card .gallery-media-fallback') !== null`), 'public missing-image fallback');
   assert.equal(await evaluate(`[...document.querySelectorAll('.gallery-card img')].some(image => image.src.endsWith('.webm'))`), false);
+  for (const [label, count] of [['Photos', 2], ['Videos', 1], ['Featured', 1], ['All moments', 3]]) {
+    await evaluate(`[...document.querySelectorAll('.gallery-filter')].find(button => button.textContent.trim() === ${JSON.stringify(label)}).click()`);
+    await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === ${count}`), `public ${label} filter`);
+  }
+  for (const [width, columns] of [[320, 2], [375, 2], [768, 3], [1024, 4], [1365, 4]]) {
+    await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 });
+    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.gallery-grid')).gridTemplateColumns.split(' ').length`), columns);
+    assert.equal(await evaluate(`(() => { const tile = document.querySelector('.gallery-tile').getBoundingClientRect(); return Math.abs(tile.width - tile.height) < 1 && document.documentElement.scrollWidth <= ${width}; })()`), true, `public square grid at ${width}px`);
+  }
+  if (process.env.GALLERY_PUBLIC_SCREENSHOT) {
+    const screenshot = await send('Page.captureScreenshot', { format: 'png' });
+    await writeFile(process.env.GALLERY_PUBLIC_SCREENSHOT, Buffer.from(screenshot.data, 'base64'));
+  }
   await evaluate(`document.querySelector('.gallery-card--featured').click()`);
   await waitFor(() => evaluate(`document.querySelector('.gallery-lightbox__image')?.naturalWidth > 0`), 'featured image lightbox');
   await evaluate(`document.querySelector('.gallery-lightbox__close').click()`);
