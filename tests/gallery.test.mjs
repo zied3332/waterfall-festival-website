@@ -6,10 +6,10 @@ import vm from 'node:vm';
 import ts from 'typescript';
 
 // Execute the real TypeScript services with isolated browser globals and mocked HTTP.
-export async function loadGallery(fetchImpl = async () => Response.json([])) {
+export async function loadGallery(fetchImpl = async () => Response.json([]), environment = {}) {
   const context = vm.createContext({
-    window: { location: { hostname: 'localhost' } },
-    Headers, FormData, Response, fetch: fetchImpl, console,
+    window: { location: { hostname: 'localhost', origin: 'https://frontend.test' } },
+    URL, Headers, FormData, Response, fetch: fetchImpl, console,
   });
   const modules = new Map();
   async function load(filename) {
@@ -27,7 +27,7 @@ export async function loadGallery(fetchImpl = async () => Response.json([])) {
     }).outputText;
     const module = new vm.SourceTextModule(code, {
       context, identifier: filename,
-      initializeImportMeta(meta) { meta.env = { VITE_API_URL: 'http://api.test:3000' }; },
+      initializeImportMeta(meta) { meta.env = { VITE_API_URL: 'http://api.test:3000', DEV: false, ...environment }; },
     });
     modules.set(filename, module);
     await module.link(specifier => load(resolve(dirname(filename), `${specifier}.ts`)));
@@ -203,4 +203,30 @@ test('pending, failed, partial and preserved outcomes never claim all physical a
     assert.doesNotMatch(message, /All scheduled/);
     assert.match(message, status === 'cleanup_pending' ? /still pending/ : /could not be cleaned/);
   }
+});
+
+
+test('media helper resolves root uploads against backend origin, not an API prefix', async () => {
+  const { api } = await loadGallery(undefined, { VITE_API_URL: 'https://backend.test/api/v1/' });
+  assert.equal(api.getApiMediaUrl('/uploads/gallery/images/photo.webp'), 'https://backend.test/uploads/gallery/images/photo.webp');
+  assert.equal(api.getApiMediaUrl('uploads/gallery/videos/clip.mp4'), 'https://backend.test/uploads/gallery/videos/clip.mp4');
+  assert.equal(api.getApiMediaUrl(api.getApiMediaUrl('/uploads/a.jpg')), 'https://backend.test/uploads/a.jpg');
+});
+
+test('production without API config uses current origin; development uses existing local convention', async () => {
+  const production = await loadGallery(undefined, { VITE_API_URL: '' });
+  assert.equal(production.api.API_URL, 'https://frontend.test');
+  const development = await loadGallery(undefined, { VITE_API_URL: undefined, DEV: true });
+  assert.equal(development.api.API_URL, 'http://localhost:3000');
+  const proxied = await loadGallery(undefined, { VITE_API_URL: '/api' });
+  assert.equal(proxied.api.getApiMediaUrl('/uploads/a.jpg'), 'https://frontend.test/uploads/a.jpg');
+});
+
+test('invalid and unsafe media values return null rather than malformed requests', async () => {
+  const { api } = await loadGallery();
+  for (const input of [null, undefined, '', '   ', 123, {}, 'not a URL', 'null', 'undefined', 'https://', 'javascript:alert(1)', 'file:///tmp/a.jpg', 'data:text/html,test', '/uploads/a%zz.jpg', '/uploads/\\bad.jpg', '?image=1', '#photo', 'https://user:pass@example.com/a.jpg']) {
+    assert.equal(api.getApiMediaUrl(input), null, String(input));
+  }
+  assert.equal(api.getApiMediaUrl(' /uploads/a photo.jpg '), 'http://api.test:3000/uploads/a%20photo.jpg');
+  assert.equal(api.getApiMediaUrl('//cdn.example.com/a.jpg'), 'http://cdn.example.com/a.jpg');
 });

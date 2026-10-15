@@ -2,14 +2,12 @@ import {
   getAccessToken,
 } from "./auth.service";
 
-export const API_URL =
-  (
-    import.meta.env.VITE_API_URL ??
-    `http://${window.location.hostname}:3000`
-  ).replace(
-    /\/+$/,
-    "",
-  );
+// Vite substitutes these values at build time. Production falls back to the
+// current origin (for a reverse proxy), never a development-only port.
+export const API_URL = (
+  import.meta.env.VITE_API_URL?.trim() ||
+  (import.meta.env.DEV ? `http://${window.location.hostname}:3000` : window.location.origin)
+).replace(/\/+$/, "");
 
 type RequestOptions =
   Omit<
@@ -20,85 +18,35 @@ type RequestOptions =
       HeadersInit;
   };
 
-/**
- * Converts a media path returned by the backend
- * into a URL that the browser can load.
- *
- * Examples:
- *
- * /uploads/events/event-12.jpg
- * ->
- * http://localhost:3000/uploads/events/event-12.jpg
- *
- * Existing absolute URLs are preserved.
+/** Resolve backend media paths independently of an API prefix such as /api.
+ * Absolute legacy URLs are validated and preserved. Invalid input is absent
+ * media, not a request for the current document or an invented API path.
  */
-export function getApiMediaUrl(
-  mediaUrl:
-    | string
-    | null
-    | undefined,
-): string | null {
-  if (!mediaUrl) {
+export function getApiMediaUrl(mediaUrl: string | null | undefined): string | null {
+  if (typeof mediaUrl !== "string") return null;
+  const value = mediaUrl.trim();
+  if (!value || [...value].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127 || character === "\\") || /%(?![0-9a-f]{2})/i.test(value)) return null;
+  if (/^blob:.+/i.test(value) || /^data:(image|video)\/[a-z0-9.+-]+[;,]/i.test(value)) return value;
+
+  try {
+    const base = new URL(API_URL, window.location.origin);
+    if (!/^https?:$/.test(base.protocol)) return null;
+    if (/^https?:\/\//i.test(value)) {
+      const absolute = new URL(value);
+      return absolute.hostname && !absolute.username && !absolute.password ? value : null;
+    }
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return null;
+    if (value.startsWith("//")) {
+      const absolute = new URL(value, base.origin);
+      return absolute.hostname && !absolute.username && !absolute.password ? absolute.href : null;
+    }
+    // Retain relative media filenames/paths, but reject arbitrary text and
+    // query-only values that would fetch a page rather than a media resource.
+    if (!value.startsWith("/") && !/^[^:/?#]+\//.test(value) && !/^[^:/?#]+\.[a-z0-9]+(?:[?#]|$)/i.test(value)) return null;
+    return new URL(value.startsWith("/") ? value : `/${value}`, base.origin).href;
+  } catch {
     return null;
   }
-
-  const trimmedUrl =
-    mediaUrl.trim();
-
-  if (!trimmedUrl) {
-    return null;
-  }
-
-  /*
-   * Blob URLs are used by the EventForm
-   * while previewing a newly selected file.
-   */
-  if (
-    trimmedUrl.startsWith(
-      "blob:",
-    )
-  ) {
-    return trimmedUrl;
-  }
-
-  /*
-   * Data URLs can also be used directly.
-   */
-  if (
-    trimmedUrl.startsWith(
-      "data:",
-    )
-  ) {
-    return trimmedUrl;
-  }
-
-  /*
-   * Preserve existing absolute URLs.
-   *
-   * This also means old Cloudinary records
-   * continue to behave normally until those
-   * posters are replaced.
-   */
-  if (
-    /^https?:\/\//i.test(
-      trimmedUrl,
-    )
-  ) {
-    return trimmedUrl;
-  }
-
-  /*
-   * Backend-generated local paths.
-   */
-  if (
-    trimmedUrl.startsWith(
-      "/",
-    )
-  ) {
-    return `${API_URL}${trimmedUrl}`;
-  }
-
-  return `${API_URL}/${trimmedUrl}`;
 }
 
 export class ApiError extends Error {
