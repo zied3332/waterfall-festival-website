@@ -29,34 +29,12 @@ import type {
   GalleryImage,
 } from "../../types/gallery";
 
+import GalleryMedia from "./GalleryMedia";
 import "./gallery-preview.css";
 
 const PREVIEW_LIMIT = 10;
 
 const SWIPE_THRESHOLD = 50;
-
-/* =========================================================
-   LOCAL FALLBACK GALLERY
-
-   Files:
-   public/images/gallery/waterfall-gallery-1.jpg
-   public/images/gallery/waterfall-gallery-2.jpg
-   ...
-   public/images/gallery/waterfall-gallery-10.jpg
-
-   These images keep the homepage gallery alive when:
-   - the API fails
-   - the API returns no images
-   - Cloudinary images return 401 / fail to load
-========================================================= */
-
-const LOCAL_GALLERY_IMAGES = Array.from(
-  {
-    length: PREVIEW_LIMIT,
-  },
-  (_, index) =>
-    `/images/gallery/waterfall-gallery-${index + 1}.jpg`,
-);
 
 /*
  * Keeps compatibility with older GalleryImage
@@ -73,8 +51,7 @@ type GalleryPreviewItem =
 /*
  * This is the final item used by the UI.
  *
- * It keeps the original gallery information
- * but also stores a guaranteed local fallback.
+ * It keeps the original backend gallery information.
  */
 
 type DisplayGalleryItem = {
@@ -83,7 +60,6 @@ type DisplayGalleryItem = {
   altText?: string | null;
 
   imageUrl: string;
-  fallbackImageUrl: string;
 
   isFeatured: boolean;
   sortOrder: number;
@@ -169,26 +145,6 @@ function GalleryPreviewSection() {
     number | null
   >(null);
 
-  /*
-   * Keeps track of individual remote images
-   * that failed.
-   *
-   * Once an image fails we immediately use
-   * its local equivalent.
-   */
-
-  const [
-    failedImageIds,
-    setFailedImageIds,
-  ] = useState<
-    Set<string | number>
-  >(
-    () =>
-      new Set<
-        string | number
-      >(),
-  );
-
   const touchStartXRef =
     useRef<number | null>(
       null,
@@ -203,48 +159,18 @@ function GalleryPreviewSection() {
      LOAD GALLERY
   ========================================================= */
 
-  const loadGallery =
-    useCallback(
-      async () => {
-        try {
-          setIsLoading(true);
-
-          setApiFailed(false);
-
-          const data =
-            await getGallery();
-
-          setGalleryItems(
-            data as GalleryPreviewItem[],
-          );
-        } catch (requestError) {
-          /*
-           * Backend/API failure should NOT
-           * remove the gallery from the
-           * homepage.
-           *
-           * We'll render the local gallery
-           * instead.
-           */
-
-          console.warn(
-            "Gallery API unavailable. Using local fallback images.",
-            requestError,
-          );
-
-          setGalleryItems([]);
-
-          setApiFailed(true);
-        } finally {
-          setIsLoading(false);
-        }
-      },
-      [],
-    );
-
   useEffect(() => {
-    void loadGallery();
-  }, [loadGallery]);
+    let active = true;
+    getGallery().then(items => {
+      if (active) setGalleryItems(items);
+    }).catch((error: unknown) => {
+      console.warn("Homepage gallery records could not load.", error);
+      if (active) setApiFailed(true);
+    }).finally(() => {
+      if (active) setIsLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   /* =========================================================
      REMOTE IMAGE RECORDS
@@ -296,177 +222,15 @@ function GalleryPreviewSection() {
      FINAL DISPLAY ITEMS
   ========================================================= */
 
-  const previewItems =
-    useMemo<
-      DisplayGalleryItem[]
-    >(() => {
-      /*
-       * If the backend has no usable images,
-       * build the entire section from the
-       * local gallery.
-       */
-
-      if (
-        remotePreviewItems.length === 0
-      ) {
-        return LOCAL_GALLERY_IMAGES.map(
-          (
-            localImageUrl,
-            index,
-          ) => ({
-            id:
-              `local-gallery-${index + 1}`,
-
-            title:
-              `Waterfall Festival ${index + 1}`,
-
-            altText:
-              `Waterfall Festival Koh Phangan moment ${index + 1}`,
-
-            imageUrl:
-              localImageUrl,
-
-            fallbackImageUrl:
-              localImageUrl,
-
-            isFeatured:
-              index < 3,
-
-            sortOrder:
-              index + 1,
-
-            eventTitle:
-              "Waterfall Festival",
-          }),
-        );
-      }
-
-      /*
-       * Backend records exist.
-       *
-       * Give every remote image a deterministic
-       * local backup:
-       *
-       * remote #1 -> local #1
-       * remote #2 -> local #2
-       * ...
-       */
-
-      return remotePreviewItems.map(
-        (
-          item,
-          index,
-        ) => {
-          const fallbackImageUrl =
-            LOCAL_GALLERY_IMAGES[
-              index %
-                LOCAL_GALLERY_IMAGES.length
-            ];
-
-          return {
-            id:
-              item.id,
-
-            title:
-              item.title,
-
-            altText:
-              item.altText,
-
-            imageUrl:
-              item.imageUrl,
-
-            fallbackImageUrl,
-
-            isFeatured:
-              Boolean(
-                item.isFeatured,
-              ),
-
-            sortOrder:
-              item.sortOrder ??
-              index + 1,
-
-            eventTitle:
-              item.event
-                ?.title ??
-              "Waterfall Festival",
-          };
-        },
-      );
-    }, [remotePreviewItems]);
-
-  /* =========================================================
-     IMAGE SOURCE
-  ========================================================= */
-
-  const getImageSource =
-    useCallback(
-      (
-        item: DisplayGalleryItem,
-      ) => {
-        if (
-          failedImageIds.has(
-            item.id,
-          )
-        ) {
-          return item.fallbackImageUrl;
-        }
-
-        return item.imageUrl;
-      },
-      [failedImageIds],
-    );
-
-  const handleImageError =
-    useCallback(
-      (
-        item: DisplayGalleryItem,
-      ) => {
-        /*
-         * Already using local fallback.
-         * Do nothing to prevent an error loop.
-         */
-
-        if (
-          failedImageIds.has(
-            item.id,
-          )
-        ) {
-          console.error(
-            `Local gallery fallback failed: ${item.fallbackImageUrl}`,
-          );
-
-          return;
-        }
-
-        /*
-         * Remote Cloudinary image failed.
-         * Switch only this image to its local
-         * fallback.
-         */
-
-        console.warn(
-          `Remote gallery image unavailable: ${item.title}. Using ${item.fallbackImageUrl}`,
-        );
-
-        setFailedImageIds(
-          (currentIds) => {
-            const nextIds =
-              new Set(
-                currentIds,
-              );
-
-            nextIds.add(
-              item.id,
-            );
-
-            return nextIds;
-          },
-        );
-      },
-      [failedImageIds],
-    );
+  const previewItems = useMemo<DisplayGalleryItem[]>(() => remotePreviewItems.map(item => ({
+    id: item.id,
+    title: item.title,
+    altText: item.altText,
+    imageUrl: item.imageUrl,
+    isFeatured: item.isFeatured,
+    sortOrder: item.sortOrder,
+    eventTitle: item.event?.title ?? "Waterfall Festival",
+  })), [remotePreviewItems]);
 
   /* =========================================================
      SELECTED IMAGE
@@ -613,25 +377,6 @@ function GalleryPreviewSection() {
         previousOverflow;
     };
   }, [selectedIndex]);
-
-  /* =========================================================
-     KEEP SELECTED INDEX VALID
-  ========================================================= */
-
-  useEffect(() => {
-    if (
-      selectedIndex !== null &&
-      selectedIndex >=
-        previewItems.length
-    ) {
-      setSelectedIndex(
-        null,
-      );
-    }
-  }, [
-    selectedIndex,
-    previewItems.length,
-  ]);
 
   /* =========================================================
      MOBILE SWIPE
@@ -822,10 +567,7 @@ function GalleryPreviewSection() {
                       item,
                       index,
                     ) => {
-                      const imageSource =
-                        getImageSource(
-                          item,
-                        );
+                      const imageSource = item.imageUrl;
 
                       return (
                         <button
@@ -841,7 +583,7 @@ function GalleryPreviewSection() {
                         >
                           <div className="gallery-preview-card__media">
 
-                            <img
+                            <GalleryMedia
                               src={
                                 imageSource
                               }
@@ -852,11 +594,6 @@ function GalleryPreviewSection() {
                               loading="lazy"
                               decoding="async"
                               className="gallery-preview-card__image"
-                              onError={() =>
-                                handleImageError(
-                                  item,
-                                )
-                              }
                             />
 
                             <span
@@ -955,17 +692,10 @@ function GalleryPreviewSection() {
               </>
             )}
 
-          {/*
-           * apiFailed is intentionally not shown
-           * to visitors.
-           *
-           * They receive the local gallery instead.
-           */}
-
-          {apiFailed && false && (
-            <span>
-              Gallery fallback active
-            </span>
+          {!isLoading && previewItems.length === 0 && (
+            <p className="gallery-preview-status" role="status">
+              {apiFailed ? "Gallery photos could not be loaded. Please try again later." : "No gallery photos have been published yet. Explore the full gallery for festival videos."}
+            </p>
           )}
 
         </div>
@@ -1075,14 +805,10 @@ function GalleryPreviewSection() {
               handleTouchEnd
             }
           >
-            <img
-              key={`${selectedItem.id}-${getImageSource(
-                selectedItem,
-              )}`}
+            <GalleryMedia
+              key={`${selectedItem.id}-${selectedItem.imageUrl}`}
               src={
-                getImageSource(
-                  selectedItem,
-                )
+                selectedItem.imageUrl
               }
               alt={
                 selectedItem.altText ??
@@ -1090,11 +816,6 @@ function GalleryPreviewSection() {
               }
               className="gallery-preview-lightbox__image"
               draggable={false}
-              onError={() =>
-                handleImageError(
-                  selectedItem,
-                )
-              }
             />
 
             <div className="gallery-preview-lightbox__details">

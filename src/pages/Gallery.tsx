@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 
+import GalleryMedia from "../components/gallery/GalleryMedia";
 import { getGallery } from "../services/gallery.service";
 import type { GalleryImage } from "../types/gallery";
 
@@ -64,8 +65,12 @@ function Gallery() {
   }, []);
 
   useEffect(() => {
-    void loadGallery();
-  }, [loadGallery]);
+    let active = true;
+    getGallery().then(items => { if (active) setGalleryItems(items); })
+      .catch((error: unknown) => { if (active) setError(error instanceof Error ? error.message : "Failed to load the gallery."); })
+      .finally(() => { if (active) setIsLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const featuredCount = useMemo(() => {
     return galleryItems.filter(
@@ -276,7 +281,7 @@ function Gallery() {
           </h1>
 
           <p className="gallery-hero__description">
-            Explore the latest photos
+            Explore the latest photos and videos
             published from Waterfall
             Festival.
           </p>
@@ -319,8 +324,8 @@ function Gallery() {
                   }{" "}
                   {galleryItems.length ===
                   1
-                    ? "photo"
-                    : "photos"}
+                    ? "media item"
+                    : "media items"}
                 </span>
               )}
           </header>
@@ -335,7 +340,7 @@ function Gallery() {
               0 && (
               <div
                 className="gallery-filters"
-                aria-label="Filter gallery images"
+                aria-label="Filter gallery media"
               >
                 <button
                   className={`gallery-filter${
@@ -429,7 +434,7 @@ function Gallery() {
           {isLoading && (
             <div
               className="gallery-skeleton-grid"
-              aria-label="Loading gallery photos"
+              aria-label="Loading gallery media"
             >
               {Array.from({
                 length:
@@ -463,7 +468,7 @@ function Gallery() {
                     Something went
                     wrong while loading
                     the latest festival
-                    photos.
+                    photos and videos.
                   </p>
 
                   <small>
@@ -509,11 +514,11 @@ function Gallery() {
                 <div>
                   <h2>
                     No festival
-                    photos yet
+                    media yet
                   </h2>
 
                   <p>
-                    Images published
+                    Images and videos published
                     from the admin
                     dashboard will
                     appear here
@@ -541,12 +546,12 @@ function Gallery() {
 
                 <div>
                   <h2>
-                    No matching photos
+                    No matching media
                   </h2>
 
                   <p>
                     There are no
-                    published photos
+                    published media
                     for this category.
                   </p>
                 </div>
@@ -554,7 +559,7 @@ function Gallery() {
             )}
 
           {/* =========================
-              Backend images
+              Published media
           ========================= */}
 
           {!isLoading &&
@@ -569,8 +574,8 @@ function Gallery() {
                   }{" "}
                   {filteredItems.length ===
                   1
-                    ? "photo"
-                    : "photos"}
+                    ? "media item"
+                    : "media items"}
                 </p>
 
                 <div className="gallery-grid">
@@ -602,7 +607,9 @@ function Gallery() {
                           }
                           aria-label={`Open ${item.title}`}
                         >
-                          <img
+                          <GalleryMedia
+                            mediaType={item.mediaType}
+                            poster={item.thumbnailUrl}
                             className="gallery-card__image"
                             src={
                               item.imageUrl
@@ -620,6 +627,7 @@ function Gallery() {
                             aria-hidden="true"
                           />
 
+                          {item.mediaType === "VIDEO" && <span className="gallery-card__type">Video</span>}
                           {item.isFeatured && (
                             <span className="gallery-card__featured">
                               <Star
@@ -700,7 +708,7 @@ function Gallery() {
               onClick={
                 closeGalleryItem
               }
-              aria-label="Close image viewer"
+              aria-label="Close media viewer"
             >
               <X
                 size={22}
@@ -722,7 +730,7 @@ function Gallery() {
 
                   showPreviousItem();
                 }}
-                aria-label="Previous image"
+                aria-label="Previous media item"
               >
                 <ChevronLeft
                   size={25}
@@ -740,7 +748,7 @@ function Gallery() {
 
                   showNextItem();
                 }}
-                aria-label="Next image"
+                aria-label="Next media item"
               >
                 <ChevronRight
                   size={25}
@@ -757,7 +765,12 @@ function Gallery() {
             }
           >
             <div className="gallery-lightbox__image-wrapper">
-              <img
+              <GalleryMedia
+                key={selectedItem.id}
+                mediaType={selectedItem.mediaType}
+                poster={selectedItem.thumbnailUrl}
+                controls
+                muted={false}
                 className="gallery-lightbox__image"
                 src={
                   selectedItem.imageUrl

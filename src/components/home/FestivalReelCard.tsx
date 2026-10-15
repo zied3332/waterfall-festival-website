@@ -75,21 +75,6 @@ export default function FestivalReelCard({
 
   /*
    * =========================================================
-   * RESET WHEN VIDEO CHANGES
-   * =========================================================
-   */
-
-  useEffect(() => {
-    setHasVideoError(false);
-    setIsPlaying(false);
-    setIsMuted(true);
-  }, [
-    video.id,
-    videoUrl,
-  ]);
-
-  /*
-   * =========================================================
    * AUTO PLAY / PAUSE
    * =========================================================
    */
@@ -328,7 +313,7 @@ export default function FestivalReelCard({
             }
           />
         ) : (
-          <div className="festival-reel-card__error">
+          <div className="festival-reel-card__error" role="img" aria-label={`${video.title}: video unavailable`}>
             <span>
               Video unavailable
             </span>

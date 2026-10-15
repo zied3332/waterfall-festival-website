@@ -6,18 +6,22 @@ import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 
 // Windows Edge smoke test of the production bundle. All API data is disposable.
-// Every remote browser request is blocked; the real backend is never contacted.
+// Default runs block remote requests. GALLERY_VERIFY_PUBLIC_MEDIA=1 permits
+// only the optional public GET/media checks; admin mutations stay mocked.
 const browserPath = process.env.GALLERY_TEST_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const profile = await mkdtemp(join(tmpdir(), 'gallery-smoke-'));
 const operationId = '7358c4c1-4ee7-4cdd-8a83-f10d602bcab8';
 const baseItem = { title: 'Test photo', description: '', altText: 'Disposable image', status: 'DRAFT', isFeatured: false, sortOrder: 0, publicId: 'gallery/images/test.webp', thumbnailUrl: null, duration: null, width: null, height: null, showOnHomepage: false, homepageSortOrder: 0, eventId: null, event: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-let items = [1, 2, 3].map(id => ({ ...baseItem, id, title: id === 3 ? 'Test video' : `Test photo ${id}`, mediaType: id === 3 ? 'VIDEO' : 'IMAGE', imageUrl: id === 2 ? '/uploads/missing.webp' : '/uploads/photo.svg' }));
+let items = [1, 2, 3].map(id => ({ ...baseItem, id, title: id === 3 ? 'Test video' : `Test photo ${id}`, mediaType: id === 3 ? 'VIDEO' : 'IMAGE', isFeatured: id === 1, thumbnailUrl: id === 3 ? '/uploads/photo.svg' : null, imageUrl: id === 3 ? '/uploads/clip.webm' : id === 2 ? '/uploads/missing.webp' : '/uploads/photo.svg' }));
+let publicMode = "mixed";
+let fixtureVideo;
 let contractAvailable = false;
 let failDelete = true;
 let deleteCalls = 0;
 let lastPatch;
 let operation;
 const requests = [];
+const allowedPublicMedia = new Set();
 const apiServer = createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'authorization,content-type');
@@ -29,6 +33,14 @@ const apiServer = createServer(async (req, res) => {
   const json = (data, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(data)); };
   if (req.url === '/auth/me') return json({ id: 1, email: 'test@example.invalid', firstName: 'Test', lastName: 'Admin', role: 'ADMIN' });
   if (req.url === '/admin/gallery' && req.method === 'GET') return json(items);
+  if (req.url === '/settings/public') return json({ galleryPageEnabled: true, eventsPageEnabled: false, experiencePageEnabled: false, faqPageEnabled: false });
+  if (req.url === '/gallery') {
+    if (publicMode === 'fail') return json({ message: 'Fixture API unavailable' }, 503);
+    return json(items.filter(item => publicMode !== 'videos' || item.mediaType === 'VIDEO').map(item => ({ ...item, status: 'PUBLISHED' })));
+  }
+  if (req.url === '/gallery/homepage-videos') return json(items.filter(item => item.mediaType === 'VIDEO').map(item => ({ ...item, status: 'PUBLISHED', showOnHomepage: true })));
+  if (req.url === '/uploads/clip.webm') { res.writeHead(200, { 'Content-Type': 'video/webm', 'Content-Length': fixtureVideo.length }); return res.end(fixtureVideo); }
+
   if (req.url === '/admin/gallery/operations') return contractAvailable ? json(operation ? [operation] : []) : json({ message: 'Not deployed' }, 404);
   if (req.url === '/admin/gallery/batch' && req.method === 'DELETE') {
     deleteCalls++;
@@ -60,7 +72,7 @@ const distRoot = resolve('dist');
 const staticServer = createServer(async (req, res) => {
   try {
     let filename = resolve(distRoot, `.${new URL(req.url, 'http://local').pathname}`);
-    if (!filename.startsWith(distRoot + sep)) throw new Error('Invalid path');
+    if (filename !== distRoot && !filename.startsWith(distRoot + sep)) throw new Error('Invalid path');
     if (!extname(filename)) filename = join(distRoot, 'index.html');
     let data = await readFile(filename);
     if (extname(filename) === '.js') data = Buffer.from(data.toString().replaceAll('https://api.waterfallpartykohphangan.com', apiOrigin));
@@ -78,6 +90,7 @@ const browserErrors = [];
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function waitFor(fn, label) {
   for (let i = 0; i < 100; i++) { try { if (await fn()) return; } catch { /* wait for browser state */ } await delay(100); }
+  console.error('Browser state:', await evaluate(`({url: location.href, text: document.body.innerText.slice(0, 2000)})`).catch(() => null));
   throw new Error(`Timed out: ${label}`);
 }
 function send(method, params = {}) {
@@ -100,7 +113,7 @@ try {
     if (message.method === 'Runtime.exceptionThrown') browserErrors.push(message.params.exceptionDetails.text);
     if (message.method === 'Fetch.requestPaused') {
       const { requestId, request } = message.params;
-      const allowed = [origin, apiOrigin].includes(new URL(request.url).origin);
+      const allowed = [origin, apiOrigin].includes(new URL(request.url).origin) || (allowedPublicMedia.has(request.url) && ['GET', 'HEAD'].includes(request.method));
       void send(allowed ? 'Fetch.continueRequest' : 'Fetch.failRequest', { requestId, ...(allowed ? {} : { errorReason: 'BlockedByClient' }) });
     }
   };
@@ -109,6 +122,44 @@ try {
   await send('Fetch.enable', { patterns: [{ urlPattern: 'http*' }] });
   await send('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('waterfall_access_token','fixture-token');` });
   await send('Emulation.setDeviceMetricsOverride', { width: 1365, height: 1000, deviceScaleFactor: 1, mobile: false });
+  const encodedVideo = await evaluate(`new Promise(resolve => {
+    const canvas = document.createElement('canvas'); canvas.width = 160; canvas.height = 90;
+    const context = canvas.getContext('2d'); context.fillStyle = '#6548d8'; context.fillRect(0,0,160,90);
+    const stream = canvas.captureStream(10);
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+    const chunks = []; recorder.ondataavailable = event => chunks.push(event.data);
+    recorder.onstop = () => { const reader = new FileReader(); reader.onload = () => { stream.getTracks().forEach(track => track.stop()); resolve(reader.result.split(',')[1]); }; reader.readAsDataURL(new Blob(chunks, {type:'video/webm'})); };
+    recorder.start(); setTimeout(() => { context.fillStyle = '#22d3ee'; context.fillRect(0,0,160,90); }, 80); setTimeout(() => recorder.stop(), 250);
+  })`);
+  fixtureVideo = Buffer.from(encodedVideo, 'base64');
+  await send('Page.navigate', { url: `${origin}/gallery` });
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 3`), 'public gallery records');
+  await waitFor(() => evaluate(`document.querySelector('.gallery-card img')?.naturalWidth > 0`), 'public image decoded across origins');
+  await waitFor(() => evaluate(`document.querySelector('.gallery-card video')?.videoWidth > 0`), 'public video decoded across origins');
+  await waitFor(() => evaluate(`document.querySelector('.gallery-card .gallery-media-fallback') !== null`), 'public missing-image fallback');
+  assert.equal(await evaluate(`[...document.querySelectorAll('.gallery-card img')].some(image => image.src.endsWith('.webm'))`), false);
+  await evaluate(`document.querySelector('.gallery-card--featured').click()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-lightbox__image')?.naturalWidth > 0`), 'featured image lightbox');
+  await evaluate(`document.querySelector('.gallery-lightbox__close').click()`);
+  await evaluate(`document.querySelector('.gallery-card video').closest('button').click()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-lightbox__image')?.videoWidth > 0`), 'public video lightbox');
+  assert.equal(await evaluate(`document.querySelector('.gallery-lightbox__image').controls`), true);
+  await send('Page.navigate', { url: origin });
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-preview-card').length === 2`), 'homepage backend photos');
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-card img')?.naturalWidth > 0`), 'homepage image decoded');
+  await waitFor(() => evaluate(`document.querySelector('.festival-reel-card video')?.videoWidth > 0`), 'homepage reel decoded');
+  await evaluate(`document.querySelectorAll('.gallery-preview-card')[1].scrollIntoView()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-card .gallery-media-fallback') !== null`), 'homepage failure shown without stock substitution');
+  assert.equal(await evaluate(`[...document.querySelectorAll('.gallery-preview-card img')].some(image => image.src.includes('/images/gallery/'))`), false);
+  await evaluate(`document.querySelector('.gallery-preview-card').click()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-lightbox__image')?.naturalWidth > 0`), 'homepage photo lightbox');
+  publicMode = 'videos';
+  await send('Page.reload');
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-status')?.textContent.includes('No gallery photos')`), 'honest photo empty state for video-only API');
+  publicMode = 'fail';
+  await send('Page.reload');
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-status')?.textContent.includes('could not be loaded')`), 'visible homepage API failure');
+  publicMode = 'mixed';
   await send('Page.navigate', { url: `${origin}/admin/gallery` });
   await waitFor(() => evaluate(`document.querySelectorAll('.admin-gallery__card').length === 3`), 'gallery fixture load');
   await waitFor(() => evaluate(`document.querySelector('.admin-gallery__api-status').textContent.includes('Bulk deletion is disabled')`), 'unsupported API gate');
@@ -156,9 +207,37 @@ try {
   assert.equal(await evaluate(`document.documentElement.scrollWidth <= 768`), true, 'tablet viewport should not overflow horizontally');
   await send('Emulation.setDeviceMetricsOverride', { width: 375, height: 812, deviceScaleFactor: 1, mobile: true });
   assert.equal(await evaluate(`document.documentElement.scrollWidth <= 375`), true, 'mobile viewport should not overflow horizontally');
+  if (process.env.GALLERY_VERIFY_PUBLIC_MEDIA === '1') {
+    // Optional READ-ONLY hosting check. Never load production admin routes or
+    // send POST/PATCH/DELETE requests outside the disposable fixture server.
+    const config = await readFile(resolve('.env.production'), 'utf8');
+    const apiBase = config.match(/^VITE_API_URL=(.+)$/m)?.[1].trim();
+    assert.ok(apiBase, 'Configure VITE_API_URL for the optional hosting check');
+    const response = await fetch(`${apiBase}/gallery`, { signal: AbortSignal.timeout(15000) });
+    assert.equal(response.status, 200);
+    const records = await response.json();
+    const results = [];
+    for (const record of records.slice(0, 10)) {
+      const url = new URL(record.imageUrl, apiBase);
+      if (url.origin !== new URL(apiBase).origin || !url.pathname.startsWith('/uploads/gallery/')) continue;
+      allowedPublicMedia.add(url.href);
+      const result = await evaluate(`new Promise(resolve => {
+        const media = document.createElement(${JSON.stringify(record.mediaType === 'VIDEO' ? 'video' : 'img')});
+        const finish = loaded => { clearTimeout(timer); const result = { id: ${record.id}, type: ${JSON.stringify(record.mediaType)}, loaded, width: media.videoWidth || media.naturalWidth || 0 }; media.removeAttribute('src'); if (media.load) media.load(); media.remove(); resolve(result); };
+        const timer = setTimeout(() => finish(false), 15000);
+        media.onload = () => finish(true); media.onloadeddata = () => finish(true); media.onerror = () => finish(false);
+        media.muted = true; media.preload = 'auto'; media.style.width = '160px'; document.body.appendChild(media);
+        media.src = ${JSON.stringify(url.href)};
+      })`);
+      results.push(result);
+    }
+    console.log('Read-only live API browser decoding:', JSON.stringify(results));
+    assert.ok(results.length > 0 && results.every(result => result.loaded && result.width > 0), 'Published local media must decode successfully');
+  }
   assert.deepEqual(browserErrors, []);
+  console.log('Public media smoke passed: decoded backend images/videos, featured and video lightboxes, homepage photos/reels, explicit missing-media and API failure states.');
   console.log('Browser smoke passed: API gate, partial selection, images-only Select All, hidden selection confirmation, 409 preservation, duplicate-submit protection, partial/pending/preserved results, cleanup retry, metadata-only editing, image fallbacks, preview isolation, and tablet/mobile overflow.');
-  console.log(`Mocked API requests: ${requests.length}. Real backend requests: 0.`);
+  console.log(`Mocked API requests: ${requests.length}. Real backend mutations: 0. Optional live checks use public GET/media reads only.`);
 } finally {
   if (ws?.readyState === WebSocket.OPEN) { try { await send('Browser.close'); } catch { /* browser may close before reply */ } ws.close(); }
   browser.kill();

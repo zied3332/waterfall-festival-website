@@ -234,7 +234,7 @@ export default function FestivalReelsSection() {
           {videos.map(
             (video) => (
               <FestivalReelCard
-                key={video.id}
+                key={`${video.id}-${video.imageUrl}`}
                 video={video}
               />
             ),

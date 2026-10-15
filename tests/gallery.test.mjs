@@ -230,3 +230,14 @@ test('invalid and unsafe media values return null rather than malformed requests
   assert.equal(api.getApiMediaUrl(' /uploads/a photo.jpg '), 'http://api.test:3000/uploads/a%20photo.jpg');
   assert.equal(api.getApiMediaUrl('//cdn.example.com/a.jpg'), 'http://cdn.example.com/a.jpg');
 });
+
+
+test('all public gallery, homepage reel, and single-item reads normalize image and thumbnail sources', async () => {
+  const { gallery } = await loadGallery(async url => Response.json(url.endsWith('/1') ? item : [item]));
+  for (const read of [gallery.getGallery, gallery.getGalleryImages, gallery.getGalleryVideos, gallery.getHomepageVideos]) {
+    const [actual] = await read();
+    assert.equal(actual.imageUrl, 'http://api.test:3000/uploads/gallery/images/photo.webp');
+    assert.equal(actual.thumbnailUrl, 'http://api.test:3000/uploads/gallery/images/thumb.webp');
+  }
+  assert.equal((await gallery.getGalleryImage(1)).imageUrl, 'http://api.test:3000/uploads/gallery/images/photo.webp');
+});

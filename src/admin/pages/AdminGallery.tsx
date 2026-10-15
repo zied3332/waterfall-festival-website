@@ -48,6 +48,7 @@ import type {
 } from "../../types/gallery";
 
 import { API_URL, ApiError } from "../../services/api.service";
+import GalleryMedia from "../../components/gallery/GalleryMedia";
 import GalleryMediaImage from "../components/GalleryMediaImage";
 import { selectVisibleImages, pruneGallerySelection, reconcileGalleryDeletion, describeGalleryDeletion } from "../utils/gallery-selection";
 import "../style/admin-gallery.css";
@@ -1901,7 +1902,7 @@ function AdminGallery() {
                                 }
                               />
                             ) : (
-                              <video
+                              <GalleryMedia mediaType="VIDEO" alt={item.altText || item.title}
                                 src={
                                   item.imageUrl
                                 }
@@ -2622,7 +2623,7 @@ function AdminGallery() {
                     {selectedVideo &&
                       selectedVideoPreview && (
                         <div className="admin-gallery__video-pending">
-                          <video
+                          <GalleryMedia mediaType="VIDEO" alt={selectedVideo?.name || "Video upload preview"}
                             src={
                               selectedVideoPreview
                             }
@@ -2960,7 +2961,7 @@ function AdminGallery() {
                   <div className="admin-gallery__edit-preview">
                     {editingItem.mediaType ===
                     "VIDEO" ? (
-                      <video
+                      <GalleryMedia mediaType="VIDEO" alt={editingItem.altText || editingItem.title}
                         src={
                           form.imageUrl
                         }
@@ -3105,7 +3106,7 @@ function AdminGallery() {
 
             {previewItem.mediaType ===
             "VIDEO" ? (
-              <video
+              <GalleryMedia mediaType="VIDEO" alt={previewItem.altText || previewItem.title}
                 src={
                   previewItem.imageUrl
                 }
