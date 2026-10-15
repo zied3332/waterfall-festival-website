@@ -151,6 +151,10 @@ try {
   for (const [width, columns] of [[320, 2], [375, 2], [768, 3], [1024, 4], [1365, 4]]) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 });
     assert.equal(await evaluate(`getComputedStyle(document.querySelector('.gallery-grid')).gridTemplateColumns.split(' ').length`), columns);
+    if (width === 375 && process.env.GALLERY_PUBLIC_MOBILE_SCREENSHOT) {
+      const screenshot = await send('Page.captureScreenshot', { format: 'png' });
+      await writeFile(process.env.GALLERY_PUBLIC_MOBILE_SCREENSHOT, Buffer.from(screenshot.data, 'base64'));
+    }
     assert.equal(await evaluate(`(() => { const tile = document.querySelector('.gallery-tile').getBoundingClientRect(); return Math.abs(tile.width - tile.height) < 1 && document.documentElement.scrollWidth <= ${width}; })()`), true, `public square grid at ${width}px`);
   }
   if (process.env.GALLERY_PUBLIC_SCREENSHOT) {
@@ -235,8 +239,10 @@ try {
   await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 24`), 'initial progressive page');
   await evaluate(`document.querySelector('.gallery-load-more').click()`);
   await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 48`), 'second progressive page');
+  assert.equal(await evaluate(`document.activeElement === document.querySelectorAll('.gallery-card')[24]`), true, 'Load more focuses the first newly revealed moment');
   await evaluate(`document.querySelector('.gallery-load-more').click()`);
   await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 55 && !document.querySelector('.gallery-load-more')`), 'final progressive page');
+  assert.equal(await evaluate(`document.activeElement === document.querySelectorAll('.gallery-card')[48]`), true, 'final Load more preserves keyboard focus');
   await evaluate(`document.querySelector('.gallery-event-filter select').value = 'Forest Night'; document.querySelector('.gallery-event-filter select').dispatchEvent(new Event('change',{bubbles:true}))`);
   await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 24 && document.querySelector('.gallery-results-count').textContent.includes('of 30')`), 'event filtering resets progressive limit');
   await evaluate(`[...document.querySelectorAll('.gallery-filter')].find(button => button.textContent === 'Featured').click()`);
@@ -348,6 +354,7 @@ try {
     assert.ok(results.length > 0 && results.every(result => result.loaded && result.width > 0), 'Published local media must decode successfully');
   }
   assert.deepEqual(browserErrors, []);
+  console.log('Full Gallery redesign passed: responsive grid/type/event filters, shared/cross-tab favorites, progressive loading/focus, fullscreen keyboard/swipe/pinch safety, and removed-opener focus recovery.');
   console.log('Homepage album passed: 12-photo limit, stable sorting, 3/4/5 columns from 320px, square tiles, favorite isolation/persistence/rapid toggles, corrupt storage, modal focus/keyboard/swipe/scroll recovery, and full Gallery navigation.');
   console.log('Public media smoke passed: decoded backend images/videos, featured and video lightboxes, homepage photos/reels, explicit missing-media and API failure states.');
   console.log('Browser smoke passed: API gate, partial selection, images-only Select All, hidden selection confirmation, 409 preservation, duplicate-submit protection, partial/pending/preserved results, cleanup retry, metadata-only editing, image fallbacks, preview isolation, and tablet/mobile overflow.');

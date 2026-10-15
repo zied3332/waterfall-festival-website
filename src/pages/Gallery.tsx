@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Camera, Film, Heart, Images, RotateCcw, Star, X } from "lucide-react";
 import { useGalleryViewer } from "../hooks/useGalleryViewer";
 import { useGalleryFavorites } from "../hooks/useGalleryFavorites";
@@ -20,6 +20,8 @@ export default function Gallery() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const nextFocusId = useRef<number | null>(null);
   const [viewerItems, setViewerItems] = useState<GalleryImage[]>([]);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLButtonElement | null>(null);
@@ -49,6 +51,11 @@ export default function Gallery() {
     && (filter !== "photos" || item.mediaType === "IMAGE")
     && (filter !== "videos" || item.mediaType === "VIDEO")), [items, filter, event, favorites]);
   const visibleItems = filteredItems.slice(0, visibleCount);
+  useLayoutEffect(() => {
+    if (nextFocusId.current === null) return;
+    gridRef.current?.querySelector<HTMLButtonElement>(`[data-gallery-id="${nextFocusId.current}"]`)?.focus();
+    nextFocusId.current = null;
+  }, [visibleCount]);
   const favoriteCount = items.filter(item => item.mediaType === "IMAGE" && favorites.has(String(item.id))).length;
   const selectedItem = selectedIndex === null ? null : viewerItems[selectedIndex] ?? null;
   const isViewerOpen = selectedItem !== null;
@@ -106,9 +113,9 @@ export default function Gallery() {
           <Images size={32} aria-hidden="true" /><h2>{items.length ? "No moments match these filters" : "The next memories are on their way"}</h2>
           <p>{items.length ? "Try another event or explore all festival moments." : "Published festival photos and videos will appear here."}</p>
           {items.length > 0 && <button type="button" onClick={() => { setFilter("all"); setEvent(""); setVisibleCount(PAGE_SIZE); }}>Clear filters</button>}
-        </div> : <div className="gallery-grid">
+        </div> : <div className="gallery-grid" ref={gridRef}>
           {visibleItems.map((item, index) => <article className="gallery-tile" key={item.id}>
-            <button type="button" className={`gallery-card${item.isFeatured ? " gallery-card--featured" : ""}`}
+            <button type="button" data-gallery-id={item.id} className={`gallery-card${item.isFeatured ? " gallery-card--featured" : ""}`}
               aria-label={`Open ${item.title}`} aria-haspopup="dialog" onClick={event => { openerRef.current = event.currentTarget; setViewerItems([...filteredItems]); setSelectedIndex(index); }}>
               <GalleryMedia mediaType={item.mediaType} src={item.imageUrl} poster={item.thumbnailUrl}
                 alt={item.altText || item.title} className="gallery-card__image" loading={index < 4 ? "eager" : "lazy"} decoding="async" />
@@ -125,7 +132,7 @@ export default function Gallery() {
           </article>)}
         </div>}
         {visibleItems.length < filteredItems.length && <div className="gallery-pagination">
-          <button type="button" className="gallery-load-more" onClick={() => setVisibleCount(count => count + PAGE_SIZE)}>Load {Math.min(PAGE_SIZE, filteredItems.length - visibleCount)} more moments</button>
+          <button type="button" className="gallery-load-more" onClick={() => { nextFocusId.current = filteredItems[visibleItems.length]?.id ?? null; setVisibleCount(count => count + PAGE_SIZE); }}>Load {Math.min(PAGE_SIZE, filteredItems.length - visibleCount)} more moments</button>
           <small>Photos are loaded as you explore. Favorites stay saved in this browser.</small>
         </div>}
       </>}
