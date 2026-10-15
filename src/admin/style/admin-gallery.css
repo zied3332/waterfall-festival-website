@@ -1592,3 +1592,105 @@
     grid-template-columns: 1fr;
   }
 }
+/* Gallery image selection */
+.admin-gallery__selection-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--admin-border);
+  background: var(--admin-surface-secondary);
+  font-size: 0.72rem;
+}
+
+.admin-gallery__selection-toolbar > span {
+  color: var(--admin-text);
+  font-weight: 700;
+}
+
+.admin-gallery__selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-gallery__selection-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 7px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-gallery__selection-actions button:hover:not(:disabled) {
+  background: var(--admin-surface-hover);
+  border-color: var(--admin-border-strong);
+}
+
+.admin-gallery__selection-actions .admin-gallery__bulk-delete {
+  color: var(--admin-danger, #dc2626);
+}
+
+.admin-gallery__selection-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-gallery__selection-toolbar p {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--admin-text-muted);
+  line-height: 1.5;
+}
+
+.admin-gallery__card.admin-gallery__card--selected {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 2px var(--admin-accent);
+  background: var(--admin-accent-soft, var(--admin-surface-secondary));
+}
+
+.admin-gallery__selection-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 36px;
+  margin-bottom: 8px;
+  color: var(--admin-text);
+  font-size: 0.72rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-gallery__selection-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--admin-accent);
+  cursor: pointer;
+}
+
+.admin-gallery__selection-check input:focus-visible,
+.admin-gallery__selection-actions button:focus-visible {
+  outline: 3px solid var(--admin-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .admin-gallery__selection-actions {
+    width: 100%;
+  }
+
+  .admin-gallery__selection-actions button {
+    flex: 1 1 auto;
+  }
+}

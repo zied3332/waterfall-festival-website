@@ -206,6 +206,22 @@ function getFileKey(
 }
 
 function AdminGallery() {
+  const [selectedImageIds, setSelectedImageIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+
+  function toggleImageSelection(id: number) {
+    setSelectedImageIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
   const [
     galleryItems,
     setGalleryItems,
@@ -391,6 +407,10 @@ function AdminGallery() {
         await getAdminGallery();
 
       setGalleryItems(data);
+      setSelectedImageIds((current) => new Set(
+        data.filter((item) => item.mediaType === "IMAGE" && current.has(item.id))
+          .map((item) => item.id),
+      ));
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -493,6 +513,10 @@ function AdminGallery() {
       statusFilter,
       mediaFilter,
     ]);
+
+  const visibleImages = filteredItems.filter((item) => item.mediaType === "IMAGE");
+  const visibleSelectedCount = visibleImages.filter((item) => selectedImageIds.has(item.id)).length;
+  const hiddenSelectedCount = selectedImageIds.size - visibleSelectedCount;
 
   const imageCount =
     galleryItems.filter(
@@ -1256,6 +1280,11 @@ function AdminGallery() {
       await deleteGalleryImage(
         item.id,
       );
+      setSelectedImageIds((current) => {
+        const next = new Set(current);
+        next.delete(item.id);
+        return next;
+      });
 
       setGalleryItems(
         (currentItems) =>
@@ -1624,6 +1653,46 @@ function AdminGallery() {
           </div>
         </div>
 
+        <div className="admin-gallery__selection-toolbar" aria-label="Image selection">
+          <span role="status" aria-live="polite" aria-atomic="true">
+            {selectedImageIds.size} images selected
+            {hiddenSelectedCount > 0 && ` (${hiddenSelectedCount} hidden by filters)`}
+          </span>
+          <div className="admin-gallery__selection-actions">
+            <button
+              type="button"
+              disabled={isLoading || !!error || visibleImages.length === 0 || visibleSelectedCount === visibleImages.length}
+              onClick={() => setSelectedImageIds((current) => new Set([
+                ...current,
+                ...visibleImages.map((item) => item.id),
+              ]))}
+            >
+              Select All
+            </button>
+            <button
+              type="button"
+              disabled={selectedImageIds.size === 0}
+              onClick={() => setSelectedImageIds(new Set())}
+            >
+              Deselect All
+            </button>
+            <button
+              type="button"
+              className="admin-gallery__bulk-delete"
+              disabled
+              aria-describedby="gallery-bulk-delete-help"
+            >
+              <Trash2 size={15} aria-hidden="true" />
+              Delete Selected
+            </button>
+          </div>
+          <p id="gallery-bulk-delete-help">
+            Bulk deletion is unavailable because the gallery API only supports deleting one item at a time.
+            Use each card's delete button to delete an image with confirmation.
+            Select All selects images matching the current filters; Deselect All clears every selection.
+          </p>
+        </div>
+
         {error && (
           <div className="admin-gallery__empty">
             <h2>
@@ -1679,7 +1748,7 @@ function AdminGallery() {
 
                   return (
                     <article
-                      className="admin-gallery__card"
+                      className={`admin-gallery__card${selectedImageIds.has(item.id) ? " admin-gallery__card--selected" : ""}`}
                       key={
                         item.id
                       }
@@ -1782,6 +1851,18 @@ function AdminGallery() {
                       </div>
 
                       <div className="admin-gallery__body">
+                        {item.mediaType === "IMAGE" && (
+                          <label className="admin-gallery__selection-check">
+                            <input
+                              type="checkbox"
+                              checked={selectedImageIds.has(item.id)}
+                              onChange={() => toggleImageSelection(item.id)}
+                              disabled={deletingId === item.id}
+                              aria-label={`Select image: ${item.title}`}
+                            />
+                            Select image
+                          </label>
+                        )}
                         <div className="admin-gallery__meta-row">
                           <div className="admin-gallery__meta">
                             {item.mediaType ===
