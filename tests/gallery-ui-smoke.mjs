@@ -1,6 +1,6 @@
 ﻿import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { resolve, join, extname, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
@@ -36,6 +36,10 @@ const apiServer = createServer(async (req, res) => {
   if (req.url === '/settings/public') return json({ galleryPageEnabled: true, eventsPageEnabled: false, experiencePageEnabled: false, faqPageEnabled: false });
   if (req.url === '/gallery') {
     if (publicMode === 'fail') return json({ message: 'Fixture API unavailable' }, 503);
+    if (publicMode === 'album') return json([
+      ...Array.from({ length: 14 }, (_, index) => ({ ...baseItem, id: 101 + index, title: `Album photo ${index + 1}`, mediaType: 'IMAGE', status: 'PUBLISHED', isFeatured: index === 13, sortOrder: index, imageUrl: index === 1 ? '/uploads/missing.webp' : '/uploads/photo.svg' })),
+      { ...items[2], status: 'PUBLISHED' },
+    ]);
     return json(items.filter(item => publicMode !== 'videos' || item.mediaType === 'VIDEO').map(item => ({ ...item, status: 'PUBLISHED' })));
   }
   if (req.url === '/gallery/homepage-videos') return json(items.filter(item => item.mediaType === 'VIDEO').map(item => ({ ...item, status: 'PUBLISHED', showOnHomepage: true })));
@@ -94,7 +98,7 @@ async function waitFor(fn, label) {
   throw new Error(`Timed out: ${label}`);
 }
 function send(method, params = {}) {
-  return new Promise((resolve, reject) => { const requestId = ++id; pending.set(requestId, { resolve, reject }); ws.send(JSON.stringify({ id: requestId, method, params })); });
+  return new Promise((resolve, reject) => { const requestId = ++id; pending.set(requestId, { resolve, reject, method }); ws.send(JSON.stringify({ id: requestId, method, params })); });
 }
 async function evaluate(expression) {
   const response = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
@@ -109,12 +113,13 @@ try {
   await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
   ws.onmessage = event => {
     const message = JSON.parse(event.data);
-    if (message.id) { const request = pending.get(message.id); pending.delete(message.id); if (message.error) request.reject(new Error(message.error.message)); else request.resolve(message.result); }
+    if (message.id) { const request = pending.get(message.id); pending.delete(message.id); if (message.error) request.reject(new Error(`${request.method}: ${message.error.message}`)); else request.resolve(message.result); }
     if (message.method === 'Runtime.exceptionThrown') browserErrors.push(message.params.exceptionDetails.text);
     if (message.method === 'Fetch.requestPaused') {
       const { requestId, request } = message.params;
       const allowed = [origin, apiOrigin].includes(new URL(request.url).origin) || (allowedPublicMedia.has(request.url) && ['GET', 'HEAD'].includes(request.method));
-      void send(allowed ? 'Fetch.continueRequest' : 'Fetch.failRequest', { requestId, ...(allowed ? {} : { errorReason: 'BlockedByClient' }) });
+      // A reload can detach the old page before its paused request is resumed.
+      void send(allowed ? 'Fetch.continueRequest' : 'Fetch.failRequest', { requestId, ...(allowed ? {} : { errorReason: 'BlockedByClient' }) }).catch(() => {});
     }
   };
   await send('Runtime.enable');
@@ -145,16 +150,62 @@ try {
   await waitFor(() => evaluate(`document.querySelector('.gallery-lightbox__image')?.videoWidth > 0`), 'public video lightbox');
   assert.equal(await evaluate(`document.querySelector('.gallery-lightbox__image').controls`), true);
   await send('Page.navigate', { url: origin });
-  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-preview-card').length === 2`), 'homepage backend photos');
-  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-card img')?.naturalWidth > 0`), 'homepage image decoded');
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-preview-photo').length === 2`), 'homepage backend photos');
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-photo img')?.naturalWidth > 0`), 'homepage image decoded');
   await waitFor(() => evaluate(`document.querySelector('.festival-reel-card video')?.videoWidth > 0`), 'homepage reel decoded');
-  await evaluate(`document.querySelectorAll('.gallery-preview-card')[1].scrollIntoView()`);
-  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-card .gallery-media-fallback') !== null`), 'homepage failure shown without stock substitution');
-  assert.equal(await evaluate(`[...document.querySelectorAll('.gallery-preview-card img')].some(image => image.src.includes('/images/gallery/'))`), false);
-  await evaluate(`document.querySelector('.gallery-preview-card').click()`);
+  await evaluate(`document.querySelectorAll('.gallery-preview-photo')[1].scrollIntoView()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-photo .gallery-media-fallback') !== null`), 'homepage failure shown without stock substitution');
+  assert.equal(await evaluate(`[...document.querySelectorAll('.gallery-preview-photo img')].some(image => image.src.includes('/images/gallery/'))`), false);
+  await evaluate(`document.querySelector('.gallery-preview-photo').click()`);
   await waitFor(() => evaluate(`document.querySelector('.gallery-preview-lightbox__image')?.naturalWidth > 0`), 'homepage photo lightbox');
-  publicMode = 'videos';
+  await evaluate(`document.querySelector('.gallery-preview-lightbox__close').click()`);
+  publicMode = 'album';
   await send('Page.reload');
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-preview-photo').length === 12`), '12-photo homepage limit');
+  assert.equal(await evaluate(`document.querySelector('.gallery-preview-photo').getAttribute('aria-label')`), 'Open Album photo 14', 'existing featured-first ordering is preserved');
+  assert.equal(await evaluate(`document.querySelector('.gallery-preview-card__featured') === null && document.querySelector('.gallery-preview-album--more') !== null`), true);
+  await evaluate(`document.querySelector('.gallery-preview-favorite').click()`);
+  assert.equal(await evaluate(`document.querySelector('.gallery-preview-favorite').getAttribute('aria-pressed') === 'true' && !document.querySelector('.gallery-preview-lightbox').open`), true, 'favorite does not open the viewer');
+  assert.deepEqual(await evaluate(`JSON.parse(localStorage.getItem('waterfall.gallery.favorites.v1'))`), ['114']);
+  await send('Page.reload');
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-favorite')?.getAttribute('aria-pressed') === 'true'`), 'favorite survives reload');
+  await evaluate(`document.querySelector('.gallery-preview-favorite').click(); document.querySelector('.gallery-preview-favorite').click()`);
+  assert.deepEqual(await evaluate(`JSON.parse(localStorage.getItem('waterfall.gallery.favorites.v1'))`), ['114'], 'favorites remain unique');
+  for (const [width, columns] of [[320, 3], [375, 3], [767, 3], [768, 4], [1023, 4], [1024, 5], [1365, 5]]) {
+    await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 });
+    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.gallery-preview-grid')).gridTemplateColumns.split(' ').length`), columns, `column count at ${width}px`);
+    assert.equal(await evaluate(`(() => { const tile = document.querySelector('.gallery-preview-tile').getBoundingClientRect(); return Math.abs(tile.width - tile.height) < 1 && document.querySelector('.gallery-preview').scrollWidth <= ${width}; })()`), true, `square tiles without preview overflow at ${width}px`);
+    assert.equal(await evaluate(`document.querySelector('.gallery-preview-favorite').getBoundingClientRect().width >= 44`), true);
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 375, height: 812, deviceScaleFactor: 1, mobile: true });
+  if (process.env.GALLERY_PREVIEW_SCREENSHOT) {
+    await evaluate(`document.querySelector('.gallery-preview').scrollIntoView({block:'start'})`);
+    await delay(300);
+    const screenshot = await send('Page.captureScreenshot', { format: 'png' });
+    await writeFile(process.env.GALLERY_PREVIEW_SCREENSHOT, Buffer.from(screenshot.data, 'base64'));
+  }
+  await evaluate(`document.querySelector('.gallery-preview-photo').click()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-lightbox').open`), 'native modal opens');
+  assert.equal(await evaluate(`document.activeElement === document.querySelector('.gallery-preview-lightbox__close') && document.body.style.overflow === 'hidden'`), true, 'viewer focuses close and locks background scrolling');
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', modifiers: 8 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', modifiers: 8 });
+  assert.equal(await evaluate(`document.activeElement.getAttribute('aria-label')`), 'Next image', 'Shift+Tab wraps focus inside modal');
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowRight', code: 'ArrowRight' });
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-lightbox__counter').textContent.includes('Photo 2 of 12')`), 'keyboard next');
+  await evaluate(`(() => { const viewer = document.querySelector('.gallery-preview-lightbox__viewer'); const start = new Touch({identifier:1,target:viewer,clientX:250,clientY:250}); const end = new Touch({identifier:1,target:viewer,clientX:80,clientY:260}); viewer.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,touches:[start],changedTouches:[start]})); viewer.dispatchEvent(new TouchEvent('touchend',{bubbles:true,touches:[],changedTouches:[end]})); })()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-preview-lightbox__counter').textContent.includes('Photo 3 of 12')`), 'touch swipe next');
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape' });
+  await waitFor(() => evaluate(`!document.querySelector('.gallery-preview-lightbox').open`), 'Escape closes viewer');
+  assert.equal(await evaluate(`document.activeElement === document.querySelector('.gallery-preview-photo') && document.body.style.overflow !== 'hidden'`), true, 'focus and scrolling restored');
+  await evaluate(`localStorage.setItem('waterfall.gallery.favorites.v1', 'invalid JSON')`);
+  await send('Page.reload');
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-preview-photo').length === 12`), 'corrupt browser storage does not break the album');
+  assert.equal(await evaluate(`document.querySelector('.gallery-preview-favorite').getAttribute('aria-pressed')`), 'false');
+  await evaluate(`document.querySelector('.gallery-preview-cta').click()`);
+  await waitFor(() => evaluate(`location.pathname === '/gallery' && document.querySelectorAll('.gallery-card').length > 0`), 'existing full Gallery navigation');
+  publicMode = 'videos';
+  await send('Page.navigate', { url: origin });
   await waitFor(() => evaluate(`document.querySelector('.gallery-preview-status')?.textContent.includes('No gallery photos')`), 'honest photo empty state for video-only API');
   publicMode = 'fail';
   await send('Page.reload');
@@ -235,6 +286,7 @@ try {
     assert.ok(results.length > 0 && results.every(result => result.loaded && result.width > 0), 'Published local media must decode successfully');
   }
   assert.deepEqual(browserErrors, []);
+  console.log('Homepage album passed: 12-photo limit, stable sorting, 3/4/5 columns from 320px, square tiles, favorite isolation/persistence/rapid toggles, corrupt storage, modal focus/keyboard/swipe/scroll recovery, and full Gallery navigation.');
   console.log('Public media smoke passed: decoded backend images/videos, featured and video lightboxes, homepage photos/reels, explicit missing-media and API failure states.');
   console.log('Browser smoke passed: API gate, partial selection, images-only Select All, hidden selection confirmation, 409 preservation, duplicate-submit protection, partial/pending/preserved results, cleanup retry, metadata-only editing, image fallbacks, preview isolation, and tablet/mobile overflow.');
   console.log(`Mocked API requests: ${requests.length}. Real backend mutations: 0. Optional live checks use public GET/media reads only.`);

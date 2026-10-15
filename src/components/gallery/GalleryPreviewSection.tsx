@@ -1,163 +1,50 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type TouchEvent,
-} from "react";
-
-import {
-  Link,
-} from "react-router-dom";
-
-import {
-  ArrowLeft,
-  ArrowRight,
-  Camera,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  X,
-} from "lucide-react";
-
-import {
-  getGallery,
-} from "../../services/gallery.service";
-
-import type {
-  GalleryImage,
-} from "../../types/gallery";
-
+import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
+import { getGallery } from "../../services/gallery.service";
+import type { GalleryImage } from "../../types/gallery";
 import GalleryMedia from "./GalleryMedia";
 import "./gallery-preview.css";
 
-const PREVIEW_LIMIT = 10;
-
+const PREVIEW_LIMIT = 12;
+const FAVORITES_KEY = "waterfall.gallery.favorites.v1";
 const SWIPE_THRESHOLD = 50;
 
-/*
- * Keeps compatibility with older GalleryImage
- * records and newer media records.
- */
+type GalleryPreviewItem = GalleryImage & { videoUrl?: string | null };
 
-type GalleryPreviewItem =
-  GalleryImage & {
-    type?: string | null;
-    mediaType?: string | null;
-    videoUrl?: string | null;
-  };
-
-/*
- * This is the final item used by the UI.
- *
- * It keeps the original backend gallery information.
- */
-
-type DisplayGalleryItem = {
-  id: string | number;
-  title: string;
-  altText?: string | null;
-
-  imageUrl: string;
-
-  isFeatured: boolean;
-  sortOrder: number;
-
-  eventTitle: string;
-};
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function isImageItem(
-  item: GalleryPreviewItem,
-): boolean {
-  const mediaType =
-    item.mediaType ??
-    item.type;
-
-  /*
-   * If the backend explicitly provides a
-   * media type, only accept images/photos.
-   */
-
-  if (
-    typeof mediaType === "string" &&
-    mediaType.trim()
-  ) {
-    const normalizedType =
-      mediaType
-        .trim()
-        .toUpperCase();
-
-    return (
-      normalizedType === "IMAGE" ||
-      normalizedType === "PHOTO"
-    );
+function isImageItem(item: GalleryPreviewItem): boolean {
+  const mediaType = item.mediaType ?? item.type;
+  if (typeof mediaType === "string" && mediaType.trim()) {
+    return ["IMAGE", "PHOTO"].includes(mediaType.trim().toUpperCase());
   }
-
-  /*
-   * Older records might not have a type.
-   * If videoUrl exists, exclude it.
-   */
-
-  if (item.videoUrl) {
-    return false;
-  }
-
-  /*
-   * Older records only contain imageUrl.
-   */
-
-  return Boolean(
-    item.imageUrl?.trim(),
-  );
+  return !item.videoUrl && Boolean(item.imageUrl?.trim());
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
+function readFavorites(): Set<string> {
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(FAVORITES_KEY) ?? "[]");
+    if (!Array.isArray(value)) return new Set();
+    return new Set(value.filter((id: unknown) =>
+      (typeof id === "number" && Number.isSafeInteger(id) && id > 0)
+      || (typeof id === "string" && /^\d+$/.test(id)),
+    ).map(String));
+  } catch {
+    // Storage can be unavailable or contain invalid JSON; the album still works.
+    return new Set();
+  }
+}
 
 function GalleryPreviewSection() {
-  const [
-    galleryItems,
-    setGalleryItems,
-  ] = useState<
-    GalleryPreviewItem[]
-  >([]);
-
-  const [
-    isLoading,
-    setIsLoading,
-  ] = useState(true);
-
-  const [
-    apiFailed,
-    setApiFailed,
-  ] = useState(false);
-
-  const [
-    selectedIndex,
-    setSelectedIndex,
-  ] = useState<
-    number | null
-  >(null);
-
-  const touchStartXRef =
-    useRef<number | null>(
-      null,
-    );
-
-  const touchEndXRef =
-    useRef<number | null>(
-      null,
-    );
-
-  /* =========================================================
-     LOAD GALLERY
-  ========================================================= */
+  const [galleryItems, setGalleryItems] = useState<GalleryPreviewItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiFailed, setApiFailed] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [favorites, setFavorites] = useState(readFavorites);
+  const favoritesRef = useRef(favorites);
+  const [favoriteNotice, setFavoriteNotice] = useState("");
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -172,716 +59,192 @@ function GalleryPreviewSection() {
     return () => { active = false; };
   }, []);
 
-  /* =========================================================
-     REMOTE IMAGE RECORDS
-  ========================================================= */
+  useEffect(() => {
+    const syncFavorites = (event: StorageEvent) => {
+      if (event.key === FAVORITES_KEY || event.key === null) {
+        const next = readFavorites();
+        favoritesRef.current = next;
+        setFavorites(next);
+      }
+    };
+    window.addEventListener("storage", syncFavorites);
+    return () => window.removeEventListener("storage", syncFavorites);
+  }, []);
 
-  const imageItems =
-    useMemo(() => {
-      return galleryItems.filter(
-        isImageItem,
-      );
-    }, [galleryItems]);
+  const imageItems = useMemo(() => galleryItems.filter(isImageItem), [galleryItems]);
+  // Preserve the homepage's existing featured-first, then sortOrder ordering.
+  const previewItems = useMemo(() => [...imageItems].sort((first, second) =>
+    first.isFeatured === second.isFeatured
+      ? (first.sortOrder ?? 0) - (second.sortOrder ?? 0)
+      : first.isFeatured ? -1 : 1,
+  ).slice(0, PREVIEW_LIMIT), [imageItems]);
 
-  /*
-   * Featured first, then sortOrder.
-   */
-
-  const remotePreviewItems =
-    useMemo(() => {
-      return [...imageItems]
-        .sort(
-          (
-            firstItem,
-            secondItem,
-          ) => {
-            if (
-              firstItem.isFeatured ===
-              secondItem.isFeatured
-            ) {
-              return (
-                (firstItem.sortOrder ??
-                  0) -
-                (secondItem.sortOrder ??
-                  0)
-              );
-            }
-
-            return firstItem.isFeatured
-              ? -1
-              : 1;
-          },
-        )
-        .slice(
-          0,
-          PREVIEW_LIMIT,
-        );
-    }, [imageItems]);
-
-  /* =========================================================
-     FINAL DISPLAY ITEMS
-  ========================================================= */
-
-  const previewItems = useMemo<DisplayGalleryItem[]>(() => remotePreviewItems.map(item => ({
-    id: item.id,
-    title: item.title,
-    altText: item.altText,
-    imageUrl: item.imageUrl,
-    isFeatured: item.isFeatured,
-    sortOrder: item.sortOrder,
-    eventTitle: item.event?.title ?? "Waterfall Festival",
-  })), [remotePreviewItems]);
-
-  /* =========================================================
-     SELECTED IMAGE
-  ========================================================= */
-
-  const selectedItem =
-    selectedIndex !== null
-      ? previewItems[
-          selectedIndex
-        ] ?? null
-      : null;
-
-  /* =========================================================
-     LIGHTBOX CONTROLS
-  ========================================================= */
-
-  const openImage =
-    useCallback(
-      (index: number) => {
-        setSelectedIndex(
-          index,
-        );
-      },
-      [],
-    );
-
-  const closeImage =
-    useCallback(() => {
-      setSelectedIndex(
-        null,
-      );
-    }, []);
-
-  const showPreviousImage =
-    useCallback(() => {
-      setSelectedIndex(
-        (currentIndex) => {
-          if (
-            currentIndex === null ||
-            previewItems.length === 0
-          ) {
-            return null;
-          }
-
-          return currentIndex === 0
-            ? previewItems.length - 1
-            : currentIndex - 1;
-        },
-      );
-    }, [previewItems.length]);
-
-  const showNextImage =
-    useCallback(() => {
-      setSelectedIndex(
-        (currentIndex) => {
-          if (
-            currentIndex === null ||
-            previewItems.length === 0
-          ) {
-            return null;
-          }
-
-          return currentIndex ===
-            previewItems.length - 1
-            ? 0
-            : currentIndex + 1;
-        },
-      );
-    }, [previewItems.length]);
-
-  /* =========================================================
-     KEYBOARD NAVIGATION
-  ========================================================= */
+  const selectedItem = selectedIndex === null ? null : previewItems[selectedIndex] ?? null;
+  const isViewerOpen = selectedItem !== null;
+  const closeImage = useCallback(() => setSelectedIndex(null), []);
+  const showPreviousImage = useCallback(() => {
+    setSelectedIndex(index => index === null || !previewItems.length
+      ? null : (index - 1 + previewItems.length) % previewItems.length);
+  }, [previewItems.length]);
+  const showNextImage = useCallback(() => {
+    setSelectedIndex(index => index === null || !previewItems.length
+      ? null : (index + 1) % previewItems.length);
+  }, [previewItems.length]);
 
   useEffect(() => {
-    if (
-      selectedIndex === null
-    ) {
-      return;
-    }
-
-    const handleKeyDown = (
-      event: KeyboardEvent,
-    ) => {
-      if (
-        event.key === "Escape"
-      ) {
-        closeImage();
-      }
-
-      if (
-        event.key ===
-        "ArrowLeft"
-      ) {
-        showPreviousImage();
-      }
-
-      if (
-        event.key ===
-        "ArrowRight"
-      ) {
-        showNextImage();
-      }
-    };
-
-    window.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
-
+    const dialog = dialogRef.current;
+    if (!isViewerOpen || !dialog) return;
+    // The existing homepage viewer uses a native modal for background inertness
+    // and focus containment, without adding a second lightbox dependency.
+    const overflow = document.body.style.overflow;
+    const rootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    dialog.showModal();
+    dialog.querySelector<HTMLButtonElement>(".gallery-preview-lightbox__close")?.focus();
     return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
+      dialog.close();
+      document.body.style.overflow = overflow;
+      document.documentElement.style.overflow = rootOverflow;
+      openerRef.current?.focus({ preventScroll: true });
+      touchStartRef.current = null;
     };
-  }, [
-    selectedIndex,
-    closeImage,
-    showPreviousImage,
-    showNextImage,
-  ]);
+  }, [isViewerOpen]);
 
-  /* =========================================================
-     LOCK PAGE SCROLL WHEN LIGHTBOX IS OPEN
-  ========================================================= */
-
-  useEffect(() => {
-    if (
-      selectedIndex === null
-    ) {
-      return;
+  function toggleFavorite(id: number) {
+    const key = String(id);
+    const next = new Set(favoritesRef.current);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    favoritesRef.current = next;
+    setFavorites(next);
+    try {
+      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
+      setFavoriteNotice("");
+    } catch {
+      setFavoriteNotice("Favorites are saved for this visit only because browser storage is unavailable.");
     }
+  }
 
-    const previousOverflow =
-      document.body.style
-        .overflow;
+  function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.touches.length === 1 ? event.touches[0] : null;
+    touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+  }
 
-    document.body.style.overflow =
-      "hidden";
-
-    return () => {
-      document.body.style.overflow =
-        previousOverflow;
-    };
-  }, [selectedIndex]);
-
-  /* =========================================================
-     MOBILE SWIPE
-  ========================================================= */
-
-  const handleTouchStart = (
-    event: TouchEvent<HTMLDivElement>,
-  ) => {
-    touchEndXRef.current =
-      null;
-
-    touchStartXRef.current =
-      event.targetTouches[0]
-        ?.clientX ?? null;
-  };
-
-  const handleTouchMove = (
-    event: TouchEvent<HTMLDivElement>,
-  ) => {
-    touchEndXRef.current =
-      event.targetTouches[0]
-        ?.clientX ?? null;
-  };
-
-  const handleTouchEnd =
-    () => {
-      const startX =
-        touchStartXRef.current;
-
-      const endX =
-        touchEndXRef.current;
-
-      touchStartXRef.current =
-        null;
-
-      touchEndXRef.current =
-        null;
-
-      if (
-        startX === null ||
-        endX === null
-      ) {
-        return;
-      }
-
-      const distance =
-        startX - endX;
-
-      if (
-        Math.abs(distance) <
-        SWIPE_THRESHOLD
-      ) {
-        return;
-      }
-
-      /*
-       * Finger moves left:
-       * show next image.
-       */
-
-      if (distance > 0) {
-        showNextImage();
-
-        return;
-      }
-
-      /*
-       * Finger moves right:
-       * show previous image.
-       */
-
-      showPreviousImage();
-    };
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
+    const start = touchStartRef.current;
+    const end = event.changedTouches[0];
+    touchStartRef.current = null;
+    if (!start || !end || event.touches.length) return;
+    const distance = start.x - end.clientX;
+    if (Math.abs(distance) < SWIPE_THRESHOLD || Math.abs(distance) <= Math.abs(start.y - end.clientY)) return;
+    if (distance > 0) showNextImage();
+    else showPreviousImage();
+  }
 
   return (
     <>
-      <section
-        className="gallery-preview"
-        aria-labelledby="gallery-preview-title"
-      >
-        <div
-          className="gallery-preview__glow gallery-preview__glow--left"
-          aria-hidden="true"
-        />
-
-        <div
-          className="gallery-preview__glow gallery-preview__glow--right"
-          aria-hidden="true"
-        />
-
+      <section className="gallery-preview" aria-labelledby="gallery-preview-title">
         <div className="gallery-preview-container">
-
-          {/* =========================
-              Header
-          ========================= */}
-
           <header className="gallery-preview-header">
-
-            <div className="gallery-preview-heading">
-
-              <div className="gallery-preview-heading__icon">
-                <Camera
-                  size={20}
-                  aria-hidden="true"
-                />
-              </div>
-
-              <div>
-
-                <p className="gallery-preview-label">
-                  Festival Gallery
-                </p>
-
-                <h2
-                  id="gallery-preview-title"
-                  className="gallery-preview-title"
-                >
-                  Experience the
-                  atmosphere
-                </h2>
-
-              </div>
-
-            </div>
-
-            <Link
-              to="/gallery"
-              className="gallery-preview-header-link"
-            >
-              View Gallery
-
-              <ArrowRight
-                size={17}
-                aria-hidden="true"
-              />
-            </Link>
-
+            <p className="gallery-preview-label">FESTIVAL GALLERY</p>
+            <h2 id="gallery-preview-title" className="gallery-preview-title">Experience the Atmosphere</h2>
+            <p className="gallery-preview-description">Unforgettable nights. Incredible music. Real moments.</p>
           </header>
 
-          <p className="gallery-preview-description">
-            A glimpse of unforgettable
-            Waterfall Festival nights,
-            performances and moments.
-          </p>
-
-          {/* =========================
-              Loading
-          ========================= */}
-
           {isLoading && (
-            <div
-              className="gallery-preview-grid gallery-preview-grid--loading"
-              aria-label="Loading festival photos"
-            >
-              {Array.from({
-                length:
-                  PREVIEW_LIMIT,
-              }).map(
-                (_, index) => (
-                  <div
-                    key={index}
-                    className={`gallery-preview-skeleton gallery-preview-skeleton--${
-                      index % 3
-                    }`}
-                    aria-hidden="true"
-                  />
-                ),
-              )}
+            <div className="gallery-preview-grid" role="status" aria-label="Loading festival photos" aria-busy="true">
+              {Array.from({ length: PREVIEW_LIMIT }, (_, index) => (
+                <div key={index} className="gallery-preview-skeleton" aria-hidden="true" />
+              ))}
             </div>
           )}
 
-          {/* =========================
-              Gallery
-          ========================= */}
-
-          {!isLoading &&
-            previewItems.length >
-              0 && (
-              <>
-                <div className="gallery-preview-grid">
-
-                  {previewItems.map(
-                    (
-                      item,
-                      index,
-                    ) => {
-                      const imageSource = item.imageUrl;
-
-                      return (
-                        <button
-                          type="button"
-                          key={item.id}
-                          className="gallery-preview-card"
-                          aria-label={`Open ${item.title}`}
-                          onClick={() =>
-                            openImage(
-                              index,
-                            )
-                          }
-                        >
-                          <div className="gallery-preview-card__media">
-
-                            <GalleryMedia
-                              src={
-                                imageSource
-                              }
-                              alt={
-                                item.altText ??
-                                item.title
-                              }
-                              loading="lazy"
-                              decoding="async"
-                              className="gallery-preview-card__image"
-                            />
-
-                            <span
-                              className="gallery-preview-card__overlay"
-                              aria-hidden="true"
-                            />
-
-                            {item.isFeatured && (
-                              <span className="gallery-preview-card__featured">
-
-                                <Sparkles
-                                  size={11}
-                                  aria-hidden="true"
-                                />
-
-                                Featured
-
-                              </span>
-                            )}
-
-                            <span className="gallery-preview-card__content">
-
-                              <small>
-                                {
-                                  item.eventTitle
-                                }
-                              </small>
-
-                              <strong>
-                                {item.title}
-                              </strong>
-
-                            </span>
-
-                            <span
-                              className="gallery-preview-card__zoom"
-                              aria-hidden="true"
-                            >
-                              <Camera
-                                size={15}
-                              />
-                            </span>
-
-                          </div>
-                        </button>
-                      );
-                    },
-                  )}
-
-                </div>
-
-                {/* =========================
-                    CTA
-                ========================= */}
-
-                <div className="gallery-preview-footer">
-
-                  <div>
-
-                    <span className="gallery-preview-footer__count">
-                      {
-                        previewItems.length
-                      }{" "}
-                      {previewItems.length ===
-                      1
-                        ? "festival photo"
-                        : "festival photos"}
-                    </span>
-
-                    <p>
-                      Explore more
-                      Waterfall Festival
-                      moments.
-                    </p>
-
-                  </div>
-
-                  <Link
-                    to="/gallery"
-                    className="gallery-preview-cta"
-                  >
-                    <Camera
-                      size={17}
-                      aria-hidden="true"
-                    />
-
-                    Explore Full Gallery
-
-                    <ArrowRight
-                      size={16}
-                      aria-hidden="true"
-                    />
-                  </Link>
-
-                </div>
-              </>
-            )}
+          {!isLoading && previewItems.length > 0 && (
+            <div className={`gallery-preview-album${imageItems.length > PREVIEW_LIMIT ? " gallery-preview-album--more" : ""}`}>
+              <div className="gallery-preview-grid">
+                {previewItems.map((item, index) => {
+                  const isFavorite = favorites.has(String(item.id));
+                  return (
+                    <div key={item.id} className="gallery-preview-tile">
+                      <button type="button" className="gallery-preview-photo" aria-label={`Open ${item.title}`}
+                        aria-haspopup="dialog" onClick={event => {
+                          openerRef.current = event.currentTarget;
+                          setSelectedIndex(index);
+                        }}>
+                        <GalleryMedia src={item.imageUrl} alt={item.altText ?? item.title}
+                          loading="lazy" decoding="async" className="gallery-preview-photo__image" />
+                      </button>
+                      <button type="button" className="gallery-preview-favorite" aria-pressed={isFavorite}
+                        aria-label={`${isFavorite ? "Remove" : "Add"} ${item.title} ${isFavorite ? "from" : "to"} favorites`}
+                        onClick={event => { event.stopPropagation(); toggleFavorite(item.id); }}>
+                        <Heart size={19} aria-hidden="true" fill={isFavorite ? "currentColor" : "none"} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {!isLoading && previewItems.length === 0 && (
             <p className="gallery-preview-status" role="status">
               {apiFailed ? "Gallery photos could not be loaded. Please try again later." : "No gallery photos have been published yet. Explore the full gallery for festival videos."}
             </p>
           )}
-
+          {favoriteNotice && <p className="gallery-preview-storage-notice" role="status">{favoriteNotice}</p>}
+          <div className="gallery-preview-footer">
+            <Link to="/gallery" className="gallery-preview-cta">
+              Explore Full Gallery <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* =========================
-          IMAGE LIGHTBOX
-      ========================= */}
-
-      {selectedItem && (
-        <div
-          className="gallery-preview-lightbox"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Viewing ${selectedItem.title}`}
-          onClick={
-            closeImage
+      <dialog ref={dialogRef} className="gallery-preview-lightbox" aria-label="Festival photo viewer"
+        onCancel={event => { event.preventDefault(); closeImage(); }}
+        onClick={event => { if (event.target === event.currentTarget) closeImage(); }}
+        onKeyDown={event => {
+          if (event.key === "Escape") { event.preventDefault(); closeImage(); }
+          if (event.key === "ArrowLeft") { event.preventDefault(); showPreviousImage(); }
+          if (event.key === "ArrowRight") { event.preventDefault(); showNextImage(); }
+          if (event.key === "Tab") {
+            const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+            const first = buttons[0];
+            const last = buttons[buttons.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
           }
-        >
-          {/* =========================
-              Top bar
-          ========================= */}
-
-          <div
-            className="gallery-preview-lightbox__top"
-            onClick={(
-              event,
-            ) =>
-              event.stopPropagation()
-            }
-          >
-            <div className="gallery-preview-lightbox__counter">
-
-              <span>
-                {selectedIndex !==
-                null
-                  ? selectedIndex +
-                    1
-                  : 1}
+        }}>
+        {selectedItem && (
+          <>
+            <div className="gallery-preview-lightbox__top">
+              <span className="gallery-preview-lightbox__counter" aria-live="polite" aria-atomic="true">
+                Photo {(selectedIndex ?? 0) + 1} of {previewItems.length}
               </span>
-
-              <span>/</span>
-
-              <span>
-                {
-                  previewItems.length
-                }
-              </span>
-
+              <button type="button" className="gallery-preview-lightbox__close" aria-label="Close image" onClick={closeImage}>
+                <X size={24} aria-hidden="true" />
+              </button>
             </div>
-
-            <button
-              type="button"
-              className="gallery-preview-lightbox__close"
-              onClick={
-                closeImage
-              }
-              aria-label="Close image"
-            >
-              <X size={22} />
-            </button>
-
-          </div>
-
-          {/* =========================
-              Previous
-          ========================= */}
-
-          {previewItems.length >
-            1 && (
-            <button
-              type="button"
-              className="gallery-preview-lightbox__nav gallery-preview-lightbox__nav--previous"
-              onClick={(
-                event,
-              ) => {
-                event.stopPropagation();
-
-                showPreviousImage();
-              }}
-              aria-label="Previous image"
-            >
-              <ChevronLeft
-                size={30}
-              />
-            </button>
-          )}
-
-          {/* =========================
-              Image
-          ========================= */}
-
-          <div
-            className="gallery-preview-lightbox__viewer"
-            onClick={(
-              event,
-            ) =>
-              event.stopPropagation()
-            }
-            onTouchStart={
-              handleTouchStart
-            }
-            onTouchMove={
-              handleTouchMove
-            }
-            onTouchEnd={
-              handleTouchEnd
-            }
-          >
-            <GalleryMedia
-              key={`${selectedItem.id}-${selectedItem.imageUrl}`}
-              src={
-                selectedItem.imageUrl
-              }
-              alt={
-                selectedItem.altText ??
-                selectedItem.title
-              }
-              className="gallery-preview-lightbox__image"
-              draggable={false}
-            />
-
-            <div className="gallery-preview-lightbox__details">
-
-              <div>
-
-                <span>
-                  {
-                    selectedItem.eventTitle
-                  }
-                </span>
-
-                <h3>
-                  {
-                    selectedItem.title
-                  }
-                </h3>
-
-              </div>
-
-              <div className="gallery-preview-lightbox__swipe">
-
-                <ArrowLeft
-                  size={13}
-                />
-
-                <span>
-                  Swipe
-                </span>
-
-                <ArrowRight
-                  size={13}
-                />
-
-              </div>
-
+            <div className="gallery-preview-lightbox__viewer" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}
+              onTouchCancel={() => { touchStartRef.current = null; }}>
+              <GalleryMedia key={`${selectedItem.id}-${selectedItem.imageUrl}`} src={selectedItem.imageUrl}
+                alt={selectedItem.altText ?? selectedItem.title} className="gallery-preview-lightbox__image" draggable={false} />
             </div>
-
-          </div>
-
-          {/* =========================
-              Next
-          ========================= */}
-
-          {previewItems.length >
-            1 && (
-            <button
-              type="button"
-              className="gallery-preview-lightbox__nav gallery-preview-lightbox__nav--next"
-              onClick={(
-                event,
-              ) => {
-                event.stopPropagation();
-
-                showNextImage();
-              }}
-              aria-label="Next image"
-            >
-              <ChevronRight
-                size={30}
-              />
-            </button>
-          )}
-
-        </div>
-      )}
+            {previewItems.length > 1 && (
+              <div className="gallery-preview-lightbox__navigation">
+                <button type="button" aria-label="Previous image" onClick={showPreviousImage}>
+                  <ChevronLeft size={24} aria-hidden="true" />
+                </button>
+                <span>Swipe to explore</span>
+                <button type="button" aria-label="Next image" onClick={showNextImage}>
+                  <ChevronRight size={24} aria-hidden="true" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </dialog>
     </>
   );
 }
