@@ -3,11 +3,11 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 import { getGallery } from "../../services/gallery.service";
 import type { GalleryImage } from "../../types/gallery";
+import { useGalleryFavorites } from "../../hooks/useGalleryFavorites";
 import GalleryMedia from "./GalleryMedia";
 import "./gallery-preview.css";
 
 const PREVIEW_LIMIT = 12;
-const FAVORITES_KEY = "waterfall.gallery.favorites.v1";
 const SWIPE_THRESHOLD = 50;
 
 type GalleryPreviewItem = GalleryImage & { videoUrl?: string | null };
@@ -20,28 +20,12 @@ function isImageItem(item: GalleryPreviewItem): boolean {
   return !item.videoUrl && Boolean(item.imageUrl?.trim());
 }
 
-function readFavorites(): Set<string> {
-  try {
-    const value: unknown = JSON.parse(window.localStorage.getItem(FAVORITES_KEY) ?? "[]");
-    if (!Array.isArray(value)) return new Set();
-    return new Set(value.filter((id: unknown) =>
-      (typeof id === "number" && Number.isSafeInteger(id) && id > 0)
-      || (typeof id === "string" && /^\d+$/.test(id)),
-    ).map(String));
-  } catch {
-    // Storage can be unavailable or contain invalid JSON; the album still works.
-    return new Set();
-  }
-}
-
 function GalleryPreviewSection() {
   const [galleryItems, setGalleryItems] = useState<GalleryPreviewItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [apiFailed, setApiFailed] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [favorites, setFavorites] = useState(readFavorites);
-  const favoritesRef = useRef(favorites);
-  const [favoriteNotice, setFavoriteNotice] = useState("");
+  const { favorites, toggleFavorite, favoriteNotice } = useGalleryFavorites();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLButtonElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -57,18 +41,6 @@ function GalleryPreviewSection() {
       if (active) setIsLoading(false);
     });
     return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    const syncFavorites = (event: StorageEvent) => {
-      if (event.key === FAVORITES_KEY || event.key === null) {
-        const next = readFavorites();
-        favoritesRef.current = next;
-        setFavorites(next);
-      }
-    };
-    window.addEventListener("storage", syncFavorites);
-    return () => window.removeEventListener("storage", syncFavorites);
   }, []);
 
   const imageItems = useMemo(() => galleryItems.filter(isImageItem), [galleryItems]);
@@ -110,21 +82,6 @@ function GalleryPreviewSection() {
       touchStartRef.current = null;
     };
   }, [isViewerOpen]);
-
-  function toggleFavorite(id: number) {
-    const key = String(id);
-    const next = new Set(favoritesRef.current);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    favoritesRef.current = next;
-    setFavorites(next);
-    try {
-      window.localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
-      setFavoriteNotice("");
-    } catch {
-      setFavoriteNotice("Favorites are saved for this visit only because browser storage is unavailable.");
-    }
-  }
 
   function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
     const touch = event.touches.length === 1 ? event.touches[0] : null;

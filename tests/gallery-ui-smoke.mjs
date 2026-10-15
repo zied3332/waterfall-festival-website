@@ -36,6 +36,7 @@ const apiServer = createServer(async (req, res) => {
   if (req.url === '/settings/public') return json({ galleryPageEnabled: true, eventsPageEnabled: false, experiencePageEnabled: false, faqPageEnabled: false });
   if (req.url === '/gallery') {
     if (publicMode === 'fail') return json({ message: 'Fixture API unavailable' }, 503);
+    if (publicMode === 'large') return json(Array.from({ length: 55 }, (_, index) => ({ ...baseItem, id: 201 + index, title: `Large album ${index + 1}`, mediaType: 'IMAGE', status: 'PUBLISHED', isFeatured: index % 10 === 0, event: { id: index < 30 ? 1 : 2, title: index < 30 ? 'Forest Night' : 'Waterfall Afterdark', slug: 'fixture' }, imageUrl: '/uploads/photo.svg' })));
     if (publicMode === 'album') return json([
       ...Array.from({ length: 14 }, (_, index) => ({ ...baseItem, id: 101 + index, title: `Album photo ${index + 1}`, mediaType: 'IMAGE', status: 'PUBLISHED', isFeatured: index === 13, sortOrder: index, imageUrl: index === 1 ? '/uploads/missing.webp' : '/uploads/photo.svg' })),
       { ...items[2], status: 'PUBLISHED' },
@@ -102,7 +103,7 @@ function send(method, params = {}) {
 }
 async function evaluate(expression) {
   const response = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
-  if (response.exceptionDetails) throw new Error(response.exceptionDetails.text);
+  if (response.exceptionDetails) throw new Error(response.exceptionDetails.exception?.description || response.exceptionDetails.text);
   return response.result.value;
 }
 try {
@@ -217,6 +218,29 @@ try {
   assert.equal(await evaluate(`document.querySelector('.gallery-preview-favorite').getAttribute('aria-pressed')`), 'false');
   await evaluate(`document.querySelector('.gallery-preview-cta').click()`);
   await waitFor(() => evaluate(`location.pathname === '/gallery' && document.querySelectorAll('.gallery-card').length > 0`), 'existing full Gallery navigation');
+  await evaluate(`document.querySelector('.gallery-favorite').click()`);
+  assert.equal(await evaluate(`document.querySelector('.gallery-lightbox').open`), false, 'public favorite does not open viewer');
+  await send('Page.navigate', { url: origin });
+  await waitFor(() => evaluate(`document.querySelector('[aria-label="Remove Album photo 1 from favorites"]')?.getAttribute('aria-pressed') === 'true'`), 'public favorites shared with homepage');
+  await evaluate(`document.querySelector('[aria-label="Remove Album photo 1 from favorites"]').click(); document.querySelector('.gallery-preview-cta').click()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-filter:last-child')?.textContent === 'Favorites (0)' && document.querySelectorAll('.gallery-card').length === 15`), 'homepage removal synchronized to full Gallery');
+  await evaluate(`document.querySelector('.gallery-favorite').click(); document.querySelector('.gallery-filter:last-child').click()`);
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 1`), 'favorites-only filter');
+  await evaluate(`document.querySelector('.gallery-favorite').click()`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-state')?.textContent.includes('No moments match')`), 'unfavorite updates filtered grid');
+  await evaluate(`document.querySelector('.gallery-state button').click(); localStorage.setItem('waterfall.gallery.favorites.v1','[101]'); window.dispatchEvent(new StorageEvent('storage',{key:'waterfall.gallery.favorites.v1',storageArea:localStorage,newValue:'[101]'}))`);
+  await waitFor(() => evaluate(`document.querySelector('.gallery-favorite')?.getAttribute('aria-pressed') === 'true'`), 'cross-tab storage event updates Gallery');
+  publicMode = 'large';
+  await send('Page.reload');
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 24`), 'initial progressive page');
+  await evaluate(`document.querySelector('.gallery-load-more').click()`);
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 48`), 'second progressive page');
+  await evaluate(`document.querySelector('.gallery-load-more').click()`);
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 55 && !document.querySelector('.gallery-load-more')`), 'final progressive page');
+  await evaluate(`document.querySelector('.gallery-event-filter select').value = 'Forest Night'; document.querySelector('.gallery-event-filter select').dispatchEvent(new Event('change',{bubbles:true}))`);
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 24 && document.querySelector('.gallery-results-count').textContent.includes('of 30')`), 'event filtering resets progressive limit');
+  await evaluate(`[...document.querySelectorAll('.gallery-filter')].find(button => button.textContent === 'Featured').click()`);
+  await waitFor(() => evaluate(`document.querySelectorAll('.gallery-card').length === 3`), 'featured and event filters combine');
   publicMode = 'videos';
   await send('Page.navigate', { url: origin });
   await waitFor(() => evaluate(`document.querySelector('.gallery-preview-status')?.textContent.includes('No gallery photos')`), 'honest photo empty state for video-only API');

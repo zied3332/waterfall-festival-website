@@ -7,8 +7,21 @@ import ts from 'typescript';
 
 // Execute the real TypeScript services with isolated browser globals and mocked HTTP.
 export async function loadGallery(fetchImpl = async () => Response.json([]), environment = {}) {
+  const storage = new Map();
+  if (environment.initialFavorites !== undefined) storage.set('waterfall.gallery.favorites.v1', environment.initialFavorites);
+  const events = new EventTarget();
+  const browserWindow = {
+    location: { hostname: 'localhost', origin: 'https://frontend.test' },
+    localStorage: {
+      getItem(key) { if (environment.storageBlocked) throw new Error('Storage blocked'); return storage.get(key) ?? null; },
+      setItem(key, value) { if (environment.storageBlocked) throw new Error('Storage blocked'); storage.set(key, value); },
+    },
+    addEventListener: events.addEventListener.bind(events),
+    removeEventListener: events.removeEventListener.bind(events),
+    dispatchEvent: events.dispatchEvent.bind(events),
+  };
   const context = vm.createContext({
-    window: { location: { hostname: 'localhost', origin: 'https://frontend.test' } },
+    window: browserWindow,
     URL, Headers, FormData, Response, fetch: fetchImpl, console,
   });
   const modules = new Map();
@@ -38,7 +51,9 @@ export async function loadGallery(fetchImpl = async () => Response.json([]), env
   const api = modules.get(resolve('src/services/api.service.ts'));
   const selection = await load(resolve('src/admin/utils/gallery-selection.ts'));
   await selection.evaluate();
-  return { gallery: service.namespace, api: api.namespace, selection: selection.namespace };
+  const favorites = await load(resolve('src/services/gallery-favorites.ts'));
+  await favorites.evaluate();
+  return { gallery: service.namespace, api: api.namespace, selection: selection.namespace, favorites: favorites.namespace, storage, browserWindow };
 }
 
 const item = { id: 1, imageUrl: '/uploads/gallery/images/photo.webp', thumbnailUrl: '/uploads/gallery/images/thumb.webp' };
@@ -240,4 +255,61 @@ test('all public gallery, homepage reel, and single-item reads normalize image a
     assert.equal(actual.thumbnailUrl, 'http://api.test:3000/uploads/gallery/images/thumb.webp');
   }
   assert.equal((await gallery.getGalleryImage(1)).imageUrl, 'http://api.test:3000/uploads/gallery/images/photo.webp');
+});
+
+
+test('favorites preserve existing homepage IDs and sanitize malformed storage', async () => {
+  const { favorites } = await loadGallery(undefined, { initialFavorites: '[12,"18",12,0,-1,"no","00",2147483648]' });
+  assert.deepEqual([...favorites.getFavoritesSnapshot().ids], ['12', '18']);
+  const corrupt = await loadGallery(undefined, { initialFavorites: 'invalid JSON' });
+  assert.equal(corrupt.favorites.getFavoritesSnapshot().ids.size, 0);
+});
+
+test('favorites notify all same-tab subscribers and rapid toggles stay unique', async () => {
+  const { favorites, storage } = await loadGallery();
+  let first = 0, second = 0;
+  const stopFirst = favorites.subscribeFavorites(() => first++);
+  const stopSecond = favorites.subscribeFavorites(() => second++);
+  const initial = favorites.getFavoritesSnapshot();
+  favorites.toggleGalleryFavorite(12); favorites.toggleGalleryFavorite(12); favorites.toggleGalleryFavorite(12);
+  assert.equal(first, 3); assert.equal(second, 3);
+  assert.equal(initial.ids.size, 0, 'snapshots stay immutable');
+  assert.deepEqual(JSON.parse(storage.get('waterfall.gallery.favorites.v1')), ['12']);
+  stopFirst(); stopSecond();
+});
+
+test('favorites merge persisted tab changes and listen to relevant storage events only', async () => {
+  const { favorites, storage, browserWindow } = await loadGallery();
+  const stop = favorites.subscribeFavorites(() => {});
+  storage.set('waterfall.gallery.favorites.v1', '[18]');
+  favorites.toggleGalleryFavorite(12);
+  assert.deepEqual([...favorites.getFavoritesSnapshot().ids], ['18', '12']);
+  function emit(key) { const event = new Event('storage'); Object.defineProperty(event, 'key', { value: key }); browserWindow.dispatchEvent(event); }
+  storage.set('waterfall.gallery.favorites.v1', '[27]');
+  emit('unrelated');
+  assert.equal(favorites.getFavoritesSnapshot().ids.has('12'), true);
+  emit('waterfall.gallery.favorites.v1');
+  assert.deepEqual([...favorites.getFavoritesSnapshot().ids], ['27']);
+  storage.clear(); emit(null);
+  assert.equal(favorites.getFavoritesSnapshot().ids.size, 0);
+  stop();
+});
+
+test('blocked storage retains visit-only favorites across gallery subscriptions', async () => {
+  const { favorites } = await loadGallery(undefined, { storageBlocked: true });
+  let stop = favorites.subscribeFavorites(() => {});
+  favorites.toggleGalleryFavorite(12); stop();
+  stop = favorites.subscribeFavorites(() => {});
+  favorites.toggleGalleryFavorite(18);
+  assert.deepEqual([...favorites.getFavoritesSnapshot().ids], ['12', '18']);
+  assert.equal(favorites.getFavoritesSnapshot().persistent, false);
+  stop();
+});
+
+test('invalid favorite IDs do not change state or persistent storage', async () => {
+  const { favorites, storage } = await loadGallery();
+  const before = favorites.getFavoritesSnapshot();
+  for (const id of [0, -1, 1.1, NaN, 2147483648]) favorites.toggleGalleryFavorite(id);
+  assert.equal(favorites.getFavoritesSnapshot(), before);
+  assert.equal(storage.size, 0);
 });
