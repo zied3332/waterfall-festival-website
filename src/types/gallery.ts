@@ -100,3 +100,24 @@ export type UpdateGalleryImageInput = Partial<Omit<
   CreateGalleryImageInput,
   "imageUrl" | "publicId" | "thumbnailUrl" | "mediaType"
 >>;
+
+export interface GalleryBatchDeletionRequest {
+  ids: number[];
+}
+
+export type GalleryCleanupStatus = "completed" | "cleanup_pending" | "cleanup_failed";
+
+export interface GalleryDeletionResponse {
+  operationId: string;
+  status: GalleryCleanupStatus;
+  requestedCount: number;
+  deletedIds: number[];
+  notFoundIds: number[];
+  preservedAssetIds: number[];
+  cleanup: { pending: number; succeeded: number; failed: number };
+}
+
+export type GalleryCleanupOperation = GalleryDeletionResponse;
+export type GalleryCleanupRetryResponse = GalleryDeletionResponse;
+// Older deployments return only the deleted record.
+export type GallerySingleDeletionResponse = GalleryImage & { deletion?: GalleryDeletionResponse };

@@ -18,6 +18,7 @@ import {
 
 import {
   useEffect,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -28,6 +29,11 @@ import {
 
 import {
   deleteGalleryImage,
+  deleteGalleryImagesBatch,
+  getGalleryCleanupOperations,
+  getGalleryCleanupOperation,
+  retryGalleryCleanup,
+  parseGalleryDeletion,
   getAdminGallery,
   updateGalleryImage,
   uploadGalleryImages,
@@ -36,10 +42,14 @@ import {
 
 import type {
   GalleryImage,
+  GalleryDeletionResponse,
   GalleryStatus,
   UpdateGalleryImageInput,
 } from "../../types/gallery";
 
+import { API_URL, ApiError } from "../../services/api.service";
+import GalleryMediaImage from "../components/GalleryMediaImage";
+import { selectVisibleImages, pruneGallerySelection, reconcileGalleryDeletion, describeGalleryDeletion } from "../utils/gallery-selection";
 import "../style/admin-gallery.css";
 
 type StatusFilter =
@@ -205,7 +215,35 @@ function getFileKey(
   ].join("-");
 }
 
+function deletionErrorMessage(error: unknown): string {
+  const details = error instanceof Error ? error.message : "Unable to reach the API.";
+  if (error instanceof ApiError) {
+    const context: Record<number, string> = {
+      400: "The API rejected this request. Check the selected images and storage ownership.",
+      401: "Your session has expired. Sign in again before deleting.",
+      403: "Your account does not have permission for this action.",
+      409: "An asset is shared or reserved by another cleanup operation. No deletion was confirmed.",
+      500: "The server could not confirm the outcome. Refresh gallery data and cleanup operations before retrying.",
+    };
+    return `${context[error.status] ?? "The API could not complete this action."} ${details}`;
+  }
+  return `${details} If a delete request was sent, its outcome may be unknown. Refresh gallery data and cleanup operations before retrying.`;
+}
+
 function AdminGallery() {
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [operationBusy, setOperationBusy] = useState<string | null>(null);
+  const [operations, setOperations] = useState<GalleryDeletionResponse[]>([]);
+  const [apiVerified, setApiVerified] = useState(false);
+  const [checkingApi, setCheckingApi] = useState(true);
+  const [capabilityError, setCapabilityError] = useState<string | null>(null);
+  const [deletionError, setDeletionError] = useState<string | null>(null);
+  const [deletionNotice, setDeletionNotice] = useState<string | null>(null);
+  const deletionLock = useRef(false);
+  const confirmationRef = useRef<HTMLDialogElement>(null);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  const deleteSelectedRef = useRef<HTMLButtonElement>(null);
+
   const [selectedImageIds, setSelectedImageIds] = useState<Set<number>>(
     () => new Set(),
   );
@@ -398,6 +436,81 @@ function AdminGallery() {
     };
   }, []);
 
+  const updateOperation = useCallback((result: GalleryDeletionResponse) => {
+    setOperations(current => [result, ...current.filter(item => item.operationId !== result.operationId)].slice(0, 100));
+  }, []);
+
+  const verifyApi = useCallback((isActive: () => boolean = () => true) => {
+    return getGalleryCleanupOperations().then(pending => {
+      if (!isActive()) return;
+      setOperations(current => [...pending, ...current.filter(item => !pending.some(operation => operation.operationId === item.operationId))].slice(0, 100));
+      setApiVerified(true);
+      setCapabilityError(null);
+    }).catch((error: unknown) => {
+      if (!isActive()) return;
+      setApiVerified(false);
+      setCapabilityError(`Bulk deletion is disabled: the active API could not verify the cleanup operations contract. ${error instanceof Error ? error.message : "Connection failed."}`);
+    }).finally(() => {
+      if (isActive()) setCheckingApi(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void verifyApi(() => active);
+    return () => { active = false; };
+  }, [verifyApi]);
+
+  function applyDeletion(result: GalleryDeletionResponse) {
+    setGalleryItems(current => reconcileGalleryDeletion(current, new Set(), result).items);
+    setSelectedImageIds(current => reconcileGalleryDeletion([], current, result).selection);
+    if (previewItem && [...result.deletedIds, ...result.notFoundIds].includes(previewItem.id)) setPreviewItem(null);
+    updateOperation(result);
+    setDeletionNotice(describeGalleryDeletion(result));
+  }
+
+  async function handleBatchDelete() {
+    if (deletionLock.current || !apiVerified || selectedImageIds.size < 1 || selectedImageIds.size > 100) return;
+    // Snapshot at confirmation, including selections hidden by filters.
+    const ids = [...selectedImageIds];
+    deletionLock.current = true;
+    setIsBulkDeleting(true);
+    setDeletionError(null);
+    setDeletionNotice(null);
+    try {
+      applyDeletion(await deleteGalleryImagesBatch(ids));
+      confirmationRef.current?.close();
+      deleteSelectedRef.current?.focus();
+    } catch (error) {
+      if (error instanceof ApiError && [404, 405].includes(error.status)) {
+        setApiVerified(false);
+        setCapabilityError("Bulk deletion is disabled because this deployment does not provide the batch route. Check the active API before retrying.");
+      }
+      setDeletionError(deletionErrorMessage(error));
+      confirmationRef.current?.close();
+      deleteSelectedRef.current?.focus();
+    } finally {
+      deletionLock.current = false;
+      setIsBulkDeleting(false);
+    }
+  }
+
+  async function handleOperation(operationId: string, retry: boolean) {
+    if (deletionLock.current) return;
+    deletionLock.current = true;
+    setOperationBusy(operationId);
+    setDeletionError(null);
+    try {
+      const result = await (retry ? retryGalleryCleanup(operationId) : getGalleryCleanupOperation(operationId));
+      applyDeletion(result);
+    } catch (error) {
+      setDeletionError(deletionErrorMessage(error));
+    } finally {
+      deletionLock.current = false;
+      setOperationBusy(null);
+    }
+  }
+
   async function loadGallery() {
     try {
       setIsLoading(true);
@@ -407,10 +520,7 @@ function AdminGallery() {
         await getAdminGallery();
 
       setGalleryItems(data);
-      setSelectedImageIds((current) => new Set(
-        data.filter((item) => item.mediaType === "IMAGE" && current.has(item.id))
-          .map((item) => item.id),
-      ));
+      setSelectedImageIds((current) => pruneGallerySelection(current, data));
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -526,6 +636,12 @@ function AdminGallery() {
   const visibleSelectedCount = visibleImages.filter((item) => selectedImageIds.has(item.id)).length;
   const hiddenSelectedCount = selectedImageIds.size - visibleSelectedCount;
 
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleImages.length;
+  }, [visibleSelectedCount, visibleImages.length]);
+
+  const isMutating = isBulkDeleting || operationBusy !== null || deletingId !== null || updatingId !== null || isSubmitting;
+
   const imageCount =
     galleryItems.filter(
       (item) =>
@@ -605,6 +721,7 @@ function AdminGallery() {
   }
 
   function openCreateImagesForm() {
+    if (deletionLock.current) return;
     clearSelections();
 
     setEditingItem(null);
@@ -620,6 +737,7 @@ function AdminGallery() {
   }
 
   function openCreateVideoForm() {
+    if (deletionLock.current) return;
     clearSelections();
 
     setEditingItem(null);
@@ -637,6 +755,7 @@ function AdminGallery() {
   function openEditForm(
     item: GalleryImage,
   ) {
+    if (deletionLock.current) return;
     clearSelections();
 
     setEditingItem(item);
@@ -1015,6 +1134,7 @@ function AdminGallery() {
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
+    if (deletionLock.current) return;
 
     const title =
       form.title.trim();
@@ -1251,6 +1371,7 @@ function AdminGallery() {
   async function handleDelete(
     item: GalleryImage,
   ) {
+    if (deletionLock.current || isMutating) return;
     const confirmed =
       window.confirm(
         `Delete "${item.title}"? This action cannot be undone.`,
@@ -1260,6 +1381,9 @@ function AdminGallery() {
       return;
     }
 
+    deletionLock.current = true;
+    setDeletionError(null);
+    setDeletionNotice(null);
     try {
       setDeletingId(
         item.id,
@@ -1267,9 +1391,9 @@ function AdminGallery() {
 
       setError(null);
 
-      await deleteGalleryImage(
-        item.id,
-      );
+      const deleted = await deleteGalleryImage(item.id);
+      if (deleted.deletion) applyDeletion(parseGalleryDeletion(deleted.deletion));
+      else setDeletionNotice("Gallery record deleted. This API did not report physical file cleanup status.");
       setSelectedImageIds((current) => {
         const next = new Set(current);
         next.delete(item.id);
@@ -1292,12 +1416,9 @@ function AdminGallery() {
         setPreviewItem(null);
       }
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Failed to delete the media item.",
-      );
+      setDeletionError(deletionErrorMessage(requestError));
     } finally {
+      deletionLock.current = false;
       setDeletingId(null);
     }
   }
@@ -1305,6 +1426,7 @@ function AdminGallery() {
   async function handleToggleStatus(
     item: GalleryImage,
   ) {
+    if (deletionLock.current) return;
     const nextStatus:
       GalleryStatus =
       item.status ===
@@ -1352,6 +1474,7 @@ function AdminGallery() {
   async function handleToggleHomepage(
     item: GalleryImage,
   ) {
+    if (deletionLock.current) return;
     if (
       item.mediaType !==
       "VIDEO"
@@ -1407,7 +1530,8 @@ function AdminGallery() {
       : isEditingVideo;
 
   return (
-    <section className="admin-gallery">
+    <section className="admin-gallery" aria-busy={isBulkDeleting}>
+      <fieldset className="admin-gallery__page-controls" disabled={isBulkDeleting || operationBusy !== null}>
       <header className="admin-gallery__header">
         <div className="admin-gallery__heading">
           <span className="admin-gallery__eyebrow">
@@ -1644,44 +1768,63 @@ function AdminGallery() {
         </div>
 
         <div className="admin-gallery__selection-toolbar" aria-label="Image selection">
-          <span role="status" aria-live="polite" aria-atomic="true">
+          <label className="admin-gallery__select-all">
+            <input ref={selectAllRef} type="checkbox"
+              checked={visibleImages.length > 0 && visibleSelectedCount === visibleImages.length}
+              disabled={isLoading || !!error || isMutating || visibleImages.length === 0}
+              onChange={event => {
+                if (event.target.checked) setSelectedImageIds(current => selectVisibleImages(current, filteredItems));
+                else setSelectedImageIds(current => new Set([...current].filter(id => !visibleImages.some(item => item.id === id))));
+              }} />
+            Select All <small>({visibleImages.length} visible images)</small>
+          </label>
+          <span className="admin-gallery__selection-count" role="status" aria-live="polite" aria-atomic="true">
             {selectedImageIds.size} images selected
             {hiddenSelectedCount > 0 && ` (${hiddenSelectedCount} hidden by filters)`}
           </span>
           <div className="admin-gallery__selection-actions">
-            <button
-              type="button"
-              disabled={isLoading || !!error || visibleImages.length === 0 || visibleSelectedCount === visibleImages.length}
-              onClick={() => setSelectedImageIds((current) => new Set([
-                ...current,
-                ...visibleImages.map((item) => item.id),
-              ]))}
-            >
-              Select All
-            </button>
-            <button
-              type="button"
-              disabled={selectedImageIds.size === 0}
-              onClick={() => setSelectedImageIds(new Set())}
-            >
-              Deselect All
-            </button>
-            <button
-              type="button"
-              className="admin-gallery__bulk-delete"
-              disabled
+            <button type="button" disabled={selectedImageIds.size === 0 || isMutating}
+              onClick={() => setSelectedImageIds(new Set())}>Deselect All</button>
+            <button ref={deleteSelectedRef} type="button" className="admin-gallery__bulk-delete"
+              disabled={!apiVerified || checkingApi || isMutating || selectedImageIds.size === 0 || selectedImageIds.size > 100 || isLoading || !!error}
               aria-describedby="gallery-bulk-delete-help"
-            >
+              onClick={() => { setDeletionError(null); confirmationRef.current?.showModal(); }}>
               <Trash2 size={15} aria-hidden="true" />
-              Delete Selected
+              {isBulkDeleting ? "Deleting records..." : "Delete Selected"}
             </button>
           </div>
           <p id="gallery-bulk-delete-help">
-            Bulk deletion is unavailable because the gallery API only supports deleting one item at a time.
-            Use each card's delete button to delete an image with confirmation.
-            Select All selects images matching the current filters; Deselect All clears every selection.
+            Select All applies to visible images only. Deselect All clears every selection, including hidden images.
+            Delete up to 100 images at a time. Videos are excluded.
           </p>
         </div>
+
+        <div className="admin-gallery__api-status">
+          <span>API: <code>{API_URL}</code></span>
+          <span>{checkingApi ? "Checking batch deletion support..." : apiVerified ? "Batch deletion contract verified" : capabilityError}</span>
+          <button type="button" disabled={checkingApi || isMutating} onClick={() => { setCheckingApi(true); void verifyApi(); }}>Check API / refresh operations</button>
+        </div>
+        {selectedImageIds.size > 100 && <p className="admin-gallery__notice" role="status">More than 100 images are selected. Deselect images before deleting; selections will not be split into automatic requests.</p>}
+        {deletionNotice && <p className="admin-gallery__notice" role="status">{deletionNotice}</p>}
+        {deletionError && <div className="admin-gallery__notice admin-gallery__notice--error" role="alert">
+          <p>{deletionError}</p>
+          <button type="button" disabled={isMutating} onClick={() => { void loadGallery(); setCheckingApi(true); void verifyApi(); }}>Refresh gallery and operations</button>
+        </div>}
+        {operations.length > 0 && <section className="admin-gallery__cleanup" aria-label="File cleanup operations">
+          <h2>File cleanup</h2>
+          <p>Deleting a record and cleaning up its files are separate outcomes. Legacy assets may be preserved.</p>
+          {operations.map(operation => <div className="admin-gallery__cleanup-row" key={operation.operationId}>
+            <div>
+              <strong>{operation.status === "completed" ? "Cleanup completed" : operation.status === "cleanup_failed" ? "Cleanup needs attention" : "Cleanup pending"}</strong>
+              <small>Operation {operation.operationId}</small>
+              <span>{operation.deletedIds.length} records deleted | {operation.cleanup.pending} files pending | {operation.cleanup.failed} failed | {operation.preservedAssetIds.length} records with preserved assets</span>
+            </div>
+            <div className="admin-gallery__selection-actions">
+              <button type="button" disabled={isMutating} onClick={() => void handleOperation(operation.operationId, false)}>Refresh status</button>
+              {operation.status !== "completed" && <button type="button" disabled={isMutating || !apiVerified} onClick={() => void handleOperation(operation.operationId, true)}>{operationBusy === operation.operationId ? "Working..." : "Retry file cleanup"}</button>}
+            </div>
+          </div>)}
+        </section>}
 
         {error && (
           <div className="admin-gallery__empty">
@@ -1748,7 +1891,7 @@ function AdminGallery() {
                         "VIDEO" ? (
                           <>
                             {item.thumbnailUrl ? (
-                              <img
+                              <GalleryMediaImage
                                 src={
                                   item.thumbnailUrl
                                 }
@@ -1778,7 +1921,7 @@ function AdminGallery() {
                             </div>
                           </>
                         ) : (
-                          <img
+                          <GalleryMediaImage
                             src={
                               item.imageUrl
                             }
@@ -1846,8 +1989,8 @@ function AdminGallery() {
                             <input
                               type="checkbox"
                               checked={selectedImageIds.has(item.id)}
-                              onChange={() => toggleImageSelection(item.id)}
-                              disabled={deletingId === item.id}
+                              onChange={() => { if (!isMutating) toggleImageSelection(item.id); }}
+                              disabled={isMutating}
                               aria-label={`Select image: ${item.title}`}
                             />
                             Select image
@@ -1930,8 +2073,7 @@ function AdminGallery() {
                                 : ""
                             }`}
                             disabled={
-                              updatingId ===
-                              item.id
+                              isMutating
                             }
                             onClick={() =>
                               void handleToggleHomepage(
@@ -1951,7 +2093,7 @@ function AdminGallery() {
                           </button>
                         )}
 
-                        <div className="admin-gallery__actions">
+                        <fieldset className="admin-gallery__actions" disabled={isMutating}>
                           <button
                             type="button"
                             onClick={() =>
@@ -1971,8 +2113,7 @@ function AdminGallery() {
                           <button
                             type="button"
                             disabled={
-                              updatingId ===
-                              item.id
+                              isMutating
                             }
                             onClick={() =>
                               void handleToggleStatus(
@@ -2030,7 +2171,7 @@ function AdminGallery() {
                               }
                             />
                           </button>
-                        </div>
+                        </fieldset>
                       </div>
                     </article>
                   );
@@ -2308,7 +2449,7 @@ function AdminGallery() {
                                   preview.file,
                                 )}
                               >
-                                <img
+                                <GalleryMediaImage
                                   src={
                                     preview.previewUrl
                                   }
@@ -2832,7 +2973,7 @@ function AdminGallery() {
                         playsInline
                       />
                     ) : (
-                      <img
+                      <GalleryMediaImage
                         src={
                           form.imageUrl
                         }
@@ -2978,7 +3119,7 @@ function AdminGallery() {
                 playsInline
               />
             ) : (
-              <img
+              <GalleryMediaImage
                 src={
                   previewItem.imageUrl
                 }
@@ -3039,6 +3180,25 @@ function AdminGallery() {
           </div>
         </div>
       )}
+      </fieldset>
+      <dialog ref={confirmationRef} className="admin-gallery__delete-dialog"
+        aria-labelledby="gallery-delete-title" aria-describedby="gallery-delete-description"
+        onCancel={event => { if (isBulkDeleting) event.preventDefault(); }}
+        onClose={() => deleteSelectedRef.current?.focus()}>
+        <form onSubmit={event => { event.preventDefault(); void handleBatchDelete(); }}>
+          <div className="admin-gallery__delete-dialog-body">
+            <Trash2 size={28} aria-hidden="true" />
+            <h2 id="gallery-delete-title">Delete {selectedImageIds.size} selected images?</h2>
+            <p id="gallery-delete-description">This includes {hiddenSelectedCount} images hidden by filters. Gallery records will be permanently deleted. Physical file cleanup may remain pending or fail; protected legacy assets may be preserved. This action cannot be undone.</p>
+          </div>
+          <div className="admin-gallery__selection-actions">
+            <button type="button" autoFocus disabled={isBulkDeleting} onClick={() => confirmationRef.current?.close()}>Cancel</button>
+            <button type="submit" className="admin-gallery__confirm-delete" disabled={isBulkDeleting || selectedImageIds.size < 1 || selectedImageIds.size > 100 || !apiVerified}>
+              {isBulkDeleting ? "Deleting records..." : `Delete ${selectedImageIds.size} images`}
+            </button>
+          </div>
+        </form>
+      </dialog>
     </section>
   );
 }

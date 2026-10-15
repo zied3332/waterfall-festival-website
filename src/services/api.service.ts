@@ -101,6 +101,15 @@ export function getApiMediaUrl(
   return `${API_URL}/${trimmedUrl}`;
 }
 
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function request<T>(
   endpoint: string,
   options:
@@ -211,9 +220,7 @@ async function request<T>(
         data;
     }
 
-    throw new Error(
-      message,
-    );
+    throw new ApiError(message, response.status);
   }
 
   return data as T;
@@ -281,12 +288,14 @@ export const api = {
 
   delete<T>(
     endpoint: string,
+    body?: unknown,
   ) {
     return request<T>(
       endpoint,
       {
         method:
           "DELETE",
+        ...(body === undefined ? {} : { body: prepareBody(body) }),
       },
     );
   },

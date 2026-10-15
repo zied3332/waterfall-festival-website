@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:gallery": "node --experimental-vm-modules --test tests/gallery.test.mjs",
+    "test:gallery:browser": "npm run build && node tests/gallery-ui-smoke.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

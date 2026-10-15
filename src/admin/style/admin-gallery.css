@@ -1694,3 +1694,206 @@
     flex: 1 1 auto;
   }
 }
+/* Selection, cleanup feedback, and accessible deletion confirmation. */
+.admin-gallery__page-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-gallery__select-all {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--admin-text);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-gallery__select-all input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--admin-accent);
+}
+
+.admin-gallery__select-all small {
+  color: var(--admin-text-muted);
+  font-weight: 400;
+}
+
+.admin-gallery__selection-count {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--admin-accent-soft, var(--admin-surface));
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-gallery__selection-toolbar > .admin-gallery__selection-actions {
+  margin-left: auto;
+}
+
+.admin-gallery__selection-actions .admin-gallery__bulk-delete:not(:disabled),
+.admin-gallery__selection-actions .admin-gallery__confirm-delete {
+  background: var(--admin-danger, #dc2626);
+  border-color: var(--admin-danger, #dc2626);
+  color: #fff;
+}
+
+.admin-gallery__selection-actions .admin-gallery__confirm-delete:hover:not(:disabled),
+.admin-gallery__selection-actions .admin-gallery__bulk-delete:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--admin-danger, #dc2626) 85%, #000);
+  color: #fff;
+}
+
+.admin-gallery__api-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid var(--admin-border);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--admin-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-gallery__api-status code {
+  color: var(--admin-text-secondary);
+}
+
+.admin-gallery__api-status button,
+.admin-gallery__notice button {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 7px;
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-gallery__notice {
+  margin: 12px;
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-left: 3px solid var(--admin-accent);
+  border-radius: 8px;
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.admin-gallery__notice--error {
+  border-left-color: var(--admin-danger, #dc2626);
+}
+
+.admin-gallery__notice p { margin: 0 0 10px; }
+
+.admin-gallery__cleanup { max-height: 360px; overflow-y: auto; padding: 14px; }
+.admin-gallery__cleanup h2 { margin: 0; font-size: 0.9rem; }
+.admin-gallery__cleanup > p { color: var(--admin-text-muted); font-size: 0.74rem; line-height: 1.5; }
+.admin-gallery__cleanup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--admin-border);
+  font-size: 0.73rem;
+}
+.admin-gallery__cleanup-row > div:first-child { display: grid; gap: 5px; min-width: 0; }
+.admin-gallery__cleanup-row small { color: var(--admin-text-muted); overflow-wrap: anywhere; }
+
+.admin-gallery__actions { min-width: 0; margin-right: 0; margin-left: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; border-right: 0; border-bottom: 0; border-left: 0; }
+.admin-gallery__actions:disabled { opacity: 0.65; }
+.admin-gallery__selection-check { width: 100%; padding-bottom: 8px; border-bottom: 1px solid var(--admin-border); }
+.admin-gallery__selection-check input:disabled { cursor: not-allowed; }
+
+.admin-gallery__media-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-height: 120px;
+  height: 100%;
+  padding: 18px;
+  background: var(--admin-surface-secondary);
+  color: var(--admin-text-muted);
+  font-size: 0.75rem;
+}
+
+.admin-gallery__image-wrap > video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.admin-gallery__media-badge {
+  position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 7px; border-radius: 6px; background: rgba(15,15,20,0.8); color: #fff; font-size: 0.6rem;
+}
+.admin-gallery__video-play { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; color: #fff; }
+.admin-gallery__header-actions, .admin-gallery__toolbar-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-gallery__toolbar-filters { justify-content: flex-end; }
+.admin-gallery__add--secondary { background: var(--admin-surface-secondary); color: var(--admin-text); border-color: var(--admin-border); }
+.admin-gallery__meta-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.admin-gallery__card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 0.65rem; color: var(--admin-text-secondary); }
+
+.admin-gallery__delete-dialog {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 0;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: var(--admin-shadow-lg);
+}
+.admin-gallery__delete-dialog::backdrop { background: rgba(15,15,20,0.72); }
+.admin-gallery__delete-dialog-body { padding: 24px; }
+.admin-gallery__delete-dialog-body > svg { color: var(--admin-danger, #dc2626); }
+.admin-gallery__delete-dialog h2 { margin: 14px 0 10px; font-size: 1.1rem; }
+.admin-gallery__delete-dialog p { margin: 0; color: var(--admin-text-secondary); font-size: 0.85rem; line-height: 1.65; }
+.admin-gallery__delete-dialog .admin-gallery__selection-actions { justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--admin-border); }
+
+.admin-gallery button:focus-visible,
+.admin-gallery input[type="checkbox"]:focus-visible {
+  outline: 3px solid var(--admin-focus);
+  outline-offset: 3px;
+}
+.admin-gallery button:disabled { cursor: not-allowed; }
+.admin-gallery[aria-busy="true"] .admin-gallery__selection-count::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--admin-accent);
+}
+
+@media (hover: none) {
+  .admin-gallery__preview-button { opacity: 1; transform: none; }
+}
+@media (max-width: 900px) {
+  .admin-gallery__toolbar { align-items: stretch; flex-direction: column; }
+  .admin-gallery__search { width: 100%; }
+  .admin-gallery__toolbar-filters { justify-content: flex-start; }
+  .admin-gallery__filters { flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+  .admin-gallery__selection-toolbar > .admin-gallery__selection-actions { margin-left: 0; }
+  .admin-gallery__cleanup-row .admin-gallery__selection-actions { width: 100%; }
+  .admin-gallery__header-actions { width: 100%; }
+  .admin-gallery__header-actions button { flex: 1; }
+  .admin-gallery__delete-dialog .admin-gallery__selection-actions { padding: 14px; }
+  .admin-gallery__delete-dialog-body { padding: 20px; }
+}
